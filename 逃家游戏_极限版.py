@@ -26,6 +26,23 @@ import random
 目标天数 = 5
 
 
+def 读取整数(提示, 默认=None):
+    """只收整数；乱填就重新问，不会把程序搞崩。"""
+    while True:
+        try:
+            文本 = input(提示).strip()
+        except EOFError:
+            raise
+        if not 文本:
+            if 默认 is not None:
+                return 默认
+            print("这里要填一个整数。")
+            continue
+        try:
+            return int(文本)
+        except ValueError:
+            print("这不是整数，重新填一个（比如 3 或 -100）。")
+
 # ===== 存档包：导入 / 导出（和网页版通用）=====
 # 网页版导出的 zip 在这里输入「导入」就能接着玩；
 # 这里导出的 zip 拖进网页版「导入存档」也能恢复。
@@ -145,7 +162,7 @@ while 天 < 目标天数:
 
 
     if 操作 == "12345678":
-        天 = int(input("跳到第几天："))
+        天 = 读取整数("跳到第几天：", 0)
         continue
 
     if 操作 == "110":
