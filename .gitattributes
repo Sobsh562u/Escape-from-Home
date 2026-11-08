@@ -1,0 +1,10 @@
+# 语言统计口径
+# index.html 是分发渠道（单文件网页版），不计入仓库主语言统计。
+# 这个项目的核心是桌面端：C 语言实现 + Python 源码。
+index.html linguist-documentation
+
+# 源码里的中文注释按原样保留，不做换行符转换
+* text=auto eol=lf
+*.c text eol=lf
+*.py text eol=lf
+*.md text eol=lf
