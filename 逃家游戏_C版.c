@@ -114,6 +114,22 @@ static void 时间串(char *out, int len) {
     }
 }
 
+/* 把字符串按 JSON 规则转义后写进文件 */
+static void 写JSON串(FILE *f, const char *s) {
+    for (const char *p = s; *p; p++) {
+        switch (*p) {
+            case '"':  fputs("\\\"", f); break;
+            case '\\': fputs("\\\\", f); break;
+            case '\n': fputs("\\n", f); break;
+            case '\r': fputs("\\r", f); break;
+            case '\t': fputs("\\t", f); break;
+            default:
+                if ((unsigned char)*p < 0x20) fprintf(f, "\\u%04x", *p);
+                else fputc(*p, f);
+        }
+    }
+}
+
 static void 导出存档(const 难度配置 *c, int 天, int 血条) {
     if (血条 <= 0) {
         printf("这局已经结束了，重新开一局再导出吧。\n");
@@ -141,15 +157,16 @@ static void 导出存档(const 难度配置 *c, int 天, int 血条) {
     fprintf(f, "  \"savedAt\": \"%s\",\n", 时间);
     fprintf(f, "  \"log\": [\n");
     for (int i = 0; i < 经历数; i++) {
-        fprintf(f, "    {\"t\": \"%s\", \"c\": \"\"}%s\n",
-                经历[i], (i == 经历数 - 1) ? "" : ",");
+        fprintf(f, "    {\"t\": \"");
+        写JSON串(f, 经历[i]);
+        fprintf(f, "\", \"c\": \"\"}%s\n", (i == 经历数 - 1) ? "" : ",");
     }
     fprintf(f, "  ]\n");
     fprintf(f, "}\n");
     fclose(f);
 
     printf("存档已导出：%s\n", 文件名);
-    printf("想接着玩：网页版点「导入存档」选它（压缩包也行，解压出 json 就行），");
+    printf("想接着玩：网页版点「导入存档」选它（网页版认 zip 和 json），");
     printf("或者下次开这个程序输入「导入」。\n");
 }
 
@@ -253,18 +270,26 @@ static void 结束语(void) {
 typedef struct {
     int 扣血;
     int 死了;         /* 1 表示直接打死，不看血条 */
+    const char *结局;  /* 死了时的结局名 */
     const char *台词;
 } 考试结果;
 
 static 考试结果 考一次(const 难度配置 *c, int 分数) {
-    考试结果 r = {0, 0, ""};
+    考试结果 r = {0, 0, "被打死", ""};
     if (strcmp(c->id, "orig") == 0) {
         if (分数 == 0) { r.扣血 = -40; r.台词 = "妈妈：你怎么考了鸭蛋？！？"; }
         else if (分数 < 60) { r.扣血 = -15; r.台词 = "妈妈：你怎么又考砸了？！"; }
         else { r.扣血 = 10; r.台词 = "妈妈：这次考得不错，奖励你！"; }
     } else if (strcmp(c->id, "revert") == 0) {
-        if (分数 < 60) { r.扣血 = 60; r.台词 = "妈妈大喜！考砸了她反而放心，加血！"; }
-        else { r.扣血 = -60; r.台词 = "妈妈暴怒！考好了她怕你太优秀，扣血！"; }
+        if (分数 < 60) {
+            static const int 加血池[5] = {20, 40, 60, 80, 100};
+            r.扣血 = 加血池[rand() % 5];
+            r.台词 = "妈妈大喜！考砸了她反而放心，加血！";
+        } else {
+            static const int 扣血池[5] = {20, 40, 60, 80, 10000};
+            r.扣血 = -扣血池[rand() % 5];
+            r.台词 = "妈妈暴怒！考好了她怕你太优秀，扣血！";
+        }
     } else if (strcmp(c->id, "hard") == 0) {
         if (分数 == 0) { r.扣血 = -25; r.台词 = "妈妈：鸭蛋？！跪墙角！"; }
         else if (分数 < 60) { r.扣血 = -15; r.台词 = "妈妈：又不及格！"; }
@@ -273,6 +298,7 @@ static 考试结果 考一次(const 难度配置 *c, int 分数) {
     } else { /* limit */
         if (分数 == 0) {
             r.死了 = 1;
+            r.结局 = "被皮带打死";
             r.台词 = "爸爸：你竟然考零蛋？！爸爸解下皮带……啪啪啪——皮带打死，血再多也没用。";
             return r;
         }
@@ -406,7 +432,7 @@ static void 玩一局(const 难度配置 *c) {
             continue;
         }
         if (strcmp(操作, "导入") == 0 || strcmp(操作, "导入存档") == 0) {
-            printf("把存档文件拖进来，或者直接填路径（.json / .zip 都行）：");
+            printf("把存档文件拖进来，或者直接填路径（只认 .json；zip 请先解压出 存档.json）：");
             读一行(缓冲, 输入长度);
             去引号(缓冲);
             去空白(缓冲);
@@ -506,7 +532,7 @@ static void 玩一局(const 难度配置 *c) {
 
         if (r.死了) {
             分隔线();
-            printf("结局达成：被皮带打死（强制结束）\n");
+            printf("结局达成：%s（强制结束）\n", r.结局);
             分隔线();
             break;
         }
