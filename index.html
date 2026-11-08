@@ -239,8 +239,9 @@
         return { end: true, ending: "revert_call", lines: ["警察来了，把你抓走了。", "结局达成：报警反被抓。"] };
       },
       exam: function (s, score) {
-        if (score < 60) return { hp: 60, text: "妈妈大喜：考砸了她反而放心，加了 60 血。", tone: "good" };
-        return { hp: -60, text: "妈妈暴怒：考好了她怕你太优秀，扣了 60 血。", tone: "bad" };
+        var 加血池 = [20, 40, 60, 80, 100], 扣血池 = [20, 40, 60, 80, 10000];
+        if (score < 60) return { hp: 加血池[Math.floor(Math.random() * 5)], text: "妈妈大喜：考砸了她反而放心。", tone: "good" };
+        return { hp: -扣血池[Math.floor(Math.random() * 5)], text: "妈妈暴怒：考好了她怕你太优秀。", tone: "bad" };
       },
       gaokao: function (score) {
         if (score >= 700) return { id: "revert_cheat", text: "妈妈：考这么高？肯定作弊！拿鸡毛掸子追着打。结局达成：考太高被当成作弊打死了。" };
