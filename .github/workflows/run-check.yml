@@ -50,6 +50,13 @@ jobs:
           python3 -m py_compile 逃家游戏_跑路版.py
           printf '12345678\n60\n跑\n等\n等\n等\n' | python3 逃家游戏_跑路版.py | grep -q '终点站' && echo "Python 跑路版通关"
 
+      - name: 终点站要自己下车
+        run: |
+          printf '12345678\n100\n跑\n等\n等\n等\n走了\n' | /tmp/game -m run > /tmp/a.txt
+          grep -q '结局达成：终点站' /tmp/a.txt && echo "走了 → 终点站"
+          printf '12345678\n100\n跑\n等\n等\n等\n坐\n' | /tmp/game -m run > /tmp/b.txt
+          grep -q '结局达成：坐过站' /tmp/b.txt && echo "坐 → 坐过站"
+
       - name: 网页版含跑路版入口
         run: |
           grep -q 'data-mode="run"' index.html && echo "网页版有跑路版标签"
