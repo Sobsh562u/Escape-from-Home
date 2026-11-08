@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>逃家游戏 · Escape from Home</title>
+<meta name="description" content="逃家游戏网页版：撑过 5 天，到 18 岁生日，逃出这个家。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2b2b'/%3E%3Cpath d='M8 20 L20 8 M14 8 h6 v6' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#1b1b1b;
+    --paper:#f7f4ee;
+    --paper2:#efe9dd;
+    --line:#d8cfbd;
+    --accent:#b7472a;
+    --accent2:#2f5d50;
+    --hp:#3f7d4f;
+    --hp-low:#b7472a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.6;
+    padding:16px 14px 40px;
+    min-height:100vh;
+    background-image:radial-gradient(circle at 20% 0%, rgba(183,71,42,.06), transparent 55%),
+                      radial-gradient(circle at 100% 100%, rgba(47,93,80,.07), transparent 60%);
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+  h1{font-size:22px;margin:0;letter-spacing:.5px;}
+  .sub{font-size:13px;color:#6d6455;margin-top:2px;}
+  .dl{
+    flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+    min-height:44px;padding:0 14px;border-radius:8px;
+    background:var(--ink);color:#fff;text-decoration:none;
+    font-size:14px;white-space:nowrap;
+  }
+  .dl:hover{background:#000;}
+  .dl svg{width:16px;height:16px;}
+
+  .tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .tab{
+    flex:1;min-height:44px;border:1px solid var(--line);background:var(--paper2);
+    color:#4a4235;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;
+  }
+  .tab[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .panel{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-bottom:14px;
+  }
+  .stats{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+  .stat{font-size:13px;color:#6d6455;}
+  .stat b{color:var(--ink);font-size:18px;font-weight:600;margin-left:4px;}
+  .hpbar{height:10px;border-radius:6px;background:#e7e0d2;overflow:hidden;flex:1 1 140px;min-width:140px;}
+  .hpfill{height:100%;width:100%;background:var(--hp);transition:width .25s ease,background .25s ease;}
+  .hpfill.low{background:var(--hp-low);}
+
+  #log{
+    height:230px;overflow-y:auto;font-size:14px;
+    border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);
+    padding:10px 0;margin:0 0 12px;
+    scroll-behavior:smooth;
+  }
+  #log p{margin:0 0 8px;animation:fade .18s ease-out;}
+  #log p.day{color:#8a7d64;font-size:13px;margin-top:14px;}
+  #log p.good{color:var(--accent2);}
+  #log p.bad{color:var(--accent);}
+  #log p.end{font-weight:600;}
+  @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+  .acts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .acts button{
+    min-height:46px;border-radius:8px;border:1px solid var(--line);
+    background:var(--paper2);color:var(--ink);font-size:15px;font-family:inherit;cursor:pointer;
+  }
+  .acts button:hover{border-color:#b9ab8e;}
+  .acts button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .acts button.primary:hover{background:#9d3b22;}
+  .acts button:disabled{opacity:.45;cursor:not-allowed;}
+
+  .jumpbox{display:none;gap:8px;margin-top:10px;}
+  .jumpbox.show{display:flex;}
+  .jumpbox input{
+    flex:1;min-height:46px;border:1px solid var(--line);border-radius:8px;
+    padding:0 12px;font-size:16px;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  .jumpbox button{
+    min-height:46px;padding:0 16px;border-radius:8px;border:1px solid var(--line);
+    background:var(--ink);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;
+  }
+
+  footer{font-size:12px;color:#8a7d64;text-align:center;margin-top:20px;line-height:1.9;}
+  footer a{color:#8a7d64;}
+  .note{font-size:12px;color:#8a7d64;margin-top:10px;}
+  @media (min-width:768px){
+    body{padding:32px 24px 60px;}
+    h1{font-size:28px;}
+    #log{height:300px;}
+    .acts{grid-template-columns:repeat(4,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>逃家游戏</h1>
+      <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
+    </div>
+    <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.0" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
+      下载
+    </a>
+  </header>
+
+  <div class="tabs" role="group" aria-label="选择版本">
+    <button class="tab" data-mode="orig" aria-pressed="true">原始版</button>
+    <button class="tab" data-mode="revert" aria-pressed="false">反转版</button>
+    <button class="tab" data-mode="hard" aria-pressed="false">困难版</button>
+  </div>
+
+  <section class="panel">
+    <div class="stats">
+      <div class="stat">血条<b id="hpNum">100</b></div>
+      <div class="hpbar"><div class="hpfill" id="hpFill"></div></div>
+      <div class="stat">第<b id="dayNum">0</b>天</div>
+    </div>
+    <div id="log" aria-live="polite"></div>
+
+    <div class="acts">
+      <button class="primary" id="btnExam">考试</button>
+      <button id="btnRun">逃跑</button>
+      <button id="btnCall">报警</button>
+      <button id="btnAuthor">作者模式</button>
+    </div>
+
+    <div class="jumpbox" id="jumpBox">
+      <input id="jumpInput" type="number" placeholder="跳到第几天（可负数）" inputmode="numeric">
+      <button id="jumpGo">跳</button>
+    </div>
+
+    <p class="note" id="note">原始版：撑过 5 天即通关。考 0 分扣 40 血。</p>
+  </section>
+
+  <footer>
+    网页版由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    MIT License · Copyright (c) 2026 Sobsh562u<br>
+    想玩可执行文件？点右上角「下载」跳到发行版页面。
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var MODES = {
+    orig: {
+      label: "原始版",
+      hp: 100, max: 100, goal: 5,
+      note: "原始版：撑过 5 天即通关。考 0 分扣 40 血，60 分以下扣 15 血，60 分以上加 10 血。",
+      run: function (s) { return { text: "妈妈头都没抬，你根本没跑成，白过一天。", hp: 0, end: false }; },
+      call: function () {
+        return { end: true, lines: [
+          "你拨通了 110……",
+          "警察问清地址，几分钟后警车停在楼下。",
+          "警察把你妈妈带走了。",
+          "你名下有房，明天 18 岁生日——自由了。",
+          "隐藏结局达成：正义报警。"
+        ]};
+      },
+      exam: function (s, score) {
+        if (score === 0) return { hp: -40, text: "妈妈：你怎么考了鸭蛋？", tone: "bad" };
+        if (score < 60) return { hp: -15, text: "妈妈：你怎么又考砸了？", tone: "bad" };
+        return { hp: 10, text: "妈妈：这次考得不错，奖励你。", tone: "good" };
+      },
+      win: "第 5 天结束，你还活着。明天就是你 18 岁生日，你掏出钥匙，打开那套写着你名字的房子。结局达成：逃出这个家。"
+    },
+    revert: {
+      label: "反转版",
+      hp: 100, max: 100, goal: 6570,
+      note: "反转版：规则全反，考砸加血、考好扣血；要撑到 6570 天（18 岁）才高考，分数越高结局越惨。",
+      run: function (s) {
+        var d = s.day;
+        if (d < 3650) return { text: "你太小了，妈妈根本追不上，你跑掉了。结局达成：小小年纪成功逃家。", end: true };
+        if (d < 6570) return { text: "半大孩子，跑了又回来了。", hp: 0, end: false };
+        return { text: "都 18 岁了才跑？妈妈就在门口等着，当场抓回。", end: true };
+      },
+      call: function () {
+        return { end: true, lines: ["警察来了，把你抓走了。", "结局达成：报警反被抓。"] };
+      },
+      exam: function (s, score) {
+        if (score < 60) return { hp: 60, text: "妈妈大喜：考砸了她反而放心，加了 60 血。", tone: "good" };
+        return { hp: -60, text: "妈妈暴怒：考好了她怕你太优秀，扣了 60 血。", tone: "bad" };
+      },
+      gaokao: function (score) {
+        if (score >= 700) return "妈妈：考这么高？肯定作弊！拿鸡毛掸子追着打。结局达成：考太高被当成作弊打死了。";
+        if (score >= 400) return "考了 " + score + " 分，本科——但妈妈逼你复读，关在家里不许出门。结局达成：考上本科却失去自由。";
+        if (score >= 200) return "考了 " + score + " 分，大专。妈妈懒得管你了，你搬出去住。结局达成：成绩一般反而自由了。";
+        return "考了 " + score + " 分，妈妈气到晕倒，没人管你了。结局达成：考砸反而没人管，自由了。";
+      },
+      win: ""
+    },
+    hard: {
+      label: "困难版",
+      hp: 50, max: 50, goal: 10,
+      note: "困难版：血条只有 50，要撑 10 天。考 0 分扣 25 血，跑也有代价，报警没人来救。",
+      run: function (s) {
+        if (Math.random() < 0.2) return { hp: -10, text: "天没黑你不敢跑，被妈妈抓个正着，扣 10 血。", tone: "bad" };
+        return { hp: -5, text: "黑灯瞎火跑出门，又冷又饿，扣 5 血。", tone: "bad" };
+      },
+      call: function () {
+        return { end: true, lines: ["你拨通 110，警察说：小孩子别乱打电话！", "结局达成：被当成恶作剧，没人来救你。"] };
+      },
+      exam: function (s, score) {
+        if (score === 0) return { hp: -25, text: "妈妈：鸭蛋？！跪墙角！", tone: "bad" };
+        if (score < 60) return { hp: -15, text: "妈妈：又不及格！", tone: "bad" };
+        if (score < 90) return { hp: 5, text: "妈妈：还行，别骄傲。", tone: "good" };
+        return { hp: 8, text: "妈妈：不错。", tone: "good" };
+      },
+      win: "你撑过了 10 天。18 岁生日，名下有房。结局达成：困难模式通关。"
+    }
+  };
+
+  var state = null;
+  var els = {
+    log: document.getElementById("log"),
+    hpNum: document.getElementById("hpNum"),
+    dayNum: document.getElementById("dayNum"),
+    hpFill: document.getElementById("hpFill"),
+    note: document.getElementById("note"),
+    jump: document.getElementById("jumpBox"),
+    jumpInput: document.getElementById("jumpInput"),
+    btnExam: document.getElementById("btnExam"),
+    btnRun: document.getElementById("btnRun"),
+    btnCall: document.getElementById("btnCall"),
+    btnAuthor: document.getElementById("btnAuthor")
+  };
+
+  function rand(n) { return Math.floor(Math.random() * n); }
+
+  function line(text, cls) {
+    var p = document.createElement("p");
+    if (cls) p.className = cls;
+    p.textContent = text;
+    els.log.appendChild(p);
+    els.log.scrollTop = els.log.scrollHeight;
+  }
+
+  function updateStats() {
+    els.hpNum.textContent = state.hp;
+    els.dayNum.textContent = state.day;
+    var pct = Math.max(0, Math.min(100, (state.hp / state.cfg.max) * 100));
+    els.hpFill.style.width = pct + "%";
+    els.hpFill.className = "hpfill" + (pct <= 30 ? " low" : "");
+  }
+
+  function reset(mode) {
+    var cfg = MODES[mode];
+    state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false };
+    els.log.innerHTML = "";
+    els.jump.classList.remove("show");
+    els.note.textContent = cfg.note;
+    line(cfg.note, "day");
+    line("———— 第 0 天 ————", "day");
+    setButtons(false);
+    updateStats();
+  }
+
+  function setButtons(disabled) {
+    [els.btnExam, els.btnRun, els.btnCall, els.btnAuthor].forEach(function (b) { b.disabled = disabled; });
+  }
+
+  function clamp() {
+    if (state.hp > state.cfg.max) state.hp = state.cfg.max;
+    if (state.hp < 0) state.hp = 0;
+  }
+
+  function gameOver(reason) {
+    state.over = true;
+    setButtons(true);
+    line(reason, "end");
+    line("点上方版本按钮可以重开一局。", "day");
+  }
+
+  function applyHp(delta) {
+    state.hp += delta;
+    clamp();
+    updateStats();
+    if (state.hp <= 0) {
+      gameOver("血条归零，你被打死了。GAME OVER。");
+      return true;
+    }
+    return false;
+  }
+
+  function nextDay() {
+    if (state.mode === "revert" && state.day >= 6570) {
+      var gscore = rand(751);
+      line("高考！你考了 " + gscore + " 分！", "day");
+      gameOver(state.cfg.gaokao(gscore));
+      return;
+    }
+    state.day += 1;
+    updateStats();
+    if (state.day >= state.cfg.goal && state.mode !== "revert") {
+      gameOver(state.cfg.win);
+      return;
+    }
+    line("———— 第 " + state.day + " 天 ————", "day");
+  }
+
+  function doExam() {
+    if (state.over) return;
+    var score = rand(101);
+    line("你考了 " + score + " 分。", "day");
+    var r = state.cfg.exam(state, score);
+    if (r.hp !== 0) {
+      if (r.hp < 0) line(r.text + " 扣 " + (-r.hp) + " 血。", "bad");
+      else line(r.text + " 加 " + r.hp + " 血。", "good");
+      if (applyHp(r.hp)) return;
+    } else {
+      line(r.text, r.tone);
+    }
+    line("血条 " + state.hp + " / " + state.cfg.max, "day");
+    nextDay();
+  }
+
+  function doRun() {
+    if (state.over) return;
+    var r = state.cfg.run(state);
+    line(r.text, r.tone || "bad");
+    if (r.end) { gameOver("游戏结束。"); return; }
+    if (r.hp) { if (applyHp(r.hp)) return; }
+    nextDay();
+  }
+
+  function doCall() {
+    if (state.over) return;
+    var r = state.cfg.call(state);
+    r.lines.forEach(function (t) { line(t, "day"); });
+    gameOver("游戏结束。");
+  }
+
+  els.btnExam.addEventListener("click", doExam);
+  els.btnRun.addEventListener("click", doRun);
+  els.btnCall.addEventListener("click", doCall);
+  els.btnAuthor.addEventListener("click", function () {
+    if (state.over) return;
+    els.jump.classList.toggle("show");
+    if (els.jump.classList.contains("show")) els.jumpInput.focus();
+  });
+  document.getElementById("jumpGo").addEventListener("click", function () {
+    var v = parseInt(els.jumpInput.value, 10);
+    if (isNaN(v)) { line("请输入一个数字。", "bad"); return; }
+    if (state.mode === "revert" || state.mode === "hard") {
+      state.day = v;
+      els.jump.classList.remove("show");
+      els.jumpInput.value = "";
+      updateStats();
+      if (state.day >= state.cfg.goal && state.mode === "hard") {
+        gameOver(state.cfg.win);
+        return;
+      }
+      if (state.day < 0) {
+        line("你跳到了第 " + v + " 天，也就是还没出生的年代。妈妈都还没出生，谁在逼你考试？", "day");
+        gameOver("结局达成：祖父悖论。");
+        return;
+      }
+      line("———— 第 " + state.day + " 天 ————", "day");
+    } else {
+      state.day = v;
+      els.jump.classList.remove("show");
+      els.jumpInput.value = "";
+      updateStats();
+      if (v < 0) {
+        line("你跳到了第 " + v + " 天……", "day");
+        gameOver(v <= -100 ? "穿越到妈妈还没出生的年代。结局达成：祖父悖论。" : "你还是个受精卵。结局达成：受精卵体外死亡。");
+        return;
+      }
+      line("———— 第 " + state.day + " 天 ————", "day");
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (b) {
+        b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+      });
+      reset(btn.dataset.mode);
+    });
+  });
+
+  reset("orig");
+})();
+</script>
+</body>
+</html>
