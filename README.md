@@ -78,9 +78,25 @@ Windows 首次运行如果弹「Windows 已保护你的电脑」，是因为这�
 
 自己编译（只要 gcc）：
 
+Linux 上直接编：
+
 ```
-gcc 逃家游戏_C版.c -O2 -o 逃家游戏                       # Linux / macOS
-x86_64-w64-mingw32-gcc 逃家游戏_C版.c -O2 -o 逃家游戏.exe  # Windows 交叉编译
+gcc 逃家游戏_C版.c -O2 \
+    -o 逃家游戏_linux
+```
+
+在 Linux 上编 Windows 版（需要 mingw-w64）：
+
+```
+x86_64-w64-mingw32-gcc 逃家游戏_C版.c -O2 \
+    -o 逃家游戏.exe
+```
+
+本机没装 mingw 时，也可以用 `pip3 install ziglang` 之后：
+
+```
+zig cc -target x86_64-windows-gnu -O2 \
+    逃家游戏_C版.c -o 逃家游戏.exe
 ```
 
 C 版支持的全部操作：**回车考试 / `跑` 逃跑 / `110` 报警 / `12345678` 作者模式跳天数 / `导出` 存档 / `导入` 存档**。
