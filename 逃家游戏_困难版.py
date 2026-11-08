@@ -80,3 +80,7 @@ if 天 >= 目标天数 and 血条 > 0:
     print("你撑过了 10 天！18 岁生日，名下有房。")
     print("结局达成：困难模式通关🏃‍♂️🏠")
 #（注：内容由AI生成）
+try:
+    input("\n按回车键退出...")
+except EOFError:
+    pass
