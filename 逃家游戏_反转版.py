@@ -26,7 +26,106 @@ import random
 加血池 = [20, 40, 60, 80, 100]        # 名义“加血”，反转后实际是扣血
 扣血池 = [20, 40, 60, 80, 10000]      # 名义“扣血”，反转后实际是加血
 
+
+# ===== 存档包：导入 / 导出（和网页版通用）=====
+# 网页版导出的 zip 在这里输入「导入」就能接着玩；
+# 这里导出的 zip 拖进网页版「导入存档」也能恢复。
+import json
+import os
+import zipfile
+import datetime
+
+难度ID = "revert"
+难度名 = "反转版"
+血条上限 = 最大血条
+经历 = []
+
+
+def 导出存档(天数, 血量, 记录):
+    if 血量 <= 0:
+        print("这局已经结束了，重新开一局再导出吧。")
+        return
+    数据 = {
+        "game": "逃家游戏 Escape from Home",
+        "packVersion": 2,
+        "mode": 难度ID,
+        "modeLabel": 难度名,
+        "day": 天数,
+        "hp": 血量,
+        "max": 血条上限,
+        "savedAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "log": [{"t": t, "c": ""} for t in 记录],
+    }
+    文本 = [
+        "逃家游戏 · 存档包",
+        "导出时间：" + 数据["savedAt"],
+        "难度：" + 难度名,
+        "进度：第 %d 天" % 天数,
+        "血条：%d / %d" % (血量, 血条上限),
+        "",
+        "—— 这段时间你经历过 ——",
+    ]
+    for i, t in enumerate(记录, 1):
+        文本.append("%d. %s" % (i, t))
+    文件名 = "逃家游戏存档-%s-第%d天.zip" % (难度名, 天数)
+    with zipfile.ZipFile(文件名, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("存档.json", json.dumps(数据, ensure_ascii=False, indent=2))
+        z.writestr("存档说明.txt", "\n".join(文本))
+    print("存档包已导出：" + os.path.abspath(文件名))
+    print("想接着玩：网页版点「导入存档」选它，或者再开这个程序输入「导入」。")
+    print()
+
+
+def 导入存档():
+    print("把存档包拖进来，或者直接填路径（.zip / .json）：")
+    路径 = input("存档路径：").strip().strip('"').strip("'")
+    if not 路径:
+        print("没填路径，继续玩当前这一局。")
+        return None
+    if not os.path.exists(路径):
+        print("找不到这个文件：" + 路径)
+        return None
+    try:
+        if 路径.lower().endswith(".zip"):
+            with zipfile.ZipFile(路径) as z:
+                名单 = [n for n in z.namelist() if n.lower().endswith(".json")]
+                if not 名单:
+                    print("这个压缩包里没有存档.json，不是存档包。")
+                    return None
+                原始 = z.read(名单[0]).decode("utf-8")
+        else:
+            with open(路径, "r", encoding="utf-8") as f:
+                原始 = f.read()
+        数据 = json.loads(原始)
+    except Exception:
+        print("这个文件读不出来，可能损坏了。")
+        return None
+    if isinstance(数据, dict) and 数据.get("encrypted"):
+        print("这是带密码的加密存档，终端版解不开。")
+        print("去网页版导入它，或者导出时密码留空再来。")
+        return None
+    if not isinstance(数据, dict) or "day" not in 数据 or "hp" not in 数据:
+        print("存档内容不对（缺天数或血条），导入失败。")
+        return None
+    if 数据.get("mode") and 数据["mode"] != 难度ID:
+        print("注意：这份存档是「%s」，这里是「%s」。"
+              % (数据.get("modeLabel") or 数据["mode"], 难度名))
+        print("天数和血条照搬，但接着按这边的规则玩。")
+    天数 = int(数据["day"])
+    血量 = max(1, min(血条上限, int(数据["hp"])))
+    记录 = [it.get("t", "") for it in (数据.get("log") or [])
+             if isinstance(it, dict) and it.get("t")]
+    print("已导入：第 %d 天，血条 %d / %d" % (天数, 血量, 血条上限))
+    if 记录:
+        print("—— 之前经历过 ——")
+        for t in 记录[-6:]:
+            print("·", t)
+    print()
+    return (天数, 血量, 记录)
+
+
 print("====逃家游戏（反转版）====")
+print("输入「导出」存档打包，输入「导入」读存档包（网页版的包也能读）。")
 print("平时考试 0-100 分；最后一天高考 0-750 分！")
 print("提示：这一切是反向的")
 print("提示：考砸会加血，考好会扣血")
@@ -37,6 +136,16 @@ print()
 while 天 <= 总天数:
     print("———— 第", 天, "天（", round(天 / 365), "岁）————")
     操作 = input("考试/跑/110/12345678：")
+    # 存档包
+    if 操作 in ("导入", "导入存档"):
+        结果 = 导入存档()
+        if 结果:
+            天, 血条, 经历 = 结果
+        continue
+    if 操作 in ("导出", "导出存档"):
+        导出存档(天, 血条, 经历)
+        continue
+
 
     # —— 逃跑：反转后越小越容易跑掉 ——
     if 操作 == "跑":
@@ -129,6 +238,7 @@ while 天 <= 总天数:
 
 if 天 > 总天数 and 血条 > 0:
     print("你撑到了 18 岁！名下有房！自由了！🏃‍♂️🏠")
+
 try:
     input("\n按回车键退出...")
 except EOFError:
