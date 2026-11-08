@@ -204,6 +204,7 @@
     orig: {
       label: "原始版",
       hp: 100, max: 100, goal: 5,
+      intro: "【原始版】第 0 天。撑过 5 天，就能在 18 岁那天走出这个家门。",
       note: "原始版：撑过 5 天即通关。考 0 分扣 40 血，60 分以下扣 15 血，60 分以上加 10 血。逃跑会被抓回来打一顿，扣 20 血。",
       run: function (s) {
         return { hp: -20, keepDay: true, tone: "bad",
@@ -228,6 +229,7 @@
     revert: {
       label: "反转版",
       hp: 100, max: 100, goal: 6570,
+      intro: "【反转版】第 0 天。这里的规则全是反的，先别急着高兴。",
       note: "反转版：规则全反，考砸加血、考好扣血；要撑到 6570 天（18 岁）才高考，分数越高结局越惨。",
       run: function (s) {
         var d = s.day;
@@ -254,6 +256,7 @@
     hard: {
       label: "困难版",
       hp: 50, max: 50, goal: 10,
+      intro: "【困难版】第 0 天。只有 50 点血，要熬 10 天。",
       note: "困难版：血条只有 50，要撑 10 天。考 0 分扣 25 血，跑也有代价，报警没人来救。",
       run: function (s) {
         if (Math.random() < 0.2) return { hp: -10, text: "天没黑你不敢跑，被妈妈抓个正着，扣 10 血。", tone: "bad" };
@@ -273,6 +276,7 @@
     limit: {
       label: "极限版",
       hp: 100, max: 100, goal: 5,
+      intro: "【极限版】第 0 天。扣血等于 100 减去分数，考砸一次可能就没了。",
       note: "极限版：扣血 = 100 - 分数，分数越低掉得越狠；考 0 分爸爸直接解皮带打死，血再多也没用。撑过 5 天通关。",
       run: function (s) {
         return { hp: -5, text: "你没跑，但爸爸盯着你写作业到半夜，扣 5 血。", tone: "bad" };
@@ -500,7 +504,7 @@
     }
     if (saved && saved.over) clearSave(mode);
 
-    line(cfg.note, "day");
+    line(cfg.intro, "day");
     line("———— 第 0 天 ————", "day");
     setButtons(false);
     updateStats();
@@ -747,7 +751,7 @@
     els.jump.classList.remove("show");
     els.note.textContent = state.cfg.note;
     var logs = (pack.log || []).filter(function (it) { return it && it.t; });
-    if (!logs.length) logs = [{ t: state.cfg.note, c: "day" }];
+    if (!logs.length) logs = [{ t: state.cfg.intro, c: "day" }];
     state.log = logs.slice(-200);
     state.log.forEach(function (it) { renderLine(it.t, it.c); });
     renderLine("（已导入存档包 · " + state.cfg.label + " · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + state.cfg.max + "）", "day");
