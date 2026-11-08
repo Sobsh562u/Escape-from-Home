@@ -98,6 +98,13 @@
   footer{font-size:12px;color:#8a7d64;text-align:center;margin-top:20px;line-height:1.9;}
   footer a{color:#8a7d64;}
   .note{font-size:12px;color:#8a7d64;margin-top:10px;}
+  .footbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  .footbar button{
+    min-height:44px;padding:0 14px;border-radius:8px;border:1px dashed var(--line);
+    background:transparent;color:#6d6455;font-size:13px;font-family:inherit;cursor:pointer;
+  }
+  .footbar button:hover{border-color:#b9ab8e;color:var(--ink);}
+  .saveHint{font-size:12px;color:#a19680;margin:8px 0 0;}
   @media (min-width:768px){
     body{padding:32px 24px 60px;}
     h1{font-size:28px;}
@@ -146,6 +153,14 @@
     </div>
 
     <p class="note" id="note">原始版：撑过 5 天即通关。考 0 分扣 40 血。</p>
+
+    <div class="footbar">
+      <button id="btnRestart">重新开始本局</button>
+      <button id="btnExport">导出存档包</button>
+      <button id="btnImport">导入存档</button>
+      <input type="file" id="fileInput" accept=".zip,.json,.txt" hidden>
+    </div>
+    <p class="saveHint">本局进度会自动保存，关掉网页也还在。导出的是压缩包，里面记着你的天数、难度和经历。</p>
   </section>
 
   <footer>
@@ -155,6 +170,7 @@
   </footer>
 </div>
 
+<script src="https://fastly.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -248,11 +264,43 @@
   function rand(n) { return Math.floor(Math.random() * n); }
 
   function line(text, cls) {
+    if (!state.log) state.log = [];
+    state.log.push({ t: text, c: cls || "" });
+    if (state.log.length > 200) state.log = state.log.slice(-200);
+    renderLine(text, cls);
+  }
+
+  function renderLine(text, cls) {
     var p = document.createElement("p");
     if (cls) p.className = cls;
     p.textContent = text;
     els.log.appendChild(p);
     els.log.scrollTop = els.log.scrollHeight;
+  }
+
+  var SAVE_PREFIX = "escapeHome_save_v2_";
+
+  function saveState() {
+    if (!state) return;
+    try {
+      localStorage.setItem(SAVE_PREFIX + state.mode, JSON.stringify({
+        hp: state.hp, day: state.day, over: state.over, log: state.log
+      }));
+    } catch (e) {}
+  }
+
+  function loadSave(mode) {
+    try {
+      var raw = localStorage.getItem(SAVE_PREFIX + mode);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || typeof d.hp !== "number" || typeof d.day !== "number") return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function clearSave(mode) {
+    try { localStorage.removeItem(SAVE_PREFIX + mode); } catch (e) {}
   }
 
   function updateStats() {
@@ -261,18 +309,57 @@
     var pct = Math.max(0, Math.min(100, (state.hp / state.cfg.max) * 100));
     els.hpFill.style.width = pct + "%";
     els.hpFill.className = "hpfill" + (pct <= 30 ? " low" : "");
+    saveState();
   }
 
-  function reset(mode) {
+  var EVENTS = [
+    { hp: 5, text: "妈妈接了个电话，出门半小时。你趴在桌上，喘了口气。" },
+    { hp: 5, text: "邻居阿姨敲门，塞给你一包饼干。你没敢说谢谢。" },
+    { hp: -5, text: "妈妈翻你的书包，翻出一张皱巴巴的测验卷，又数落了你一顿。" },
+    { hp: 0, text: "楼下有人放歌，你趴在窗台上听完了整首。这一刻没人管你。" },
+    { hp: -8, text: "半夜停电，你摸黑找手电筒，膝盖磕在桌角上。" },
+    { hp: 3, text: "你在作业本背面偷偷画了一扇门，画完心里松了一点。" },
+    { hp: 0, text: "妈妈突然问你：你是不是想离开这个家？你没敢回答。" },
+    { hp: 4, text: "雨下了一整天，妈妈没来查作业，你睡了个囫囵觉。" }
+  ];
+
+  function maybeEvent() {
+    if (Math.random() > 0.45) return false;
+    var ev = EVENTS[rand(EVENTS.length)];
+    line(ev.text, ev.hp > 0 ? "good" : (ev.hp < 0 ? "bad" : "day"));
+    if (ev.hp > 0) line("恢复 " + ev.hp + " 血。", "good");
+    if (ev.hp < 0) line("扣 " + (-ev.hp) + " 血。", "bad");
+    if (ev.hp) {
+      if (applyHp(ev.hp)) return true;
+    }
+    return false;
+  }
+
+  function reset(mode, forceNew) {
     var cfg = MODES[mode];
-    state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false };
+    state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [] };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
+
+    var saved = forceNew ? null : loadSave(mode);
+    if (saved && !saved.over && saved.log && saved.log.length) {
+      state.hp = saved.hp;
+      state.day = saved.day;
+      state.log = saved.log;
+      state.log.forEach(function (it) { renderLine(it.t, it.c); });
+      renderLine("（接着上一局继续 · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + cfg.max + "）", "day");
+      setButtons(false);
+      updateStats();
+      return;
+    }
+    if (saved && saved.over) clearSave(mode);
+
     line(cfg.note, "day");
     line("———— 第 0 天 ————", "day");
     setButtons(false);
     updateStats();
+    saveState();
   }
 
   function setButtons(disabled) {
@@ -287,8 +374,9 @@
   function gameOver(reason) {
     state.over = true;
     setButtons(true);
-    line(reason, "end");
-    line("点上方版本按钮可以重开一局。", "day");
+    if (reason) line(reason, "end");
+    line("这局结束了。点「重新开始本局」再玩一次。", "day");
+    saveState();
   }
 
   function applyHp(delta) {
@@ -331,6 +419,7 @@
       line(r.text, r.tone);
     }
     line("血条 " + state.hp + " / " + state.cfg.max, "day");
+    if (maybeEvent()) return;
     nextDay();
   }
 
@@ -346,6 +435,7 @@
     if (r.end) { gameOver("游戏结束。"); return; }
     if (r.hp) { if (applyHp(r.hp)) return; }
     if (r.hp && r.keepDay) return;
+    if (maybeEvent()) return;
     nextDay();
   }
 
@@ -359,6 +449,249 @@
   els.btnExam.addEventListener("click", doExam);
   els.btnRun.addEventListener("click", doRun);
   els.btnCall.addEventListener("click", doCall);
+  document.getElementById("btnRestart").addEventListener("click", function () {
+    clearSave(state.mode);
+    reset(state.mode, true);
+    line("———— 重新开始 ————", "day");
+    saveState();
+  });
+
+  // ===== 存档包：导出 / 导入 =====
+  function buildPack() {
+    return {
+      game: "逃家游戏 Escape from Home 网页版",
+      packVersion: 2,
+      mode: state.mode,
+      modeLabel: state.cfg.label,
+      day: state.day,
+      hp: state.hp,
+      max: state.cfg.max,
+      savedAt: new Date().toLocaleString("zh-CN"),
+      log: state.log
+    };
+  }
+
+  function packToText(p) {
+    var lines = [
+      "逃家游戏 · 存档包",
+      "导出时间：" + p.savedAt,
+      "难度：" + p.modeLabel,
+      "进度：第 " + p.day + " 天",
+      "血条：" + p.hp + " / " + p.max,
+      "",
+      "—— 这段时间你经历过 ——"
+    ];
+    (p.log || []).forEach(function (it, i) {
+      lines.push((i + 1) + ". " + it.t);
+    });
+    return lines.join("\n");
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 800);
+  }
+
+  document.getElementById("btnExport").addEventListener("click", function () {
+    if (state.over) {
+      line("这局已经结束了，重新开一局再导出吧。", "bad");
+      return;
+    }
+    var pack = buildPack();
+    var base = "逃家游戏存档-" + pack.modeLabel + "-第" + pack.day + "天";
+    var pwd = window.prompt("给存档设个密码？（留空＝不加密，直接发给别人就能接着玩）", "");
+    if (pwd === null) return;
+    pwd = pwd.trim();
+
+    var ready;
+    if (pwd) {
+      if (!window.crypto || !crypto.subtle) {
+        line("这个页面不在安全环境（没 https），加密用不了，改导出成明文存档。", "bad");
+        ready = Promise.resolve(JSON.stringify(pack, null, 2));
+        pwd = "";
+      } else {
+        ready = encryptSave(pack, pwd);
+      }
+    } else {
+      ready = Promise.resolve(JSON.stringify(pack, null, 2));
+    }
+
+    ready.then(function (json) {
+      var note = packToText(pack) + (pwd ? "\n\n注意：这份存档带密码保护，导入时要输入导出时设的密码。" : "");
+      if (window.JSZip) {
+        var zip = new window.JSZip();
+        zip.file("存档.json", json);
+        zip.file("存档说明.txt", note);
+        zip.generateAsync({ type: "blob" }).then(function (blob) {
+          downloadBlob(blob, base + (pwd ? "-加密" : "") + ".zip");
+          line("存档包已导出" + (pwd ? "（已加密，别人没密码打不开）" : "（未加密）"), "good");
+        });
+      } else {
+        downloadBlob(new Blob([json], { type: "application/json" }), base + ".json");
+        line("网络不通，已导出成 json 存档文件。", "day");
+      }
+    }).catch(function () {
+      line("加密失败，换个密码再试。", "bad");
+    });
+  });
+
+  // ===== 存档加密（可选密码，AES-GCM + PBKDF2）=====
+  function b64(bytes) {
+    var arr = new Uint8Array(bytes), s = "";
+    for (var i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+    return btoa(s);
+  }
+
+  function unb64(str) {
+    var s = atob(str), arr = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) arr[i] = s.charCodeAt(i);
+    return arr;
+  }
+
+  function deriveKey(pwd, salt) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey("raw", enc.encode(pwd), "PBKDF2", false, ["deriveKey"]).then(function (mat) {
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 10000, hash: "SHA-256" },
+        mat, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    });
+  }
+
+  function encryptSave(pack, pwd) {
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return deriveKey(pwd, salt).then(function (key) {
+      return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, new TextEncoder().encode(JSON.stringify(pack)));
+    }).then(function (buf) {
+      return JSON.stringify({
+        encrypted: true, algo: "AES-GCM / PBKDF2-SHA256",
+        salt: b64(salt), iv: b64(iv), data: b64(buf)
+      }, null, 2);
+    });
+  }
+
+  function decryptSave(obj, pwd) {
+    var salt = unb64(obj.salt), iv = unb64(obj.iv), data = unb64(obj.data);
+    return deriveKey(pwd, salt).then(function (key) {
+      return crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+    }).then(function (buf) {
+      return JSON.parse(new TextDecoder().decode(buf));
+    });
+  }
+
+  function applyPack(pack) {
+    if (!pack || !MODES[pack.mode]) return false;
+    if (typeof pack.day !== "number" || typeof pack.hp !== "number") return false;
+    var mode = pack.mode;
+    state = { mode: mode, cfg: MODES[mode], hp: pack.hp, day: pack.day, over: false, log: [] };
+    state.hp = Math.max(0, Math.min(state.cfg.max, state.hp));
+    if (state.hp <= 0) state.hp = 1;
+    els.log.innerHTML = "";
+    els.jump.classList.remove("show");
+    els.note.textContent = state.cfg.note;
+    var logs = (pack.log || []).filter(function (it) { return it && it.t; });
+    if (!logs.length) logs = [{ t: state.cfg.note, c: "day" }];
+    state.log = logs.slice(-200);
+    state.log.forEach(function (it) { renderLine(it.t, it.c); });
+    renderLine("（已导入存档包 · " + state.cfg.label + " · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + state.cfg.max + "）", "day");
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (b) {
+      b.setAttribute("aria-pressed", b.dataset.mode === mode ? "true" : "false");
+    });
+    setButtons(false);
+    updateStats();
+    saveState();
+    return true;
+  }
+
+  var fileInput = document.getElementById("fileInput");
+
+  document.getElementById("btnImport").addEventListener("click", function () {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", function () {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    var isZip = /\.zip$/i.test(file.name);
+
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      if (!isZip) {
+        tryLoading(text);
+        return;
+      }
+      if (!window.JSZip) {
+        line("网络不通，压缩包解不开。可以直接导入解压出来的存档.json。", "bad");
+        return;
+      }
+      window.JSZip.loadAsync(file).then(function (zip) {
+        var entry = null;
+        zip.forEach(function (path, f) {
+          if (!entry && /\.json$/i.test(path)) entry = f;
+        });
+        if (!entry) {
+          line("这个压缩包里没有存档.json，不是存档包。", "bad");
+          return;
+        }
+        entry.async("string").then(function (s) { tryLoading(s); });
+      }).catch(function () {
+        line("压缩包读取失败，可能损坏了。", "bad");
+      });
+    };
+
+    function tryLoading(str) {
+      var pack;
+      try {
+        pack = JSON.parse(str);
+      } catch (e) {
+        line("这不是有效的存档文件。", "bad");
+        fileInput.value = "";
+        return;
+      }
+      if (pack && pack.encrypted) {
+        if (!window.crypto || !crypto.subtle) {
+          line("这个页面不在安全环境（没 https），解不开加密存档。", "bad");
+          fileInput.value = "";
+          return;
+        }
+        var pwd = window.prompt("这份存档带密码，请输入导出时设的密码：", "");
+        if (pwd === null) {
+          line("取消了导入。", "day");
+          fileInput.value = "";
+          return;
+        }
+        decryptSave(pack, pwd.trim()).then(function (real) {
+          if (applyPack(real)) {
+            line("密码正确，存档导入成功，接着玩吧。", "good");
+          } else {
+            line("存档内容不对（缺难度或天数），导入失败。", "bad");
+          }
+          fileInput.value = "";
+        }).catch(function () {
+          line("密码不对，或者这份存档被改坏了。", "bad");
+          fileInput.value = "";
+        });
+        return;
+      }
+      if (applyPack(pack)) {
+        line("存档导入成功，接着玩吧。", "good");
+      } else {
+        line("存档内容不对（缺难度或天数），导入失败。", "bad");
+      }
+      fileInput.value = "";
+    }
+
+    reader.readAsText(file);
+  });
   els.btnAuthor.addEventListener("click", function () {
     if (state.over) return;
     els.jump.classList.toggle("show");
