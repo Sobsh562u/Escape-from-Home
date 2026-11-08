@@ -346,7 +346,8 @@
     egg:           { name: "受精卵体外死亡", desc: "作者模式跳到负数（原始版）" },
     run_win:       { name: "终点站", desc: "跑路版 · 过三站，走出城" },
     run_die:       { name: "倒在路上", desc: "跑路版 · 站台上血条归零" },
-    run_rich:      { name: "攒够了也不走", desc: "跑路版 · 钱够 60 还留在家里" }
+    run_rich:      { name: "攒够了也不走", desc: "跑路版 · 钱够 60 还留在家里" },
+    run_hot:       { name: "坐过站", desc: "跑路版 · 终点站不下车，一路坐进很热的地方" }
   };
 
   function getEndings() {
@@ -491,9 +492,17 @@
     } else {
       els.moneyWrap.hidden = true;
     }
-    var inStation = state.mode === "run" && (state.stage || 0) >= 1 && !state.over;
+    var inStation = state.mode === "run" && (state.stage || 0) >= 1 && (state.stage || 0) <= 4 && !state.over;
+    var terminal = state.mode === "run" && state.stage === 4 && !state.over;
     els.stationBar.hidden = !inStation;
     els.mainActs.style.display = inStation ? "none" : "";
+    if (terminal) {
+      els.btnWait.textContent = "走了（下车出城）";
+      els.btnTaxi.textContent = "再坐一站（坐过站）";
+    } else {
+      els.btnWait.textContent = "等车";
+      els.btnTaxi.textContent = "打车（10 块）";
+    }
     var pct = Math.max(0, Math.min(100, (state.hp / state.cfg.max) * 100));
     els.hpFill.style.width = pct + "%";
     els.hpFill.className = "hpfill" + (pct <= 30 ? " low" : "");
@@ -633,16 +642,19 @@
       good: "你把帽檐压得很低贴着墙走，班主任正忙着训别的学生，没追上来。" },
     { name: "大学站", hp: 40, safe: 0.15,
       wait: "你哥在站台上抽烟，看见你，把烟一扔就冲过来。",
-      good: "公交刚好进站，你混在人堆里挤上去，你哥扑了个空。" }
+      good: "公交刚好进站，你混在人堆里挤上去，你哥扑了个空。" },
+    { name: "终点站", hp: 0, safe: 1, terminal: true }
   ];
 
   function stationOps() { return STATIONS[(state.stage || 1) - 1]; }
 
   function passStation() {
     state.stage = (state.stage || 1) + 1;
-    if (state.stage >= 4) {
+    if (state.stage === 4) {
+      line("车报站：终点站到了。车门开着，外面是凉的夜风。", "day");
+      line("下车就走——这一步是真的出城。要是继续坐着不动，就坐过站了。", "day");
       updateStats();
-      gameOver("你过了最后一站。出城的公路在眼前展开，天亮的时候你已经不在这个城市了。结局达成：终点站。", "run_win");
+      saveState();
       return;
     }
     line("过了这一站，下一站：" + STATIONS[state.stage - 1].name + "。", "day");
@@ -650,10 +662,26 @@
     saveState();
   }
 
+  /* 终点站：下车出城 */
+  function leaveHere() {
+    gameOver("你在终点站下了车。出城的公路在眼前展开，天亮的时候你已经不在这个城市了。结局达成：终点站。", "run_win");
+  }
+
+  /* 终点站：继续坐，坐过站 */
+  function ridePast() {
+    state.stage = 5;
+    line("你没下车。车门关上，车一直往前开。", "day");
+    line("路边的树越来越少，车窗开始烫手，报站的声音也说不出站名了。", "bad");
+    line("等你终于下来，脚下是一片晒得发白的地，墙上写着四个字：欢迎过站。", "bad");
+    updateStats();
+    gameOver("你坐过站了，并且这里没有回头的车。结局达成：坐过站。", "run_hot");
+  }
+
   function doWait() {
     if (state.over) return;
     var st = stationOps();
     if (!st) return;
+    if (st.terminal) { leaveHere(); return; }
     line(st.wait, "day");
     if (Math.random() < st.safe) {
       line(st.good, "good");
@@ -669,7 +697,9 @@
 
   function doTaxi() {
     if (state.over) return;
-    if (!stationOps()) return;
+    var st = stationOps();
+    if (!st) return;
+    if (st.terminal) { ridePast(); return; }
     if ((state.money || 0) < 10) {
       line("司机看了看你手里的钱，摆摆手开走了。这一站只能等公交。", "bad");
       return;
