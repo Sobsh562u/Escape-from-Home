@@ -129,3 +129,7 @@ while 天 <= 总天数:
 
 if 天 > 总天数 and 血条 > 0:
     print("你撑到了 18 岁！名下有房！自由了！🏃‍♂️🏠")
+try:
+    input("\n按回车键退出...")
+except EOFError:
+    pass
