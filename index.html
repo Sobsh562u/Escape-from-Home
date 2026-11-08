@@ -145,6 +145,7 @@
     <button class="tab" data-mode="orig" aria-pressed="true">原始版</button>
     <button class="tab" data-mode="revert" aria-pressed="false">反转版</button>
     <button class="tab" data-mode="hard" aria-pressed="false">困难版</button>
+    <button class="tab" data-mode="limit" aria-pressed="false">极限版</button>
   </div>
 
   <section class="panel">
@@ -188,7 +189,7 @@
   </section>
 
   <footer>
-    网页版 v1.2 · 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.3 · 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     想玩可执行文件？点右上角「下载」跳到发行版页面。
   </footer>
@@ -267,6 +268,31 @@
         return { hp: 8, text: "妈妈：不错。", tone: "good" };
       },
       win: "你撑过了 10 天。18 岁生日，名下有房。结局达成：困难模式通关。"
+    },
+    limit: {
+      label: "极限版",
+      hp: 100, max: 100, goal: 5,
+      note: "极限版：扣血 = 100 - 分数，分数越低掉得越狠；考 0 分爸爸直接解皮带打死，血再多也没用。撑过 5 天通关。",
+      run: function (s) {
+        return { hp: -5, text: "你没跑，但爸爸盯着你写作业到半夜，扣 5 血。", tone: "bad" };
+      },
+      call: function () {
+        return { end: true, ending: "limit_call", lines: [
+          "你拨通 110，接电话的是爸爸。",
+          "爸爸：还敢报警？回家再说。",
+          "结局达成：报警被爸爸逮住。"
+        ]};
+      },
+      exam: function (s, score) {
+        if (score === 0) {
+          return { die: true, tone: "bad",
+            text: "爸爸：你竟然考零蛋？！爸爸解下皮带……啪啪啪——结局达成：被皮带打死（强制结束）。" };
+        }
+        var dmg = 100 - score;
+        return { hp: -dmg, tone: score < 60 ? "bad" : "good",
+          text: (score < 60 ? "爸爸：这么点分？皮带伺候！" : "爸爸：还算像样，皮带放下了。") };
+      },
+      win: "你撑过了 5 天，18 岁生日，名下有房。结局达成：极限模式通关。"
     }
   };
 
@@ -286,6 +312,9 @@
     revert_free:   { name: "考砸反而没人管", desc: "反转版 · 高考 200 以下" },
     hard_win:      { name: "困难模式通关", desc: "困难版 · 撑过 10 天" },
     hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
+    limit_win:     { name: "极限模式通关", desc: "极限版 · 撑过 5 天" },
+    limit_call:    { name: "报警被爸爸逮住", desc: "极限版 · 报警，接电话的是爸爸" },
+    limit_die:     { name: "被皮带打死", desc: "极限版 · 考 0 分" },
     died:          { name: "被打死", desc: "血条归零" },
     paradox:       { name: "祖父悖论", desc: "作者模式跳到还没出生的年代" },
     egg:           { name: "受精卵体外死亡", desc: "作者模式跳到负数（原始版）" }
@@ -323,7 +352,7 @@
 
   function renderBest() {
     var b = getBest(), out = [];
-    ["orig", "revert", "hard"].forEach(function (m) {
+    ["orig", "revert", "hard", "limit"].forEach(function (m) {
       var v = b[m];
       out.push(MODES[m].label + "：" + (v ? "最快第 " + v.day + " 天通关，剩 " + v.hp + " 血" : "还没通关"));
     });
@@ -529,6 +558,7 @@
     var score = rand(101);
     line("你考了 " + score + " 分。", "day");
     var r = state.cfg.exam(state, score);
+    if (r.die) { line(r.text, r.tone || "bad"); gameOver("游戏结束。", "limit_die"); return; }
     if (r.hp !== 0) {
       if (r.hp < 0) line(r.text + " 扣 " + (-r.hp) + " 血。", "bad");
       else line(r.text + " 加 " + r.hp + " 血。", "good");
