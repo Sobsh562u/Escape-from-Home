@@ -1,8 +1,10 @@
-# 逃家游戏 Escape from Home (Python) is now available.(真名)
+# 逃家游戏（Escape from Home）
+
+原名：逃家游戏 Escape from Home (Python)
 
 一个 Python 写的纯文字小游戏。你被关在家里天天考试，唯一的盼头是撑到 18 岁、名下有套房，然后逃出去。
 
-不需要装任何依赖，有 Python 3 就能玩。
+不需要装任何依赖，有 Python 就能玩。(Python 3环境)
 
 ## 怎么运行
 
