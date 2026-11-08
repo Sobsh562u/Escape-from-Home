@@ -2,6 +2,8 @@
 
 原名：逃家游戏 Escape from Home (Python)
 
+[在线试玩](https://Sobsh562u.github.io/Escape-from-Home/)
+
 一个 Python 写的纯文字小游戏。你被关在家里天天考试，唯一的盼头是撑到 18 岁、名下有套房，然后逃出去。
 
 不需要装任何依赖，有 Python 3 就能玩。
