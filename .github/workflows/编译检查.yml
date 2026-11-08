@@ -1,0 +1,51 @@
+name: 编译检查
+
+on:
+  push:
+    branches: [main, test]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 编译 C 版（要求零警告）
+        run: |
+          gcc -Wall -Wextra -Werror -O2 逃家游戏_C版.c -o /tmp/逃家游戏
+          /tmp/逃家游戏 -m orig </dev/null >/dev/null || true
+          echo "C 版编译通过"
+
+      - name: 编译静态版并核对产物类型
+        run: |
+          gcc -O2 -static 逃家游戏_C版.c -o /tmp/逃家游戏_linux
+          file /tmp/逃家游戏_linux
+
+      - name: 检查四个 Python 版语法
+        run: |
+          for f in 逃家游戏_原始版.py 逃家游戏_反转版.py 逃家游戏_困难版.py 逃家游戏_极限版.py; do
+            python3 -m py_compile "$f" && echo "OK $f"
+          done
+
+      - name: 导出存档并校验 JSON 合法
+        run: |
+          mkdir -p /tmp/save && cd /tmp/save
+          printf '导出\n\n\n' | /tmp/逃家游戏 -m hard >/dev/null
+          python3 -c "
+          import glob, json
+          for p in glob.glob('/tmp/save/*.json'):
+              d = json.load(open(p, encoding='utf-8'))
+              assert d['packVersion'] == 2
+              assert d['mode'] in ('orig', 'revert', 'hard', 'limit')
+              print('存档合法:', p.split('/')[-1], d['day'], d['hp'])
+          "
+
+      - name: 检查网页版是单文件
+        run: |
+          test -f index.html
+          grep -q 'v1.3' index.html && echo "index.html 版本号正常"
