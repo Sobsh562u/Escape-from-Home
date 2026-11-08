@@ -110,3 +110,7 @@ while True:
 
     天 = 天 + 1
     print()
+try:
+    input("\n按回车键退出...")
+except EOFError:
+    pass
