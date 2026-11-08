@@ -105,7 +105,22 @@
   }
   .footbar button:hover{border-color:#b9ab8e;color:var(--ink);}
   .saveHint{font-size:12px;color:#a19680;margin:8px 0 0;}
+
+  .gallery{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;}
+  .gtop{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6d6455;margin-bottom:8px;}
+  .gtop b{color:var(--ink);}
+  .glist{display:grid;grid-template-columns:1fr;gap:6px;}
+  .gitem{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper2);}
+  .gitem.on{background:#fff;border-color:#c9bda3;}
+  .gitem .mk{flex:0 0 18px;text-align:center;color:#a19680;}
+  .gitem.on .mk{color:var(--accent2);font-weight:600;}
+  .gitem .nm{font-weight:600;color:var(--ink);}
+  .gitem.lock .nm{color:#a19680;font-weight:400;}
+  .gitem .ds{color:#8a7d64;font-size:12px;}
+  .best{margin-top:10px;font-size:12px;color:#6d6455;line-height:1.9;}
+
   @media (min-width:768px){
+    .glist{grid-template-columns:repeat(2,1fr);}
     body{padding:32px 24px 60px;}
     h1{font-size:28px;}
     #log{height:300px;}
@@ -120,7 +135,7 @@
       <h1>逃家游戏</h1>
       <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
     </div>
-    <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.0" target="_blank" rel="noopener">
+    <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases/latest" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
       下载
     </a>
@@ -161,10 +176,19 @@
       <input type="file" id="fileInput" accept=".zip,.json,.txt" hidden>
     </div>
     <p class="saveHint">本局进度会自动保存，关掉网页也还在。导出的是压缩包，里面记着你的天数、难度和经历。</p>
+
+    <div class="gallery">
+      <div class="gtop">
+        <span>结局图鉴 · 都打出来过没有</span>
+        <span><b id="gCount">0 / 14</b></span>
+      </div>
+      <div class="glist" id="gList"></div>
+      <div class="best" id="bestList"></div>
+    </div>
   </section>
 
   <footer>
-    网页版由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.2 · 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     想玩可执行文件？点右上角「下载」跳到发行版页面。
   </footer>
@@ -185,7 +209,7 @@
           text: "你想走出这个家门，刚把门拉开一条缝，妈妈一把把你拽回来，抄起拖鞋就打——扣 20 血，这一天没过成。" };
       },
       call: function () {
-        return { end: true, lines: [
+        return { end: true, ending: "orig_call", lines: [
           "你拨通了 110……",
           "警察问清地址，几分钟后警车停在楼下。",
           "警察把你妈妈带走了。",
@@ -206,22 +230,22 @@
       note: "反转版：规则全反，考砸加血、考好扣血；要撑到 6570 天（18 岁）才高考，分数越高结局越惨。",
       run: function (s) {
         var d = s.day;
-        if (d < 3650) return { text: "你太小了，妈妈根本追不上，你跑掉了。结局达成：小小年纪成功逃家。", end: true };
+        if (d < 3650) return { text: "你太小了，妈妈根本追不上，你跑掉了。结局达成：小小年纪成功逃家。", end: true, ending: "revert_early" };
         if (d < 6570) return { text: "半大孩子，跑了又回来了。", hp: 0, end: false };
-        return { text: "都 18 岁了才跑？妈妈就在门口等着，当场抓回。", end: true };
+        return { text: "都 18 岁了才跑？妈妈就在门口等着，当场抓回。", end: true, ending: "revert_caught" };
       },
       call: function () {
-        return { end: true, lines: ["警察来了，把你抓走了。", "结局达成：报警反被抓。"] };
+        return { end: true, ending: "revert_call", lines: ["警察来了，把你抓走了。", "结局达成：报警反被抓。"] };
       },
       exam: function (s, score) {
         if (score < 60) return { hp: 60, text: "妈妈大喜：考砸了她反而放心，加了 60 血。", tone: "good" };
         return { hp: -60, text: "妈妈暴怒：考好了她怕你太优秀，扣了 60 血。", tone: "bad" };
       },
       gaokao: function (score) {
-        if (score >= 700) return "妈妈：考这么高？肯定作弊！拿鸡毛掸子追着打。结局达成：考太高被当成作弊打死了。";
-        if (score >= 400) return "考了 " + score + " 分，本科——但妈妈逼你复读，关在家里不许出门。结局达成：考上本科却失去自由。";
-        if (score >= 200) return "考了 " + score + " 分，大专。妈妈懒得管你了，你搬出去住。结局达成：成绩一般反而自由了。";
-        return "考了 " + score + " 分，妈妈气到晕倒，没人管你了。结局达成：考砸反而没人管，自由了。";
+        if (score >= 700) return { id: "revert_cheat", text: "妈妈：考这么高？肯定作弊！拿鸡毛掸子追着打。结局达成：考太高被当成作弊打死了。" };
+        if (score >= 400) return { id: "revert_repeat", text: "考了 " + score + " 分，本科——但妈妈逼你复读，关在家里不许出门。结局达成：考上本科却失去自由。" };
+        if (score >= 200) return { id: "revert_college", text: "考了 " + score + " 分，大专。妈妈懒得管你了，你搬出去住。结局达成：成绩一般反而自由了。" };
+        return { id: "revert_free", text: "考了 " + score + " 分，妈妈气到晕倒，没人管你了。结局达成：考砸反而没人管，自由了。" };
       },
       win: ""
     },
@@ -234,7 +258,7 @@
         return { hp: -5, text: "黑灯瞎火跑出门，又冷又饿，扣 5 血。", tone: "bad" };
       },
       call: function () {
-        return { end: true, lines: ["你拨通 110，警察说：小孩子别乱打电话！", "结局达成：被当成恶作剧，没人来救你。"] };
+        return { end: true, ending: "hard_call", lines: ["你拨通 110，警察说：小孩子别乱打电话！", "结局达成：被当成恶作剧，没人来救你。"] };
       },
       exam: function (s, score) {
         if (score === 0) return { hp: -25, text: "妈妈：鸭蛋？！跪墙角！", tone: "bad" };
@@ -245,6 +269,93 @@
       win: "你撑过了 10 天。18 岁生日，名下有房。结局达成：困难模式通关。"
     }
   };
+
+  // ===== 结局图鉴 =====
+  var ENDING_KEY = "escapeHome_endings_v1";
+  var BEST_KEY = "escapeHome_best_v1";
+
+  var ENDINGS = {
+    orig_win:      { name: "逃出这个家", desc: "原始版 · 撑过 5 天" },
+    orig_call:     { name: "正义报警", desc: "原始版 · 报警，警察把妈妈带走" },
+    revert_early:  { name: "小小年纪成功逃家", desc: "反转版 · 3650 天之前就跑" },
+    revert_caught: { name: "门口被抓", desc: "反转版 · 拖到 18 岁才跑" },
+    revert_call:   { name: "报警反被抓", desc: "反转版 · 报警，抓的是你" },
+    revert_cheat:  { name: "被当成作弊打死", desc: "反转版 · 高考 700 分以上" },
+    revert_repeat: { name: "考上本科却失去自由", desc: "反转版 · 高考 400–699" },
+    revert_college:{ name: "成绩一般反而自由", desc: "反转版 · 高考 200–399" },
+    revert_free:   { name: "考砸反而没人管", desc: "反转版 · 高考 200 以下" },
+    hard_win:      { name: "困难模式通关", desc: "困难版 · 撑过 10 天" },
+    hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
+    died:          { name: "被打死", desc: "血条归零" },
+    paradox:       { name: "祖父悖论", desc: "作者模式跳到还没出生的年代" },
+    egg:           { name: "受精卵体外死亡", desc: "作者模式跳到负数（原始版）" }
+  };
+
+  function getEndings() {
+    try {
+      var a = JSON.parse(localStorage.getItem(ENDING_KEY) || "[]");
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  function unlockEnding(id) {
+    if (!id || !ENDINGS[id]) return;
+    var got = getEndings();
+    if (got.indexOf(id) >= 0) return;
+    got.push(id);
+    try { localStorage.setItem(ENDING_KEY, JSON.stringify(got)); } catch (e) {}
+    line("🏁 新结局解锁：" + ENDINGS[id].name + "（" + got.length + " / " + Object.keys(ENDINGS).length + "）", "end");
+    renderGallery();
+  }
+
+  function getBest() {
+    try { return JSON.parse(localStorage.getItem(BEST_KEY) || "{}") || {}; } catch (e) { return {}; }
+  }
+
+  function recordBest(mode, day, hp) {
+    var b = getBest(), cur = b[mode];
+    if (!cur || day < cur.day || (day === cur.day && hp > cur.hp)) {
+      b[mode] = { day: day, hp: hp };
+      try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch (e) {}
+    }
+    renderBest();
+  }
+
+  function renderBest() {
+    var b = getBest(), out = [];
+    ["orig", "revert", "hard"].forEach(function (m) {
+      var v = b[m];
+      out.push(MODES[m].label + "：" + (v ? "最快第 " + v.day + " 天通关，剩 " + v.hp + " 血" : "还没通关"));
+    });
+    els.bestList.textContent = out.join(" · ");
+  }
+
+  function renderGallery() {
+    var got = getEndings(), ids = Object.keys(ENDINGS);
+    els.gList.innerHTML = "";
+    ids.forEach(function (id) {
+      var e = ENDINGS[id], on = got.indexOf(id) >= 0;
+      var box = document.createElement("div");
+      box.className = "gitem " + (on ? "on" : "lock");
+      var mk = document.createElement("div");
+      mk.className = "mk";
+      mk.textContent = on ? "✓" : "·";
+      var tx = document.createElement("div");
+      var nm = document.createElement("div");
+      nm.className = "nm";
+      nm.textContent = on ? e.name : "？？？";
+      var ds = document.createElement("div");
+      ds.className = "ds";
+      ds.textContent = on ? e.desc : "还没打出来";
+      tx.appendChild(nm);
+      tx.appendChild(ds);
+      box.appendChild(mk);
+      box.appendChild(tx);
+      els.gList.appendChild(box);
+    });
+    els.gCount.textContent = got.length + " / " + ids.length;
+    renderBest();
+  }
 
   var state = null;
   var els = {
@@ -258,7 +369,10 @@
     btnExam: document.getElementById("btnExam"),
     btnRun: document.getElementById("btnRun"),
     btnCall: document.getElementById("btnCall"),
-    btnAuthor: document.getElementById("btnAuthor")
+    btnAuthor: document.getElementById("btnAuthor"),
+    gList: document.getElementById("gList"),
+    gCount: document.getElementById("gCount"),
+    bestList: document.getElementById("bestList")
   };
 
   function rand(n) { return Math.floor(Math.random() * n); }
@@ -341,6 +455,7 @@
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
+    renderGallery();
 
     var saved = forceNew ? null : loadSave(mode);
     if (saved && !saved.over && saved.log && saved.log.length) {
@@ -371,11 +486,12 @@
     if (state.hp < 0) state.hp = 0;
   }
 
-  function gameOver(reason) {
+  function gameOver(reason, endingId) {
     state.over = true;
     setButtons(true);
     if (reason) line(reason, "end");
     line("这局结束了。点「重新开始本局」再玩一次。", "day");
+    unlockEnding(endingId);
     saveState();
   }
 
@@ -384,7 +500,7 @@
     clamp();
     updateStats();
     if (state.hp <= 0) {
-      gameOver("血条归零，你被打死了。GAME OVER。");
+      gameOver("血条归零，你被打死了。GAME OVER。", "died");
       return true;
     }
     return false;
@@ -394,13 +510,15 @@
     if (state.mode === "revert" && state.day >= 6570) {
       var gscore = rand(751);
       line("高考！你考了 " + gscore + " 分！", "day");
-      gameOver(state.cfg.gaokao(gscore));
+      var g = state.cfg.gaokao(gscore);
+      gameOver(g.text, g.id);
       return;
     }
     state.day += 1;
     updateStats();
     if (state.day >= state.cfg.goal && state.mode !== "revert") {
-      gameOver(state.cfg.win);
+      recordBest(state.mode, state.day, state.hp);
+      gameOver(state.cfg.win, state.mode + "_win");
       return;
     }
     line("———— 第 " + state.day + " 天 ————", "day");
@@ -432,7 +550,7 @@
       return;
     }
     line(r.text, r.tone || "bad");
-    if (r.end) { gameOver("游戏结束。"); return; }
+    if (r.end) { gameOver("游戏结束。", r.ending); return; }
     if (r.hp) { if (applyHp(r.hp)) return; }
     if (r.hp && r.keepDay) return;
     if (maybeEvent()) return;
@@ -443,7 +561,7 @@
     if (state.over) return;
     var r = state.cfg.call(state);
     r.lines.forEach(function (t) { line(t, "day"); });
-    gameOver("游戏结束。");
+    gameOver("游戏结束。", r.ending);
   }
 
   els.btnExam.addEventListener("click", doExam);
@@ -706,12 +824,13 @@
       els.jumpInput.value = "";
       updateStats();
       if (state.day >= state.cfg.goal && state.mode === "hard") {
-        gameOver(state.cfg.win);
+        recordBest("hard", state.day, state.hp);
+        gameOver(state.cfg.win, "hard_win");
         return;
       }
       if (state.day < 0) {
         line("你跳到了第 " + v + " 天，也就是还没出生的年代。妈妈都还没出生，谁在逼你考试？", "day");
-        gameOver("结局达成：祖父悖论。");
+        gameOver("结局达成：祖父悖论。", "paradox");
         return;
       }
       line("———— 第 " + state.day + " 天 ————", "day");
@@ -722,7 +841,11 @@
       updateStats();
       if (v < 0) {
         line("你跳到了第 " + v + " 天……", "day");
-        gameOver(v <= -100 ? "穿越到妈妈还没出生的年代。结局达成：祖父悖论。" : "你还是个受精卵。结局达成：受精卵体外死亡。");
+        if (v <= -100) {
+          gameOver("穿越到妈妈还没出生的年代。结局达成：祖父悖论。", "paradox");
+        } else {
+          gameOver("你还是个受精卵。结局达成：受精卵体外死亡。", "egg");
+        }
         return;
       }
       line("———— 第 " + state.day + " 天 ————", "day");
