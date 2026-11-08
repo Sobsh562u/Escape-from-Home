@@ -74,6 +74,7 @@ Windows 首次运行如果弹「Windows 已保护你的电脑」，是因为这�
 ./逃家游戏_linux -m revert   反转版
 ./逃家游戏_linux -m hard     困难版
 ./逃家游戏_linux -m limit    极限版
+./逃家游戏_linux -m run      跑路版
 ```
 
 自己编译（只要 gcc）：
