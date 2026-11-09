@@ -137,6 +137,8 @@
 .lbtip{font-size:13px;color:#777;margin:6px 0 10px}
 .lbpid{font-size:13px;color:#8a6d3b;background:#faf3e0;border-radius:8px;padding:7px 10px;margin-bottom:10px;word-break:break-all}
 .lbform{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.lbform textarea{width:100%;padding:9px;font-size:16px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;resize:vertical;font-family:inherit}
+.lbform button{padding:10px;border:1px solid #e0c9c9;background:#faf3e0;border-radius:8px;font-size:15px;cursor:pointer}
 .lbform input{padding:9px;font-size:16px;border:1px solid #ddd;border-radius:8px;width:100%;box-sizing:border-box}
 .lbacts{display:flex;gap:8px}
 .lbdel{width:100%;margin:0 0 10px;padding:8px;border:1px solid #e0c9c9;background:#fdf3f3;color:#a4574f;border-radius:8px;font-size:13px;cursor:pointer}
@@ -230,6 +232,22 @@
     </div>
   </section>
 
+  <div class="lbmask" id="fbMask" hidden>
+    <div class="lbcard" role="dialog" aria-modal="true" aria-label="反馈">
+      <div class="lbtop">
+        <span>反馈 / 建议</span>
+        <button class="lbx" id="fbClose" aria-label="关闭">×</button>
+      </div>
+      <p class="lbtip">不用 GitHub 账号也能发。哪里不好玩、哪里出错、想加什么，都写这儿。</p>
+      <div class="lbform">
+        <input id="fbName" type="text" maxlength="20" placeholder="怎么称呼你（可留空）">
+        <textarea id="fbText" maxlength="1000" rows="5" placeholder="……"></textarea>
+        <button id="fbSend" type="button">发送</button>
+      </div>
+      <p class="lbauthmsg" id="fbMsg"></p>
+    </div>
+  </div>
+
   <div class="lbmask" id="lbMask" hidden>
     <div class="lbcard" role="dialog" aria-modal="true" aria-label="无尽榜">
       <div class="lbtop">
@@ -255,7 +273,8 @@
   <footer>
     网页版 v1.4 · 版本说明：v1.3 为四难度（原始 / 反转 / 困难 / 极限），v1.4 起新增跑路版 · 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
-    想玩可执行文件？点右上角「下载」跳到发行版页面。
+    想玩可执行文件？点右上角「下载」跳到发行版页面。<br>
+    <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
   </footer>
 </div>
 
@@ -519,6 +538,13 @@
     gCount: document.getElementById("gCount"),
     bestList: document.getElementById("bestList"),
     btnBoard: document.getElementById("btnBoard"),
+    btnFeedback: document.getElementById("btnFeedback"),
+    fbMask: document.getElementById("fbMask"),
+    fbName: document.getElementById("fbName"),
+    fbText: document.getElementById("fbText"),
+    fbSend: document.getElementById("fbSend"),
+    fbMsg: document.getElementById("fbMsg"),
+    fbClose: document.getElementById("fbClose"),
     lbMask: document.getElementById("lbMask"),
     lbClose: document.getElementById("lbClose"),
     lbList: document.getElementById("lbList"),
@@ -1036,6 +1062,23 @@
   els.btnRun.addEventListener("click", doRun);
   els.btnCall.addEventListener("click", doCall);
   els.btnBoard.addEventListener("click", openBoard);
+
+  els.btnFeedback.addEventListener("click", function () { els.fbMask.hidden = false; });
+  els.fbClose.addEventListener("click", function () { els.fbMask.hidden = true; });
+  els.fbMask.addEventListener("click", function (e) { if (e.target === els.fbMask) els.fbMask.hidden = true; });
+  els.fbSend.addEventListener("click", function () {
+    var t = (els.fbText.value || "").trim();
+    if (t.length < 2) { els.fbMsg.textContent = "多写几个字吧。"; return; }
+    els.fbMsg.textContent = "发送中…";
+    fetch(SB_URL.replace("/scores", "/rpc/submit_feedback"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: els.fbName.value || "", p_content: t, p_client_id: localStorage.getItem("ehq_cid") || "" })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      els.fbMsg.textContent = (r && r.msg) || "发送失败";
+      if (r && r.ok) { els.fbText.value = ""; els.fbName.value = ""; }
+    }).catch(function () { els.fbMsg.textContent = "网络不通，稍后再试"; });
+  });
   els.lbClose.addEventListener("click", function () { els.lbMask.hidden = true; });
   els.lbMask.addEventListener("click", function (e) { if (e.target === els.lbMask) els.lbMask.hidden = true; });
   els.lbReg.addEventListener("click", function () {
