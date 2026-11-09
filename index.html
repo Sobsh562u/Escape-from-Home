@@ -136,9 +136,11 @@
 .lbform{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .lbform input{padding:9px;font-size:16px;border:1px solid #ddd;border-radius:8px;width:100%;box-sizing:border-box}
 .lbacts{display:flex;gap:8px}
+.lbdel{width:100%;margin:0 0 10px;padding:8px;border:1px solid #e0c9c9;background:#fdf3f3;color:#a4574f;border-radius:8px;font-size:13px;cursor:pointer}
 .lbacts button{flex:1;padding:9px;border:1px solid #ddd;background:#f5f2ea;border-radius:8px;font-size:15px;cursor:pointer}
 .lbme{font-size:13px;color:#8a7b5e;background:#f7f3e9;border-radius:8px;padding:8px 10px;margin-bottom:8px}
 .lbacts{display:flex;gap:8px}
+.lbdel{width:100%;margin:0 0 10px;padding:8px;border:1px solid #e0c9c9;background:#fdf3f3;color:#a4574f;border-radius:8px;font-size:13px;cursor:pointer}
 .lbacts button{flex:1;padding:9px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:15px;cursor:pointer}
 .lbacts button:first-child{background:#f0e6d2}
 .lbauthmsg{font-size:13px;color:#a0503c;min-height:18px;margin:8px 0 0}
@@ -236,6 +238,7 @@
         <button id="lbLogin">登录</button>
       </div>
       <p class="lbauthmsg" id="lbMsg"></p>
+      <button class="lbdel" id="lbDel">删除我的成绩（5 天冷静期）</button>
       <div class="lblist" id="lbList">正在拉榜单…</div>
     </div>
   </div>
@@ -515,7 +518,8 @@
     lbReg: document.getElementById("lbReg"),
     lbLogin: document.getElementById("lbLogin"),
     lbMe: document.getElementById("lbMe"),
-    lbMsg: document.getElementById("lbMsg")
+    lbMsg: document.getElementById("lbMsg"),
+    lbDel: document.getElementById("lbDel")
   };
 
   function rand(n) { return Math.floor(Math.random() * n); }
@@ -741,21 +745,23 @@
       line("还没登录，这局成绩不上榜。点「排行榜」注册一个玩家 ID 就能上榜。", "day");
       return;
     }
-    var body = [{
-      mode: state.mode,
-      ending: String(endingId || "died").slice(0, 20),
-      days: Math.max(0, Math.min(20000, state.day || 0)),
-      stations: Math.max(0, Math.min(20000, (state.mode === "endless" ? (state.loop || 1) * 4 : (state.stage || 0)))),
-      money: Math.max(0, Math.min(1000000, state.money || 0)),
-      name: myName(),
-      client_id: myCid(),
-      player_id: localStorage.getItem("ehq_pid") || ""
-    }];
-    fetch(SB_URL, {
+    fetch(SB_URL.replace("/scores", "/rpc/submit_score"), {
       method: "POST",
-      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
-      body: JSON.stringify(body)
-    }).catch(function () {});
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        p_name: myName(),
+        p_client_id: localStorage.getItem("ehq_cid") || "",
+        p_mode: state.mode,
+        p_ending: String(endingId || "died").slice(0, 20),
+        p_days: Math.max(0, Math.min(20000, state.day || 0)),
+        p_stations: Math.max(0, Math.min(20000, (state.mode === "endless" ? (state.loop || 1) * 4 : (state.stage || 0)))),
+        p_money: Math.max(0, Math.min(1000000, state.money || 0))
+      })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (!r || !r.ok) { line("这局没上榜：" + ((r && r.msg) || "网络问题"), "day"); return; }
+      if (r.updated) line("上榜了：" + r.days + " 天 · " + r.stations + " 站（榜上只留你最好的一条）", "day");
+      else line("这局没超过你的最好成绩（" + r.days + " 天 · " + r.stations + " 站），榜上不变。", "day");
+    }).catch(function () { line("榜单连不上，这局先没上传。", "day"); });
   }
 
   function openBoard() {
@@ -763,7 +769,7 @@
     els.lbName.value = localStorage.getItem("ehq_name") || "";
     showMe();
     els.lbList.textContent = "正在拉榜单…";
-    fetch(SB_URL + "?select=name,player_id,mode,days,stations,money&order=days.desc,stations.desc&limit=20", {
+    fetch(SB_URL + "?select=name,player_id,mode,days,stations,money&deleted_at=is.null&order=days.desc,stations.desc&limit=20", {
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
     }).then(function (r) { return r.json(); }).then(function (rows) {
       if (!Array.isArray(rows) || !rows.length) { els.lbList.textContent = "还没有人上榜，你上第一个吧。"; return; }
@@ -1031,6 +1037,20 @@
     if (isReg()) { msg("你已经注册了，名字不能改。"); return; }
     msg("注册中…");
     doRegister(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
+  });
+
+  els.lbDel.addEventListener("click", function () {
+    if (!isReg()) { msg("先登录再删。"); return; }
+    if (!window.confirm("删掉你的上榜成绩？下架后 5 天内还能反悔（重打一局会覆盖），5 天后彻底删除。")) return;
+    msg("提交删除…");
+    fetch(SB_URL.replace("/scores", "/rpc/delete_my_score"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: myName(), p_client_id: localStorage.getItem("ehq_cid") || "" })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      msg((r && r.msg) || "删除失败");
+      if (r && r.ok) openBoard();
+    }).catch(function () { msg("网络不通，稍后再试"); });
   });
 
   els.lbLogin.addEventListener("click", function () {
