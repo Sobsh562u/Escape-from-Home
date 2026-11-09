@@ -15,6 +15,7 @@ import urllib.error
 
 # ===== 联网排行榜（Supabase）=====
 榜地址 = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/scores"
+接口地址 = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/rpc"
 玩家地址 = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/players"
 榜公钥 = "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET"
 身份文件 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "逃家身份.json")
@@ -129,7 +130,7 @@ def 上传成绩(天数, 站数, 剩余钱):
 def 查看榜单():
     """拉前 10 名，按天数、站数排序。"""
     try:
-        url = 榜地址 + "?select=name,days,stations,money,created_at&order=days.desc,stations.desc&limit=10"
+        url = 榜地址 + "?select=name,days,stations,money,created_at&deleted_at=is.null&order=days.desc,stations.desc&limit=10"
         req = urllib.request.Request(
             url,
             headers={"apikey": 榜公钥, "Authorization": "Bearer " + 榜公钥},
