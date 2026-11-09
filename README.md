@@ -359,3 +359,7 @@ Copyright (c) 2026 Sobsh562u
 ## 关键词
 
 文字游戏、中文独立游戏、网页小游戏、Python 小游戏、单文件 HTML、开源小游戏、考试题材、GitHub Pages。
+
+## Keywords（英文关键词）
+
+text adventure, text-based game, Chinese indie game, visual novel alternative, Python game, HTML5 game, browser game, no-download game, open source game, exam theme.
