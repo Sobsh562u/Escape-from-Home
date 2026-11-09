@@ -154,6 +154,10 @@
 .lbrow b{width:22px;color:#8a7b5e}
 .lbrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lbrow i{font-style:normal;color:#777;font-size:13px}
+  .lbfilter{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+  .lbfilter button{font:inherit;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #d8d2c4;background:#fbf9f4;color:#5b5346;cursor:pointer;min-height:32px}
+  .lbfilter button.on{background:#e8dfcb;border-color:#b9a575;color:#3f3729;font-weight:600}
+  .lbmode{font-size:11px;color:#8a7d64;margin-left:6px}
 </style>
 </head>
 <body>
@@ -266,12 +270,21 @@
       </div>
       <p class="lbauthmsg" id="lbMsg"></p>
       <button class="lbdel" id="lbDel">删除我的成绩（5 天冷静期）</button>
+      <div class="lbfilter" id="lbFilter">
+        <button type="button" data-m="" class="on">全部</button>
+        <button type="button" data-m="orig">原始</button>
+        <button type="button" data-m="revert">反转</button>
+        <button type="button" data-m="hard">困难</button>
+        <button type="button" data-m="extreme">极限</button>
+        <button type="button" data-m="run">跑路</button>
+        <button type="button" data-m="endless">无尽</button>
+      </div>
       <div class="lblist" id="lbList">正在拉榜单…</div>
     </div>
   </div>
 
   <footer>
-    网页版 v1.6 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.7 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     想玩可执行文件？点右上角「下载」跳到发行版页面。<br>
     <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -548,6 +561,7 @@
     lbMask: document.getElementById("lbMask"),
     lbClose: document.getElementById("lbClose"),
     lbList: document.getElementById("lbList"),
+    lbFilter: document.getElementById("lbFilter"),
     lbName: document.getElementById("lbName"),
     lbPwd: document.getElementById("lbPwd"),
     lbReg: document.getElementById("lbReg"),
@@ -799,15 +813,31 @@
     }).catch(function () { line("榜单连不上，这局先没上传。", "day"); });
   }
 
+  var LB_FILTER = "";
+  var LB_MODENAME = { orig: "原始", revert: "反转", hard: "困难", extreme: "极限", run: "跑路", endless: "无尽" };
+
+  function lbUrl() {
+    var q = SB_URL + "?select=name,player_id,mode,days,stations,money&deleted_at=is.null&order=days.desc,stations.desc&limit=20";
+    if (LB_FILTER) q += "&mode=eq." + LB_FILTER;
+    return q;
+  }
+
   function openBoard() {
     els.lbMask.hidden = false;
     els.lbName.value = localStorage.getItem("ehq_name") || "";
     showMe();
+    loadBoard();
+  }
+
+  function loadBoard() {
     els.lbList.textContent = "正在拉榜单…";
-    fetch(SB_URL + "?select=name,player_id,mode,days,stations,money&deleted_at=is.null&order=days.desc,stations.desc&limit=20", {
+    fetch(lbUrl(), {
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
     }).then(function (r) { return r.json(); }).then(function (rows) {
-      if (!Array.isArray(rows) || !rows.length) { els.lbList.textContent = "还没有人上榜，你上第一个吧。"; return; }
+      if (!Array.isArray(rows) || !rows.length) {
+        els.lbList.textContent = LB_FILTER ? "这个难度还没人上榜。" : "还没有人上榜，你上第一个吧。";
+        return;
+      }
       els.lbList.innerHTML = "";
       rows.forEach(function (it, i) {
         var d = document.createElement("div");
@@ -815,6 +845,12 @@
         var b = document.createElement("b"); b.textContent = (i + 1);
         var sp = document.createElement("span");
         sp.textContent = (it.player_id ? it.player_id + " " : "") + (it.name || "匿名");
+        if (it.mode && LB_MODENAME[it.mode]) {
+          var tag = document.createElement("em");
+          tag.className = "lbmode";
+          tag.textContent = LB_MODENAME[it.mode];
+          sp.appendChild(tag);
+        }
         var em = document.createElement("i");
         em.textContent = (it.days || 0) + " 天 · " + (it.stations || 0) + " 站";
         d.appendChild(b); d.appendChild(sp); d.appendChild(em);
@@ -1061,6 +1097,15 @@
   els.btnExam.addEventListener("click", doExam);
   els.btnRun.addEventListener("click", doRun);
   els.btnCall.addEventListener("click", doCall);
+  els.lbFilter.addEventListener("click", function (e) {
+    var t = e.target.closest("button[data-m]");
+    if (!t) return;
+    LB_FILTER = t.getAttribute("data-m") || "";
+    Array.prototype.forEach.call(els.lbFilter.children, function (b) {
+      b.classList.toggle("on", b === t);
+    });
+    loadBoard();
+  });
   els.btnBoard.addEventListener("click", openBoard);
 
   els.btnFeedback.addEventListener("click", function () { els.fbMask.hidden = false; });
