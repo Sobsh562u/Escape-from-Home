@@ -185,7 +185,7 @@
       <button class="primary" id="btnExam">考试</button>
       <button id="btnRun">逃跑</button>
       <button id="btnCall">报警</button>
-      <button id="btnAuthor">作者模式</button>
+      <button id="btnAuthor" hidden>作者模式</button>
     </div>
 
     <div class="acts" id="stationBar" hidden>
@@ -222,7 +222,7 @@
   <div class="lbmask" id="lbMask" hidden>
     <div class="lbcard" role="dialog" aria-modal="true" aria-label="无尽榜">
       <div class="lbtop">
-        <span>排行榜 · 无尽榜</span>
+        <span>排行榜 · 总榜</span>
         <button class="lbx" id="lbClose" aria-label="关闭">×</button>
       </div>
       <p class="lbtip">按撑过的天数、走过的站数排。名字全服唯一，注册后这个 ID 就是你的。</p>
@@ -733,6 +733,10 @@
   }
 
   function submitScore(endingId) {
+    if (state.cheat) {
+      line("这局用过作者模式，按规矩不上榜。", "day");
+      return;
+    }
     if (!isReg()) {
       line("还没登录，这局成绩不上榜。点「排行榜」注册一个玩家 ID 就能上榜。", "day");
       return;
@@ -1284,6 +1288,22 @@
 
     reader.readAsText(file);
   });
+  var AUTHOR_KEY = "562u";
+  var authorTaps = 0, authorTimer = null;
+  document.querySelector("h1").addEventListener("click", function () {
+    authorTaps += 1;
+    clearTimeout(authorTimer);
+    authorTimer = setTimeout(function () { authorTaps = 0; }, 1600);
+    if (authorTaps >= 3) {
+      authorTaps = 0;
+      var k = window.prompt("作者口令：");
+      if (k === AUTHOR_KEY) {
+        els.btnAuthor.hidden = false;
+        line("作者模式已开启。用它的局不上榜。", "day");
+      }
+    }
+  });
+
   els.btnAuthor.addEventListener("click", function () {
     if (state.over) return;
     els.jumpInput.placeholder = (state.mode === "run") ? "设置你现在有多少钱" : "跳到第几天（可负数）";
@@ -1292,6 +1312,7 @@
   });
   document.getElementById("jumpGo").addEventListener("click", function () {
     var v = parseInt(els.jumpInput.value, 10);
+    state.cheat = true;
     if (isNaN(v)) { line("请输入一个数字。", "bad"); return; }
     if (state.mode === "run") {
       if (v < 0) { line("钱不能是负数。", "bad"); return; }
