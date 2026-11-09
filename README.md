@@ -1,5 +1,7 @@
 # 逃家游戏（Escape from Home）
 
+![逃家游戏](assets/social-preview.png)
+
 **[▶ 在线试玩](https://Sobsh562u.github.io/Escape-from-Home/)** —— 手机电脑打开就能玩，不用下载。
 
 你被关在家里天天考试，唯一的盼头是撑到 18 岁、名下有套房，然后逃出去。
@@ -353,3 +355,7 @@ Copyright (c) 2026 Sobsh562u
 | `escape-from-home-writer[bot]` | 挂在本人账号下的 GitHub App | 现在的自动化提交，权限只有「内容读写」 |
 
 用 App 而不是直接用主账号，是为了把自动化操作限制在最小权限内：它能改文件，改不了仓库设置、工作流和任何密钥。提交身份分开记录，谁改了什么一目了然。
+
+## 关键词
+
+文字游戏、中文独立游戏、网页小游戏、Python 小游戏、单文件 HTML、开源小游戏、考试题材、GitHub Pages。
