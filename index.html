@@ -172,6 +172,16 @@
   .lbfilter button{font:inherit;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #d8d2c4;background:#fbf9f4;color:#5b5346;cursor:pointer;min-height:32px}
   .lbfilter button.on{background:#e8dfcb;border-color:#b9a575;color:#3f3729;font-weight:600}
   .lbmode{font-size:11px;color:#8a7d64;margin-left:6px}
+  .inboxmask{position:fixed;inset:0;background:rgba(20,18,15,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:60}
+  .inboxcard{background:#fdfbf6;border-radius:16px;max-width:520px;width:100%;max-height:82vh;overflow:auto;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.28)}
+  .inboxtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .inboxtop span{font-weight:600;font-size:16px}
+  .inboxrow{border-bottom:1px dashed #e3dccd;padding:10px 0}
+  .inboxrow .meta{font-size:12px;color:#8a7d64;margin-bottom:4px}
+  .inboxrow .txt{font-size:14px;line-height:1.6;color:#2c2620;white-space:pre-wrap;word-break:break-word}
+  .inboxrow .rp{font-size:13px;color:#6c8a5b;margin-top:6px}
+  .inboxrow input{width:100%;margin-top:8px;font:inherit;font-size:14px;padding:8px;border:1px solid #d8d2c4;border-radius:8px;background:#fff}
+  .inboxrow button{margin-top:6px;font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer}
 </style>
 </head>
 <body>
@@ -217,6 +227,7 @@
       <button id="btnRun">逃跑</button>
       <button id="btnCall">报警</button>
       <button id="btnAuthor" hidden>作者模式</button>
+      <button id="btnInbox" hidden>投诉中心</button>
     </div>
 
     <div class="acts" id="stationBar" hidden>
@@ -259,10 +270,19 @@
       <p class="lbtip">不用 GitHub 账号也能发。哪里不好玩、哪里出错、想加什么，都写这儿。</p>
       <div class="lbform">
         <input id="fbName" type="text" maxlength="20" placeholder="怎么称呼你（可留空）">
+        <input id="fbLink" type="text" maxlength="32" placeholder="联系账号（选填）：GitHub 名 / 论坛名">
         <textarea id="fbText" maxlength="1000" rows="5" placeholder="……"></textarea>
         <button id="fbSend" type="button">发送</button>
       </div>
       <p class="lbauthmsg" id="fbMsg"></p>
+    </div>
+  </div>
+
+  <div class="inboxmask" id="inboxMask" hidden>
+    <div class="inboxcard" role="dialog" aria-modal="true" aria-label="投诉中心">
+      <div class="inboxtop"><span>投诉中心 · 最近 30 条</span><button class="lbx" id="inboxClose" aria-label="关闭">×</button></div>
+      <p class="lbtip">只有作者能看。回复会存在数据库里，不对外公开。</p>
+      <div id="inboxList">加载中…</div>
     </div>
   </div>
 
@@ -298,7 +318,7 @@
   </div>
 
   <footer>
-    网页版 v1.7 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.8 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     想玩可执行文件？点右上角「下载」跳到发行版页面。<br>
     <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -568,6 +588,7 @@
     btnFeedback: document.getElementById("btnFeedback"),
     fbMask: document.getElementById("fbMask"),
     fbName: document.getElementById("fbName"),
+    fbLink: document.getElementById("fbLink"),
     fbText: document.getElementById("fbText"),
     fbSend: document.getElementById("fbSend"),
     fbMsg: document.getElementById("fbMsg"),
@@ -576,6 +597,10 @@
     lbClose: document.getElementById("lbClose"),
     lbList: document.getElementById("lbList"),
     lbFilter: document.getElementById("lbFilter"),
+    btnInbox: document.getElementById("btnInbox"),
+    inboxMask: document.getElementById("inboxMask"),
+    inboxList: document.getElementById("inboxList"),
+    inboxClose: document.getElementById("inboxClose"),
     lbName: document.getElementById("lbName"),
     lbPwd: document.getElementById("lbPwd"),
     lbReg: document.getElementById("lbReg"),
@@ -1132,10 +1157,10 @@
     fetch(SB_URL.replace("/scores", "/rpc/submit_feedback"), {
       method: "POST",
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_name: els.fbName.value || "", p_content: t, p_client_id: localStorage.getItem("ehq_cid") || "" })
+      body: JSON.stringify({ p_name: els.fbName.value || "", p_content: t, p_link: els.fbLink.value || "", p_client_id: localStorage.getItem("ehq_cid") || "" })
     }).then(function (r) { return r.json(); }).then(function (r) {
       els.fbMsg.textContent = (r && r.msg) || "发送失败";
-      if (r && r.ok) { els.fbText.value = ""; els.fbName.value = ""; }
+      if (r && r.ok) { els.fbText.value = ""; els.fbName.value = ""; els.fbLink.value = ""; }
     }).catch(function () { els.fbMsg.textContent = "网络不通，稍后再试"; });
   });
   els.lbClose.addEventListener("click", function () { els.lbMask.hidden = true; });
@@ -1430,10 +1455,76 @@
       var k = window.prompt("作者口令：");
       if (k === AUTHOR_KEY) {
         els.btnAuthor.hidden = false;
+        els.btnInbox.hidden = false;
         line("作者模式已开启。用它的局不上榜。", "day");
       }
     }
   });
+
+  var INBOX_KEY = "wW";
+
+  function inboxRpc(fn, body) {
+    return fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); });
+  }
+
+  function renderInbox(rows) {
+    els.inboxList.innerHTML = "";
+    if (!rows.length) { els.inboxList.textContent = "还没有人留言。"; return; }
+    rows.forEach(function (it) {
+      var d = document.createElement("div");
+      d.className = "inboxrow";
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "#" + it.id + " · " + (it.name || "匿名") + (it.link ? " · " + it.link : "") +
+        " · " + (it.created_at || "").slice(0, 16).replace("T", " ");
+      var txt = document.createElement("div");
+      txt.className = "txt";
+      txt.textContent = it.content;
+      d.appendChild(meta); d.appendChild(txt);
+      if (it.reply) {
+        var rp = document.createElement("div");
+        rp.className = "rp";
+        rp.textContent = "已回复：" + it.reply;
+        d.appendChild(rp);
+      }
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.maxLength = 300; inp.placeholder = "回复这条（最多 300 字）";
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.textContent = it.reply ? "改回复" : "回复";
+      btn.addEventListener("click", function () {
+        var v = (inp.value || "").trim();
+        if (!v) { inp.focus(); return; }
+        btn.disabled = true; btn.textContent = "发送中…";
+        inboxRpc("reply_feedback", { p_key: INBOX_KEY, p_id: it.id, p_reply: v }).then(function (r) {
+          if (r && r.ok) { loadInbox(); } else { btn.disabled = false; btn.textContent = "回复"; alert((r && r.msg) || "没成功"); }
+        }).catch(function () { btn.disabled = false; btn.textContent = "回复"; });
+      });
+      d.appendChild(inp); d.appendChild(btn);
+      els.inboxList.appendChild(d);
+    });
+  }
+
+  function loadInbox() {
+    els.inboxList.textContent = "加载中…";
+    inboxRpc("list_feedback", { p_key: INBOX_KEY }).then(function (r) {
+      if (!r || !r.ok) { els.inboxList.textContent = (r && r.msg) || "读不出来"; return; }
+      renderInbox(r.rows || []);
+    }).catch(function () { els.inboxList.textContent = "连不上数据库"; });
+  }
+
+  els.btnInbox.addEventListener("click", function () {
+    var k = window.prompt("投诉中心口令：");
+    if (!k) return;
+    if (k.trim() !== INBOX_KEY) { alert("口令不对"); return; }
+    els.inboxMask.hidden = false;
+    loadInbox();
+  });
+  els.inboxClose.addEventListener("click", function () { els.inboxMask.hidden = true; });
+  els.inboxMask.addEventListener("click", function (e) { if (e.target === els.inboxMask) els.inboxMask.hidden = true; });
 
   els.btnAuthor.addEventListener("click", function () {
     if (state.over) return;
