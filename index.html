@@ -318,6 +318,15 @@
         var m = score >= 90 ? (3 + rand(3)) : (1 + rand(3));
         return { money: m, text: "妈妈：考得还行，赏你 " + m + " 块。", tone: "good" };
       },
+      call: function () {
+        return { ending: "run_call", lines: [
+          "你拨通 110，接电话的是派出所。",
+          "警察：你妈又打你了？这个月第几次了。",
+          "你：……第三次。",
+          "警察：我们过去一趟，但你要不要考虑先离开那个家？",
+          "电话挂了。楼下的车灯闪了一下，又灭了。"
+        ] };
+      },
       win: ""
     }
   };
@@ -347,7 +356,8 @@
     run_win:       { name: "终点站", desc: "跑路版 · 过三站，走出城" },
     run_die:       { name: "倒在路上", desc: "跑路版 · 站台上血条归零" },
     run_rich:      { name: "攒够了也不走", desc: "跑路版 · 钱够 60 还留在家里" },
-    run_hot:       { name: "坐过站", desc: "跑路版 · 终点站不下车，一路坐进很热的地方" }
+    run_hot:       { name: "坐过站", desc: "跑路版 · 终点站不下车，一路坐进很热的地方" },
+    run_call:      { name: "报警了，但没人送你走", desc: "跑路版 · 报警，警察来了也没人管" }
   };
 
   function getEndings() {
@@ -753,6 +763,7 @@
 
   function doCall() {
     if (state.over) return;
+    if (typeof state.cfg.call !== "function") return;
     var r = state.cfg.call(state);
     r.lines.forEach(function (t) { line(t, "day"); });
     gameOver("游戏结束。", r.ending);
