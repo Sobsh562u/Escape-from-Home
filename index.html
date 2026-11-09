@@ -127,6 +127,19 @@
     #log{height:300px;}
     .acts{grid-template-columns:repeat(4,1fr);}
   }
+.lbmask{position:fixed;inset:0;background:rgba(20,18,16,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.lbcard{background:#fffdf8;border-radius:14px;max-width:420px;width:100%;max-height:80vh;overflow:auto;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.lbtop{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.lbx{border:0;background:none;font-size:22px;line-height:1;padding:4px 8px;cursor:pointer;color:#666}
+.lbtip{font-size:13px;color:#777;margin:6px 0 10px}
+.lbname{display:flex;gap:8px;margin-bottom:10px}
+.lbname input{flex:1;min-width:0;padding:8px;font-size:16px;border:1px solid #ddd;border-radius:8px}
+.lbname button{padding:8px 12px;border:1px solid #ddd;background:#f5f2ea;border-radius:8px;font-size:14px;cursor:pointer}
+.lblist{font-size:14px}
+.lbrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed #eee}
+.lbrow b{width:22px;color:#8a7b5e}
+.lbrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbrow i{font-style:normal;color:#777;font-size:13px}
 </style>
 </head>
 <body>
@@ -182,6 +195,7 @@
       <button id="btnRestart">重新开始本局</button>
       <button id="btnExport">导出存档包</button>
       <button id="btnImport">导入存档</button>
+      <button id="btnBoard">排行榜</button>
       <input type="file" id="fileInput" accept=".zip,.json,.txt" hidden>
     </div>
     <p class="saveHint">本局进度会自动保存，关掉网页也还在。导出的是压缩包，里面记着你的天数、难度和经历。</p>
@@ -195,6 +209,21 @@
       <div class="best" id="bestList"></div>
     </div>
   </section>
+
+  <div class="lbmask" id="lbMask" hidden>
+    <div class="lbcard" role="dialog" aria-modal="true" aria-label="无尽榜">
+      <div class="lbtop">
+        <span>排行榜 · 无尽榜</span>
+        <button class="lbx" id="lbClose" aria-label="关闭">×</button>
+      </div>
+      <p class="lbtip">按撑过的天数、走过的站数排。名字在下面改，下次自动用。</p>
+      <div class="lbname">
+        <input id="lbName" type="text" maxlength="4" placeholder="你的名字（最多 4 字）">
+        <button id="lbSave">保存名字</button>
+      </div>
+      <div class="lblist" id="lbList">正在拉榜单…</div>
+    </div>
+  </div>
 
   <footer>
     网页版 v1.4 · 版本说明：v1.3 为四难度（原始 / 反转 / 困难 / 极限），v1.4 起新增跑路版 · 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
@@ -447,7 +476,13 @@
     btnTaxi: document.getElementById("btnTaxi"),
     gList: document.getElementById("gList"),
     gCount: document.getElementById("gCount"),
-    bestList: document.getElementById("bestList")
+    bestList: document.getElementById("bestList"),
+    btnBoard: document.getElementById("btnBoard"),
+    lbMask: document.getElementById("lbMask"),
+    lbClose: document.getElementById("lbClose"),
+    lbList: document.getElementById("lbList"),
+    lbName: document.getElementById("lbName"),
+    lbSave: document.getElementById("lbSave")
   };
 
   function rand(n) { return Math.floor(Math.random() * n); }
@@ -581,6 +616,55 @@
     if (state.hp < 0) state.hp = 0;
   }
 
+  // ===== 联网排行榜（Supabase）=====
+  var SB_URL = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/scores";
+  var SB_KEY = "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET";
+
+  function myName() {
+    var n = localStorage.getItem("ehq_name");
+    return (n && n.trim()) ? n.trim().slice(0, 4) : "匿名";
+  }
+
+  function submitScore(endingId) {
+    try {
+      var body = [{
+        mode: state.mode,
+        ending: String(endingId || "died").slice(0, 20),
+        days: Math.max(0, Math.min(20000, state.day || 0)),
+        stations: Math.max(0, Math.min(20000, state.stage || 0)),
+        money: Math.max(0, Math.min(1000000, state.money || 0)),
+        name: myName()
+      }];
+      fetch(SB_URL, {
+        method: "POST",
+        headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify(body)
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  function openBoard() {
+    els.lbMask.hidden = false;
+    els.lbName.value = localStorage.getItem("ehq_name") || "";
+    els.lbList.textContent = "正在拉榜单…";
+    fetch(SB_URL + "?select=name,mode,days,stations,money&order=days.desc,stations.desc&limit=20", {
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+    }).then(function (r) { return r.json(); }).then(function (rows) {
+      if (!Array.isArray(rows) || !rows.length) { els.lbList.textContent = "还没有人上榜，你上第一个吧。"; return; }
+      els.lbList.innerHTML = "";
+      rows.forEach(function (it, i) {
+        var d = document.createElement("div");
+        d.className = "lbrow";
+        var b = document.createElement("b"); b.textContent = (i + 1);
+        var sp = document.createElement("span"); sp.textContent = (it.name || "匿名");
+        var em = document.createElement("i");
+        em.textContent = (it.days || 0) + " 天 · " + (it.stations || 0) + " 站";
+        d.appendChild(b); d.appendChild(sp); d.appendChild(em);
+        els.lbList.appendChild(d);
+      });
+    }).catch(function () { els.lbList.textContent = "榜单暂时拉不下来，等会儿再试。"; });
+  }
+
   function gameOver(reason, endingId) {
     state.over = true;
     setButtons(true);
@@ -588,6 +672,7 @@
     line("这局结束了。点「重新开始本局」再玩一次。", "day");
     unlockEnding(endingId);
     saveState();
+    submitScore(endingId);
   }
 
   function applyHp(delta) {
@@ -774,6 +859,16 @@
   els.btnExam.addEventListener("click", doExam);
   els.btnRun.addEventListener("click", doRun);
   els.btnCall.addEventListener("click", doCall);
+  els.btnBoard.addEventListener("click", openBoard);
+  els.lbClose.addEventListener("click", function () { els.lbMask.hidden = true; });
+  els.lbMask.addEventListener("click", function (e) { if (e.target === els.lbMask) els.lbMask.hidden = true; });
+  els.lbSave.addEventListener("click", function () {
+    var v = (els.lbName.value || "").trim().slice(0, 4);
+    localStorage.setItem("ehq_name", v);
+    els.lbSave.textContent = "已保存";
+    setTimeout(function () { els.lbSave.textContent = "保存名字"; }, 1200);
+  });
+
   document.getElementById("btnRestart").addEventListener("click", function () {
     clearSave(state.mode);
     reset(state.mode, true);
