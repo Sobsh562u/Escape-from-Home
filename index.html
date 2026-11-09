@@ -275,6 +275,8 @@
         <button id="fbSend" type="button">发送</button>
       </div>
       <p class="lbauthmsg" id="fbMsg"></p>
+      <button class="lbdel" id="fbMine" type="button">查看我的留言 / 作者有没有回复</button>
+      <div class="lblist" id="fbMineList" hidden></div>
     </div>
   </div>
 
@@ -318,7 +320,7 @@
   </div>
 
   <footer>
-    网页版 v1.8 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.9 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     想玩可执行文件？点右上角「下载」跳到发行版页面。<br>
     <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -589,6 +591,8 @@
     fbMask: document.getElementById("fbMask"),
     fbName: document.getElementById("fbName"),
     fbLink: document.getElementById("fbLink"),
+    fbMine: document.getElementById("fbMine"),
+    fbMineList: document.getElementById("fbMineList"),
     fbText: document.getElementById("fbText"),
     fbSend: document.getElementById("fbSend"),
     fbMsg: document.getElementById("fbMsg"),
@@ -838,7 +842,7 @@
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
         p_name: myName(),
-        p_client_id: localStorage.getItem("ehq_cid") || "",
+        p_client_id: myCid(),
         p_mode: state.mode,
         p_ending: String(endingId || "died").slice(0, 20),
         p_days: Math.max(0, Math.min(20000, state.day || 0)),
@@ -1150,6 +1154,34 @@
   els.btnFeedback.addEventListener("click", function () { els.fbMask.hidden = false; });
   els.fbClose.addEventListener("click", function () { els.fbMask.hidden = true; });
   els.fbMask.addEventListener("click", function (e) { if (e.target === els.fbMask) els.fbMask.hidden = true; });
+  els.fbMine.addEventListener("click", function () {
+    var cid = myCid();
+    els.fbMineList.hidden = false;
+    els.fbMineList.textContent = "正在查…";
+    fetch(SB_URL.replace("/scores", "/rpc/my_feedback"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_client_id: cid })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (!r || !r.ok) { els.fbMineList.textContent = (r && r.msg) || "查不到"; return; }
+      var rows = r.rows || [];
+      if (!rows.length) { els.fbMineList.textContent = "这台设备还没发过留言。"; return; }
+      els.fbMineList.innerHTML = "";
+      rows.forEach(function (it) {
+        var d = document.createElement("div");
+        d.className = "lbrow";
+        var sp = document.createElement("span");
+        sp.style.whiteSpace = "pre-wrap";
+        sp.textContent = (it.created_at || "").slice(0, 16).replace("T", " ") + "｜" + it.content;
+        var em = document.createElement("i");
+        em.textContent = it.reply ? "作者回复：" + it.reply : "还没回复";
+        em.style.whiteSpace = "pre-wrap";
+        d.appendChild(sp); d.appendChild(em);
+        els.fbMineList.appendChild(d);
+      });
+    }).catch(function () { els.fbMineList.textContent = "连不上服务器"; });
+  });
+
   els.fbSend.addEventListener("click", function () {
     var t = (els.fbText.value || "").trim();
     if (t.length < 2) { els.fbMsg.textContent = "多写几个字吧。"; return; }
@@ -1157,7 +1189,7 @@
     fetch(SB_URL.replace("/scores", "/rpc/submit_feedback"), {
       method: "POST",
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_name: els.fbName.value || "", p_content: t, p_link: els.fbLink.value || "", p_client_id: localStorage.getItem("ehq_cid") || "" })
+      body: JSON.stringify({ p_name: els.fbName.value || "", p_content: t, p_link: els.fbLink.value || "", p_client_id: myCid() })
     }).then(function (r) { return r.json(); }).then(function (r) {
       els.fbMsg.textContent = (r && r.msg) || "发送失败";
       if (r && r.ok) { els.fbText.value = ""; els.fbName.value = ""; els.fbLink.value = ""; }
@@ -1182,7 +1214,7 @@
     fetch(SB_URL.replace("/scores", "/rpc/delete_my_score"), {
       method: "POST",
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_name: myName(), p_client_id: localStorage.getItem("ehq_cid") || "" })
+      body: JSON.stringify({ p_name: myName(), p_client_id: myCid() })
     }).then(function (r) { return r.json(); }).then(function (r) {
       msg((r && r.msg) || "删除失败");
       if (r && r.ok) openBoard();
