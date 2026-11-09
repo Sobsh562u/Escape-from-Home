@@ -132,9 +132,16 @@
 .lbtop{display:flex;justify-content:space-between;align-items:center;font-weight:700}
 .lbx{border:0;background:none;font-size:22px;line-height:1;padding:4px 8px;cursor:pointer;color:#666}
 .lbtip{font-size:13px;color:#777;margin:6px 0 10px}
-.lbname{display:flex;gap:8px;margin-bottom:10px}
-.lbname input{flex:1;min-width:0;padding:8px;font-size:16px;border:1px solid #ddd;border-radius:8px}
-.lbname button{padding:8px 12px;border:1px solid #ddd;background:#f5f2ea;border-radius:8px;font-size:14px;cursor:pointer}
+.lbpid{font-size:13px;color:#8a6d3b;background:#faf3e0;border-radius:8px;padding:7px 10px;margin-bottom:10px;word-break:break-all}
+.lbform{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.lbform input{padding:9px;font-size:16px;border:1px solid #ddd;border-radius:8px;width:100%;box-sizing:border-box}
+.lbacts{display:flex;gap:8px}
+.lbacts button{flex:1;padding:9px;border:1px solid #ddd;background:#f5f2ea;border-radius:8px;font-size:15px;cursor:pointer}
+.lbme{font-size:13px;color:#8a7b5e;background:#f7f3e9;border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.lbacts{display:flex;gap:8px}
+.lbacts button{flex:1;padding:9px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:15px;cursor:pointer}
+.lbacts button:first-child{background:#f0e6d2}
+.lbauthmsg{font-size:13px;color:#a0503c;min-height:18px;margin:8px 0 0}
 .lblist{font-size:14px}
 .lbrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed #eee}
 .lbrow b{width:22px;color:#8a7b5e}
@@ -218,11 +225,17 @@
         <span>排行榜 · 无尽榜</span>
         <button class="lbx" id="lbClose" aria-label="关闭">×</button>
       </div>
-      <p class="lbtip">按撑过的天数、走过的站数排。名字在服务器上唯一，先登记先得，登记后不能再改。</p>
+      <p class="lbtip">按撑过的天数、走过的站数排。名字全服唯一，注册后这个 ID 就是你的。</p>
+      <div class="lbme" id="lbMe">还没登录，登录后才能上榜。</div>
       <div class="lbname">
-        <input id="lbName" type="text" maxlength="4" placeholder="你的名字（最多 4 字）">
-        <button id="lbSave">保存名字</button>
+        <input id="lbName" type="text" maxlength="4" placeholder="名字（最多 4 字）">
+        <input id="lbPwd" type="password" maxlength="16" placeholder="密码（4–16 位）">
       </div>
+      <div class="lbacts">
+        <button id="lbReg">注册</button>
+        <button id="lbLogin">登录</button>
+      </div>
+      <p class="lbauthmsg" id="lbMsg"></p>
       <div class="lblist" id="lbList">正在拉榜单…</div>
     </div>
   </div>
@@ -498,7 +511,11 @@
     lbClose: document.getElementById("lbClose"),
     lbList: document.getElementById("lbList"),
     lbName: document.getElementById("lbName"),
-    lbSave: document.getElementById("lbSave")
+    lbPwd: document.getElementById("lbPwd"),
+    lbReg: document.getElementById("lbReg"),
+    lbLogin: document.getElementById("lbLogin"),
+    lbMe: document.getElementById("lbMe"),
+    lbMsg: document.getElementById("lbMsg")
   };
 
   function rand(n) { return Math.floor(Math.random() * n); }
@@ -660,60 +677,89 @@
   }
 
   function myName() {
-    var n = localStorage.getItem("ehq_name");
-    return (n && n.trim()) ? n.trim().slice(0, 4) : "";
+    return localStorage.getItem("ehq_name") || "";
   }
 
-  function isReg() { return localStorage.getItem("ehq_reg") === "1"; }
+  function isReg() { return localStorage.getItem("ehq_reg") === "1" && !!myName(); }
 
-  /* 登记名字：名字在服务器上是唯一的，先到先得 */
-  function registerName(name) {
-    return fetch(SB_URL.replace("/scores", "/players"), {
+  function myPid() { return localStorage.getItem("ehq_pid") || ""; }
+
+  function isReg() { return !!localStorage.getItem("ehq_pid") && !!myName(); }
+
+  function saveMe(d) {
+    localStorage.setItem("ehq_name", d.name);
+    localStorage.setItem("ehq_cid", d.client_id);
+    localStorage.setItem("ehq_pid", d.player_id);
+    localStorage.setItem("ehq_reg", "1");
+    showMe();
+  }
+
+  function msg(t) { els.lbMsg.textContent = t; }
+
+  function showMe() {
+    if (isReg()) {
+      els.lbMe.textContent = "已登录：" + myName() + " · 玩家ID " + myPid();
+    } else {
+      els.lbMe.textContent = "还没登录，注册后才有玩家 ID，才能上榜。";
+    }
+  }
+
+  function callRpc(fn, name, pwd) {
+    return fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
       method: "POST",
-      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
-      body: JSON.stringify([{ name: name, client_id: myCid() }])
-    }).then(function (r) { return r.status; });
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: name, p_password: pwd })
+    }).then(function (r) { return r.json(); });
   }
 
-  /* 没登记时自动起一个不撞车的默认名 */
-  function ensureName() {
-    if (isReg()) return Promise.resolve(myName());
-    var nm = "玩家" + (1000 + Math.floor(Math.random() * 9000));
-    return registerName(nm).then(function (st) {
-      if (st === 201) {
-        localStorage.setItem("ehq_name", nm);
-        localStorage.setItem("ehq_reg", "1");
-        return nm;
-      }
-      return "";
-    }).catch(function () { return ""; });
+  /* 注册：名字 + 密码，服务器分配 6 位玩家 ID，密码只存 bcrypt 哈希 */
+  function doRegister(name, pwd) {
+    return callRpc("register_player", name, pwd).then(function (r) {
+      if (!r || !r.ok) { msg((r && r.msg) || "注册失败"); return false; }
+      saveMe(r);
+      msg("注册成功，你的玩家 ID 是 " + r.player_id + "。");
+      return true;
+    });
+  }
+
+  /* 登录：服务器核对密码哈希 */
+  function doLogin(name, pwd) {
+    return callRpc("login_player", name, pwd).then(function (r) {
+      if (!r || !r.ok) { msg((r && r.msg) || "登录失败"); return false; }
+      saveMe(r);
+      msg("登录成功，欢迎回来 " + r.name + "。");
+      return true;
+    });
   }
 
   function submitScore(endingId) {
-    ensureName().then(function (nm) {
-      if (!nm) return;
-      var body = [{
-        mode: state.mode,
-        ending: String(endingId || "died").slice(0, 20),
-        days: Math.max(0, Math.min(20000, state.day || 0)),
-        stations: Math.max(0, Math.min(20000, (state.mode === "endless" ? (state.loop || 1) * 4 : (state.stage || 0)))),
-        money: Math.max(0, Math.min(1000000, state.money || 0)),
-        name: nm,
-        client_id: myCid()
-      }];
-      return fetch(SB_URL, {
-        method: "POST",
-        headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
-        body: JSON.stringify(body)
-      }).catch(function () {});
+    if (!isReg()) {
+      line("还没登录，这局成绩不上榜。点「排行榜」注册一个玩家 ID 就能上榜。", "day");
+      return;
+    }
+    var body = [{
+      mode: state.mode,
+      ending: String(endingId || "died").slice(0, 20),
+      days: Math.max(0, Math.min(20000, state.day || 0)),
+      stations: Math.max(0, Math.min(20000, (state.mode === "endless" ? (state.loop || 1) * 4 : (state.stage || 0)))),
+      money: Math.max(0, Math.min(1000000, state.money || 0)),
+      name: myName(),
+      client_id: myCid(),
+      player_id: localStorage.getItem("ehq_pid") || ""
+    }];
+    fetch(SB_URL, {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+      body: JSON.stringify(body)
     }).catch(function () {});
   }
 
   function openBoard() {
     els.lbMask.hidden = false;
     els.lbName.value = localStorage.getItem("ehq_name") || "";
+    showMe();
     els.lbList.textContent = "正在拉榜单…";
-    fetch(SB_URL + "?select=name,mode,days,stations,money&order=days.desc,stations.desc&limit=20", {
+    fetch(SB_URL + "?select=name,player_id,mode,days,stations,money&order=days.desc,stations.desc&limit=20", {
       headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
     }).then(function (r) { return r.json(); }).then(function (rows) {
       if (!Array.isArray(rows) || !rows.length) { els.lbList.textContent = "还没有人上榜，你上第一个吧。"; return; }
@@ -722,7 +768,8 @@
         var d = document.createElement("div");
         d.className = "lbrow";
         var b = document.createElement("b"); b.textContent = (i + 1);
-        var sp = document.createElement("span"); sp.textContent = (it.name || "匿名");
+        var sp = document.createElement("span");
+        sp.textContent = (it.player_id ? it.player_id + " " : "") + (it.name || "匿名");
         var em = document.createElement("i");
         em.textContent = (it.days || 0) + " 天 · " + (it.stations || 0) + " 站";
         d.appendChild(b); d.appendChild(sp); d.appendChild(em);
@@ -972,30 +1019,22 @@
   els.btnBoard.addEventListener("click", openBoard);
   els.lbClose.addEventListener("click", function () { els.lbMask.hidden = true; });
   els.lbMask.addEventListener("click", function (e) { if (e.target === els.lbMask) els.lbMask.hidden = true; });
-  els.lbSave.addEventListener("click", function () {
-    var v = (els.lbName.value || "").trim().slice(0, 4);
-    if (!v) { els.lbSave.textContent = "先填名字"; setTimeout(function () { els.lbSave.textContent = "保存名字"; }, 1400); return; }
-    if (isReg()) {
-      els.lbSave.textContent = "已登记不可改";
-      setTimeout(function () { els.lbSave.textContent = "保存名字"; }, 1600);
-      return;
-    }
-    els.lbSave.textContent = "登记中…";
-    registerName(v).then(function (st) {
-      if (st === 201) {
-        localStorage.setItem("ehq_name", v);
-        localStorage.setItem("ehq_reg", "1");
-        els.lbSave.textContent = "已登记";
-      } else if (st === 409) {
-        els.lbSave.textContent = "这名字被占了";
-      } else {
-        els.lbSave.textContent = "登记失败";
-      }
-      setTimeout(function () { els.lbSave.textContent = "保存名字"; }, 1600);
-    }).catch(function () {
-      els.lbSave.textContent = "网络不通";
-      setTimeout(function () { els.lbSave.textContent = "保存名字"; }, 1600);
-    });
+  els.lbReg.addEventListener("click", function () {
+    var n = (els.lbName.value || "").trim().slice(0, 4);
+    var pw = (els.lbPwd.value || "");
+    if (!n) { msg("先填名字。"); return; }
+    if (pw.length < 4) { msg("密码至少 4 位。"); return; }
+    if (isReg()) { msg("你已经注册了，名字不能改。"); return; }
+    msg("注册中…");
+    doRegister(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
+  });
+
+  els.lbLogin.addEventListener("click", function () {
+    var n = (els.lbName.value || "").trim().slice(0, 4);
+    var pw = (els.lbPwd.value || "");
+    if (!n || !pw) { msg("名字和密码都要填。"); return; }
+    msg("登录中…");
+    doLogin(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
   });
 
   document.getElementById("btnRestart").addEventListener("click", function () {
