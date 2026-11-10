@@ -77,6 +77,89 @@ def 登记名字(名字):
     return False, "登记失败。"
 
 
+def 调接口(函数名, 载荷):
+    """POST 到 Supabase 的 RPC 函数，返回服务器给的 JSON。"""
+    req = urllib.request.Request(
+        接口地址 + "/" + 函数名,
+        data=json.dumps(载荷).encode("utf-8"),
+        headers={"apikey": 榜公钥, "Authorization": "Bearer " + 榜公钥,
+                 "Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def 注册账号(名字, 密码):
+    try:
+        r = 调接口("register_player", {"p_name": 名字, "p_password": 密码})
+    except Exception:
+        return False, "连不上服务器，稍后再试。"
+    if not r or not r.get("ok"):
+        return False, (r or {}).get("msg") or "注册失败"
+    数据 = 读身份()
+    数据["name"] = r.get("name") or 名字
+    数据["player_id"] = r.get("player_id")
+    if r.get("client_id"):
+        数据["client_id"] = r["client_id"]
+    写身份(数据)
+    return True, "注册成功，你的玩家 ID 是 %s。" % r.get("player_id")
+
+
+def 登录账号(名字, 密码):
+    try:
+        r = 调接口("login_player", {"p_name": 名字, "p_password": 密码})
+    except Exception:
+        return False, "连不上服务器，稍后再试。"
+    if not r or not r.get("ok"):
+        return False, (r or {}).get("msg") or "登录失败"
+    数据 = 读身份()
+    数据["name"] = r.get("name") or 名字
+    数据["player_id"] = r.get("player_id")
+    if r.get("client_id"):
+        数据["client_id"] = r["client_id"]
+    写身份(数据)
+    return True, "登录成功，欢迎回来 %s。" % (r.get("name") or 名字)
+
+
+def 登录菜单():
+    """开局时用一次：登录已有账号，或者注册一个。回车跳过。"""
+    _, 已有 = 取身份()
+    if 已有:
+        print("已登录：%s。想换账号输入「换」，直接回车继续。" % 已有)
+        try:
+            选择 = input().strip()
+        except EOFError:
+            选择 = ""
+        if 选择 != "换":
+            return
+    print("输入「登」登录已有账号，「注」注册新账号，直接回车跳过。")
+    try:
+        选择 = input().strip()
+    except EOFError:
+        选择 = ""
+    if 选择 not in ("登", "注"):
+        return
+    try:
+        名字 = input("账号名（最多 4 个字）：").strip()[:4]
+        密码 = input("密码（至少 4 位）：").strip()
+    except EOFError:
+        名字, 密码 = "", ""
+    if not 名字 or len(密码) < 4:
+        print("名字或密码不合格，跳过。")
+        print()
+        return
+    if 选择 == "登":
+        成功, 提示 = 登录账号(名字, 密码)
+        if not 成功 and "连不上" not in 提示:
+            成功, 提示 = 注册账号(名字, 密码)
+            提示 = "这个账号还不存在，帮你注册了：" + 提示
+    else:
+        成功, 提示 = 注册账号(名字, 密码)
+    print(提示)
+    print()
+
+
 def 上传成绩(天数, 站数, 剩余钱):
     """把这一局的成绩传到服务器榜单。失败也不影响游戏结束。"""
     cid, 名字 = 取身份()
@@ -97,40 +180,32 @@ def 上传成绩(天数, 站数, 剩余钱):
             print()
             return
         _, 名字 = 取身份()
-    数据 = [{
-        "mode": 难度ID,
-        "ending": "倒在路上",
-        "days": int(天数),
-        "stations": int(站数),
-        "money": int(剩余钱),
-        "name": 名字,
-        "client_id": cid,
-    }]
     try:
-        req = urllib.request.Request(
-            榜地址,
-            data=json.dumps(数据).encode("utf-8"),
-            headers={
-                "apikey": 榜公钥,
-                "Authorization": "Bearer " + 榜公钥,
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=15) as r:
-            print("成绩已上榜：%s · %d 天 · %d 站 · 剩 %d 块" % (名字, 天数, 站数, 剩余钱))
-    except urllib.error.HTTPError as e:
-        print("上传失败（%s），这局成绩先留在本机。" % e.code)
+        r = 调接口("submit_score", {
+            "p_name": 名字, "p_client_id": cid, "p_mode": 难度ID,
+            "p_ending": "倒在路上", "p_days": int(天数),
+            "p_stations": int(站数), "p_money": int(剩余钱),
+        })
     except Exception:
         print("连不上榜单服务器，这局成绩先留在本机。")
+        print()
+        return
+    if not r or not r.get("ok"):
+        print("没上榜：%s" % ((r or {}).get("msg") or "服务器拒绝了"))
+        print()
+        return
+    if not r.get("updated", True):
+        print("没有超过你之前的成绩（%d 天 · %d 站），榜单保持不变。" % (r.get("days", 0), r.get("stations", 0)))
+        print()
+        return
+    print("成绩已上榜：%s · %d 天 · %d 站 · 剩 %d 块" % (名字, 天数, 站数, 剩余钱))
     print()
-
+    return
 
 def 查看榜单():
     """拉前 10 名，按天数、站数排序。"""
     try:
-        url = 榜地址 + "?select=name,days,stations,money,created_at&deleted_at=is.null&order=days.desc,stations.desc&limit=10"
+        url = 榜地址 + "?select=name,days,stations,money,created_at&mode=eq.endless&deleted_at=is.null&order=days.desc,stations.desc&limit=10"
         req = urllib.request.Request(
             url,
             headers={"apikey": 榜公钥, "Authorization": "Bearer " + 榜公钥},
@@ -360,6 +435,7 @@ print()
 print("提示：输入 导出 / 导入 存档；输入 12345678 作者模式改钱。")
 print()
 
+登录菜单()
 已出门 = False
 最近一站 = 阶段
 
@@ -378,6 +454,10 @@ while True:
             天, 血条, 经历, 钱, 阶段 = 结果
             已出门 = 阶段 > 0
             圈 = (阶段 // 4) + 1 if 阶段 > 0 else 1
+        continue
+
+    if 操作 in ("登录", "账号", "登"):
+        登录菜单()
         continue
 
     if 操作 in ("榜", "榜单", "排行榜"):
