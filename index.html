@@ -226,6 +226,7 @@
       <button class="primary" id="btnExam">考试</button>
       <button id="btnRun">逃跑</button>
       <button id="btnCall">报警</button>
+      <button id="btnPaper">100 分试卷（每局一次）</button>
       <button id="btnAuthor" hidden>作者模式</button>
       <button id="btnInbox" hidden>投诉中心</button>
     </div>
@@ -320,7 +321,7 @@
   </div>
 
   <footer>
-    网页版 v1.10 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.11 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     想玩可执行文件？点右上角「下载」跳到发行版页面。<br>
     <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -574,6 +575,7 @@
     btnExam: document.getElementById("btnExam"),
     btnRun: document.getElementById("btnRun"),
     btnCall: document.getElementById("btnCall"),
+    btnPaper: document.getElementById("btnPaper"),
     btnAuthor: document.getElementById("btnAuthor"),
     moneyWrap: document.getElementById("moneyWrap"),
     moneyNum: document.getElementById("moneyNum"),
@@ -638,7 +640,7 @@
     try {
       localStorage.setItem(SAVE_PREFIX + state.mode, JSON.stringify({
         hp: state.hp, day: state.day, over: state.over, log: state.log,
-        money: state.money || 0, stage: state.stage || 0
+        money: state.money || 0, stage: state.stage || 0, paper: state.paperUsed ? 1 : 0, shield: state.shield ? 1 : 0
       }));
     } catch (e) {}
   }
@@ -734,6 +736,8 @@
       state.money = saved.money || 0;
       state.stage = saved.stage || 0;
       state.loop = saved.loop || 1;
+      state.paperUsed = !!saved.paper;
+      state.shield = !!saved.shield;
       state.log = saved.log;
       state.log.forEach(function (it) { renderLine(it.t, it.c); });
       renderLine("（接着上一局继续 · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + cfg.max + (cfg.money ? " · 钱 " + state.money + " 块" : "") + "）", "day");
@@ -913,6 +917,13 @@
   }
 
   function applyHp(delta) {
+    if (delta < 0 && state.shield) {
+      state.shield = false;
+      line("100 分试卷挡在中间——妈妈一看这分数，手停在半空，这次没打下来。", "good");
+      updateStats();
+      saveState();
+      return false;
+    }
     state.hp += delta;
     clamp();
     updateStats();
@@ -1137,6 +1148,17 @@
 
   els.btnWait.addEventListener("click", doWait);
   els.btnTaxi.addEventListener("click", doTaxi);
+  els.btnPaper.addEventListener("click", function () {
+    if (!state || state.over) return;
+    if (state.paperUsed) { line("这张 100 分试卷这局已经用掉了，全局只能交一次。", "day"); return; }
+    state.paperUsed = true;
+    state.shield = true;
+    state.hp = Math.min(state.cfg.max, state.hp + 100);
+    updateStats();
+    saveState();
+    line("你交上来一张 100 分试卷。血条补了 100（现在 " + state.hp + " / " + state.cfg.max + "），下一巴掌打不下来。", "good");
+  });
+
   els.btnExam.addEventListener("click", doExam);
   els.btnRun.addEventListener("click", doRun);
   els.btnCall.addEventListener("click", doCall);
