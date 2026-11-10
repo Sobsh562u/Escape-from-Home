@@ -493,6 +493,180 @@ static void 高考(void) {
     分隔线();
 }
 
+
+/* ==================== 联网上榜 ==================== */
+
+#define 接口地址 "https://spvouajdnckiyihhccux.supabase.co/rest/v1/rpc/"
+#define 榜公钥 "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET"
+#define 身份文件 "ehq_identity.txt"
+#define 请求文件 "ehq_req.json"
+#define 响应文件 "ehq_resp.json"
+#define 响应上限 4096
+
+/* 把字符串写进 JSON：转义引号和反斜杠 */
+static void JSON转义(const char *in, char *out, int len) {
+    int j = 0;
+    for (int i = 0; in[i] && j < len - 2; i++) {
+        if (in[i] == '"' || in[i] == '\\') { out[j++] = '\\'; }
+        out[j++] = in[i];
+    }
+    out[j] = 0;
+}
+
+/* POST 到 RPC 函数，返回 1 表示拿到了响应（响应放在 响应 里） */
+static int 调接口(const char *函数名, const char *载荷, char *响应, int 长度) {
+    FILE *f = fopen(请求文件, "wb");
+    if (!f) return 0;
+    fputs(载荷, f);
+    fclose(f);
+
+    char 命令[1024];
+    snprintf(命令, sizeof(命令),
+             "curl -s -m 25 -X POST \"%s%s\" "
+             "-H \"apikey: %s\" -H \"Authorization: Bearer %s\" "
+             "-H \"Content-Type: application/json\" "
+             "--data-binary @%s -o %s",
+             接口地址, 函数名, 榜公钥, 榜公钥, 请求文件, 响应文件);
+    int rc = system(命令);
+    if (rc != 0) { remove(请求文件); return 0; }
+
+    f = fopen(响应文件, "rb");
+    if (!f) return 0;
+    int n = (int)fread(响应, 1, 长度 - 1, f);
+    fclose(f);
+    响应[n > 0 ? n : 0] = 0;
+    remove(请求文件);
+    remove(响应文件);
+    return n > 0;
+}
+
+/* 找到 key 对应的值起点（跳过冒号和空格） */
+static const char *找值(const char *json, const char *key) {
+    char 模式[64];
+    snprintf(模式, sizeof(模式), "\"%s\"", key);
+    const char *p = strstr(json, 模式);
+    if (!p) return NULL;
+    p += strlen(模式);
+    while (*p == ' ' || *p == ':') p++;
+    return (*p == 0) ? NULL : p;
+}
+
+/* 取字符串值；成功返回 1 */
+static int 取字符串(const char *json, const char *key, char *out, int len) {
+    const char *p = 找值(json, key);
+    if (!p || *p != '"') return 0;
+    p++;
+    int j = 0;
+    while (*p && *p != '"' && j < len - 1) out[j++] = *p++;
+    out[j] = 0;
+    return 1;
+}
+
+/* 取布尔的 true；响应里可能是 "ok" : true */
+static int 取真值(const char *json, const char *key) {
+    const char *p = 找值(json, key);
+    return p && *p == 't';
+}
+
+/* 读身份文件：第一行名字，第二行 client_id */
+static int 读身份(char *名字, int 名字长, char *cid, int cid长) {
+    FILE *f = fopen(身份文件, "rb");
+    if (!f) return 0;
+    char 行[256];
+    int ok = 0;
+    if (fgets(行, sizeof(行), f)) {
+        行[strcspn(行, "\r\n")] = 0;
+        snprintf(名字, 名字长, "%s", 行);
+        if (fgets(行, sizeof(行), f)) {
+            行[strcspn(行, "\r\n")] = 0;
+            snprintf(cid, cid长, "%s", 行);
+            ok = (名字[0] && cid[0]);
+        }
+    }
+    fclose(f);
+    return ok;
+}
+
+static void 写身份(const char *名字, const char *cid) {
+    FILE *f = fopen(身份文件, "wb");
+    if (!f) return;
+    fprintf(f, "%s\n%s\n", 名字, cid);
+    fclose(f);
+}
+
+/* 开局没身份就问一次：登录/注册，回车跳过。返回 1 表示有账号 */
+static int 登录菜单(void) {
+    char 名字[64], cid[64], 选[16];
+
+    if (读身份(名字, sizeof 名字, cid, sizeof cid)) {
+        printf("已登录：%s。换账号输入 换，直接回车开玩。\n", 名字);
+        读一行(选, sizeof 选);
+        去空白(选);
+        if (strcmp(选, "换") != 0) return 1;
+    }
+
+    printf("输入 登 登录已有账号，注 注册新账号，直接回车跳过。\n");
+    读一行(选, sizeof 选);
+    去空白(选);
+    if (strcmp(选, "登") != 0 && strcmp(选, "注") != 0) return 0;
+
+    char 名[64], 密[64], 载荷[512], 响应[响应上限], 服务器名[64], 服务器cid[64];
+    printf("账号名（最多 4 个字）：");
+    读一行(名, sizeof 名);
+    去空白(名);
+    printf("密码（至少 4 位）：");
+    读一行(密, sizeof 密);
+    去空白(密);
+    if (!名[0] || strlen(密) < 4) { printf("名字或密码不合格，跳过。\n\n"); return 0; }
+
+    const char *函数 = (strcmp(选, "登") == 0) ? "login_player" : "register_player";
+    snprintf(载荷, sizeof(载荷), "{\"p_name\":\"%s\",\"p_password\":\"%s\"}", 名, 密);
+    if (!调接口(函数, 载荷, 响应, sizeof 响应)) {
+        printf("连不上服务器，这局先不上榜。\n\n");
+        return 0;
+    }
+    if (!取真值(响应, "ok")) {
+        char 提示[256] = "";
+        if (!取字符串(响应, "msg", 提示, sizeof 提示)) snprintf(提示, sizeof(提示), "服务器拒绝了");
+        printf("%s\n\n", 提示);
+        return 0;
+    }
+    if (!取字符串(响应, "name", 服务器名, sizeof 服务器名)) snprintf(服务器名, sizeof 服务器名, "%s", 名);
+    if (!取字符串(响应, "client_id", 服务器cid, sizeof 服务器cid)) {
+        printf("服务器没给身份，跳过。\n\n");
+        return 0;
+    }
+    写身份(服务器名, 服务器cid);
+    printf("%s成功：%s。\n\n", (strcmp(函数, "login_player") == 0) ? "登录" : "注册", 服务器名);
+    return 1;
+}
+
+/* 结算后把成绩传上去；失败只提示，不影响游戏 */
+static void 上传成绩(const 难度配置 *c, int 天, int 站数, int 钱, int 圈) {
+    char 名字[64], cid[64];
+    if (!读身份(名字, sizeof 名字, cid, sizeof cid)) {
+        printf("这局没登录，成绩留在本机。\n\n");
+        return;
+    }
+    char 名转[128], 载荷[512], 响应[响应上限];
+    JSON转义(名字, 名转, sizeof 名转);
+    snprintf(载荷, sizeof(载荷),
+             "{\"p_name\":\"%s\",\"p_client_id\":\"%s\",\"p_mode\":\"%s\","
+             "\"p_ending\":\"倒在路上\",\"p_days\":%d,\"p_stations\":%d,\"p_money\":%d}",
+             名转, cid, c->id, 天, 站数, 钱);
+    if (!调接口("submit_score", 载荷, 响应, sizeof 响应)) {
+        printf("连不上榜单服务器，这局成绩留在本机。\n\n");
+        return;
+    }
+    if (!取真值(响应, "ok")) {
+        char 提示[256] = "";
+        if (!取字符串(响应, "msg", 提示, sizeof 提示)) snprintf(提示, sizeof(提示), "服务器拒绝了");
+        printf("没上榜：%s\n\n", 提示);
+        return;
+    }
+    printf("成绩已上榜：%s · %d 天 · %d 站 · 剩 %d 块\n\n", 名字, 天, 站数, 钱);
+}
+
 /* ==================== 玩一局 ==================== */
 
 static void 玩一局(const 难度配置 *c) {
@@ -518,6 +692,8 @@ static void 玩一局(const 难度配置 *c) {
     }
     printf("每天按回车考试；输入 跑 逃跑；110 报警；12345678 作者模式跳天数。\n");
     printf("输入「导出」存成 json，输入「导入」读存档（网页版、Python 版的包都能用）。\n\n");
+
+    登录菜单();
 
     for (;;) {
         if (站台版 && 阶段 > 0) {
@@ -777,6 +953,12 @@ static void 玩一局(const 难度配置 *c) {
 
         天 += 1;
         printf("\n");
+    }
+
+    /* 结算后上榜 */
+    {
+        int 站数 = (阶段 > 0) ? ((圈 - 1) * 4 + 阶段) : 0;
+        上传成绩(c, 天, 站数, 钱, 圈);
     }
 }
 
