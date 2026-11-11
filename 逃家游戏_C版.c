@@ -568,6 +568,15 @@ static int 取真值(const char *json, const char *key) {
     return p && *p == 't';
 }
 
+/* 把 src 复制进 dst，超出长度就截断（避免 snprintf 被 -Werror 判为可能截断） */
+static void 复制截断(char *dst, int 长度, const char *src) {
+    if (长度 <= 0) return;
+    size_t n = strlen(src);
+    if (n >= (size_t)长度) n = (size_t)长度 - 1;
+    memcpy(dst, src, n);
+    dst[n] = 0;
+}
+
 /* 读身份文件：第一行名字，第二行 client_id */
 static int 读身份(char *名字, int 名字长, char *cid, int cid长) {
     FILE *f = fopen(身份文件, "rb");
@@ -576,10 +585,10 @@ static int 读身份(char *名字, int 名字长, char *cid, int cid长) {
     int ok = 0;
     if (fgets(行, sizeof(行), f)) {
         行[strcspn(行, "\r\n")] = 0;
-        snprintf(名字, 名字长, "%s", 行);
+        复制截断(名字, 名字长, 行);
         if (fgets(行, sizeof(行), f)) {
             行[strcspn(行, "\r\n")] = 0;
-            snprintf(cid, cid长, "%s", 行);
+            复制截断(cid, cid长, 行);
             ok = (名字[0] && cid[0]);
         }
     }
@@ -643,6 +652,7 @@ static int 登录菜单(void) {
 
 /* 结算后把成绩传上去；失败只提示，不影响游戏 */
 static void 上传成绩(const 难度配置 *c, int 天, int 站数, int 钱, int 圈) {
+    (void)圈;  /* 圈数已经换算进站数，榜单接口只收站数 */
     char 名字[64], cid[64];
     if (!读身份(名字, sizeof 名字, cid, sizeof cid)) {
         printf("这局没登录，成绩留在本机。\n\n");
