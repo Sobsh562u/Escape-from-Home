@@ -10,42 +10,82 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-and-run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: 编译 C 版（要求零警告）
+      - name: 零警告编译 C 版
         run: |
-          gcc -Wall -Wextra -Werror -O2 逃家游戏_C版.c -o /tmp/逃家游戏
-          /tmp/逃家游戏 -m orig </dev/null >/dev/null || true
-          echo "C 版编译通过"
+          gcc -Wall -Wextra -Werror -O2 逃家游戏_C版.c -o /tmp/game -lm
+          echo "编译通过（-Werror 零警告）"
 
-      - name: 编译静态版并核对产物类型
+      - name: 静态编译并核对产物
         run: |
-          gcc -O2 -static 逃家游戏_C版.c -o /tmp/逃家游戏_linux
-          file /tmp/逃家游戏_linux
+          gcc -O2 -static 逃家游戏_C版.c -o /tmp/game_static -lm
+          file /tmp/game_static | tee /tmp/file.txt
+          grep -q 'statically linked' /tmp/file.txt
 
-      - name: 检查四个 Python 版语法
+      - name: 六难度冒烟（每个都要 exit 0 且有输出）
         run: |
-          for f in 逃家游戏_原始版.py 逃家游戏_反转版.py 逃家游戏_困难版.py 逃家游戏_极限版.py; do
+          for m in orig revert hard limit run endless; do
+            printf '\n\n\n\n' | /tmp/game -m "$m" > "/tmp/o_$m.txt" 2>&1
+            grep -q '逃家游戏' "/tmp/o_$m.txt" || { echo "FAIL: $m 无输出"; exit 1; }
+            test "$(stat -c%s "/tmp/o_$m.txt")" -gt 100 || { echo "FAIL: $m 输出过短"; exit 1; }
+            echo "OK $m ($(stat -c%s "/tmp/o_$m.txt") 字节)"
+          done
+
+      - name: 跑路版能攒钱、能出门、能过三站
+        run: |
+          # 第一个空行跳过登录菜单；12345678 是作者模式（站台版用来直接设钱）
+          printf '\n12345678\n60\n跑\n等\n等\n等\n走了\n' | /tmp/game -m run > /tmp/run.txt 2>&1
+          cat /tmp/run.txt
+          grep -q '幼儿园站' /tmp/run.txt
+          grep -q '学校站' /tmp/run.txt
+          grep -q '大学站' /tmp/run.txt
+          grep -q '结局达成：终点站' /tmp/run.txt
+          echo "三站流程正常，终点站可达成"
+
+      - name: 终点站要自己下车
+        run: |
+          printf '\n12345678\n100\n跑\n等\n等\n等\n坐\n' | /tmp/game -m run > /tmp/b.txt 2>&1
+          grep -q '结局达成：坐过站' /tmp/b.txt && echo "坐 → 坐过站"
+
+      - name: 无尽版能进第二圈
+        run: |
+          printf '\n12345678\n100\n跑\n等\n等\n等\n坐\n' | /tmp/game -m endless > /tmp/e.txt 2>&1
+          grep -q '这是第 2 圈' /tmp/e.txt && echo "无尽版进入第二圈"
+
+      - name: 六个 Python 版语法
+        run: |
+          for f in 逃家游戏_原始版.py 逃家游戏_反转版.py 逃家游戏_困难版.py \
+                   逃家游戏_极限版.py 逃家游戏_跑路版.py 逃家游戏_无尽版.py; do
             python3 -m py_compile "$f" && echo "OK $f"
           done
 
-      - name: 导出存档并校验 JSON 合法
+      - name: 跑路版存档导出并校验 JSON
         run: |
           mkdir -p /tmp/save && cd /tmp/save
-          printf '导出\n\n\n' | /tmp/逃家游戏 -m hard >/dev/null
-          python3 -c "
+          printf '\n12345678\n60\n导出\n\n\n' | /tmp/game -m run >/dev/null 2>&1
+          python3 - <<'PY'
           import glob, json
-          for p in glob.glob('/tmp/save/*.json'):
-              d = json.load(open(p, encoding='utf-8'))
-              assert d['packVersion'] == 2
-              assert d['mode'] in ('orig', 'revert', 'hard', 'limit')
-              print('存档合法:', p.split('/')[-1], d['day'], d['hp'])
-          "
+          files = glob.glob('/tmp/save/*.json')
+          assert files, '没有导出存档'
+          d = json.load(open(files[0], encoding='utf-8'))
+          assert d['packVersion'] == 2, d.get('packVersion')
+          assert d['mode'] == 'run', d.get('mode')
+          assert isinstance(d.get('money'), int), d.get('money')
+          assert isinstance(d.get('stage'), int), d.get('stage')
+          print('存档合法:', files[0].split('/')[-1], d['money'], d['stage'])
+          PY
 
-      - name: 检查网页版是单文件
+      - name: 网页版关键入口都在
         run: |
-          test -f index.html
-          grep -q 'v1.3' index.html && echo "index.html 版本号正常"
+          grep -q '网页版 v1.14' index.html && echo "index.html 版本号正常"
+          grep -q 'data-mode="run"' index.html && echo "有跑路版入口"
+          grep -q 'run_win' index.html && echo "有终点站结局"
+          grep -q 'run_rich' index.html && echo "有攒够不走结局"
+
+      - name: 根目录与 C版/ 源码必须一致
+        run: |
+          cmp 逃家游戏_C版.c C版/逃家游戏_C版.c && echo "两份源码一致"
