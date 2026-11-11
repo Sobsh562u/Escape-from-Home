@@ -1,3 +1,10 @@
+## v1.16
+
+- Windows 版重编：`逃家游戏.exe` 换成六难度版本，启动菜单能选到第 6 项「无尽版」
+- 编译方式改成 mingw-w64 交叉编译（`x86_64-w64-mingw32-gcc -O2`），不再依赖 MSYS2 手动点
+- 根目录 exe 与 `C版/` 同步，版本号、体积（约 514KB）、难度表全部对齐
+- 关闭 Issue #6
+
 ## v1.15
 
 - 编译文档更新：Windows 端改用 MSYS2 UCRT64 的 gcc（PowerShell 里跑不通），补上 `-m run` 与 `-m endless` 两个参数
