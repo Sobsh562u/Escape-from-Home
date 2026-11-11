@@ -10,7 +10,7 @@
  *   Windows (MinGW): x86_64-w64-mingw32-gcc 逃家游戏_C版.c -O2 -o 逃家游戏.exe
  *
  * 这一版是桌面端的完整实现：
- *   1. 四个难度（原始 / 反转 / 困难 / 极限）同一个程序，启动时选
+ *   1. 六个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽）同一个程序，启动时选
  *   2. 支持「导出」「导入」存档，存档是 json，和网页版、Python 版同一套字段
  *   3. 不依赖任何第三方库，只要 libc
  *
@@ -52,6 +52,7 @@ static 难度配置 难度表[] = {
     {"hard",   "困难版",  50,  50, 10},
     {"limit",  "极限版", 100, 100, 5},
     {"run",    "跑路版", 100, 100, 0},   /* 目标天数 0 = 不限天数，攒钱跑路 */
+    {"endless","无尽版", 100, 100, 0},   /* 目标天数 0，一圈一圈跑，撑到死为止 */
 };
 
 static int 难度数 = (int)(sizeof(难度表) / sizeof(难度表[0]));
@@ -304,7 +305,7 @@ static 考试结果 考一次(const 难度配置 *c, int 分数) {
         else if (分数 < 60) { r.扣血 = -15; r.台词 = "妈妈：又不及格！"; }
         else if (分数 < 90) { r.扣血 = 5; r.台词 = "妈妈：还行，别骄傲。"; }
         else { r.扣血 = 8; r.台词 = "妈妈：不错。"; }
-    } else if (strcmp(c->id, "run") == 0) {
+    } else if (strcmp(c->id, "run") == 0 || strcmp(c->id, "endless") == 0) {
         if (分数 == 0) { r.扣血 = -40; r.台词 = "妈妈：鸭蛋？跪下！"; }
         else if (分数 < 60) { r.扣血 = -15; r.台词 = "妈妈：又不及格，一分钱都别想要。"; }
         else { r.扣血 = 0; r.台词 = "妈妈：考得还行。"; }
@@ -386,8 +387,9 @@ static int 跑路(int *血条, int *钱, int *阶段) {
 }
 
 /* 站台：返回 1 表示已经出城（通关） */
-static int 过站(int *阶段, int *血条, int 打车) {
+static int 过站(int *阶段, int *血条, int 打车, int 圈) {
     int 扣血 = (*阶段 == 1) ? 20 : ((*阶段 == 2) ? 30 : 40);
+    扣血 += (圈 > 0 ? (圈 - 1) * 5 : 0);
     int 安全 = (*阶段 == 1) ? 25 : ((*阶段 == 2) ? 20 : 15);
 
     if (打车) {
@@ -491,13 +493,190 @@ static void 高考(void) {
     分隔线();
 }
 
+
+/* ==================== 联网上榜 ==================== */
+
+#define 接口地址 "https://spvouajdnckiyihhccux.supabase.co/rest/v1/rpc/"
+#define 榜公钥 "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET"
+#define 身份文件 "ehq_identity.txt"
+#define 请求文件 "ehq_req.json"
+#define 响应文件 "ehq_resp.json"
+#define 响应上限 4096
+
+/* 把字符串写进 JSON：转义引号和反斜杠 */
+static void JSON转义(const char *in, char *out, int len) {
+    int j = 0;
+    for (int i = 0; in[i] && j < len - 2; i++) {
+        if (in[i] == '"' || in[i] == '\\') { out[j++] = '\\'; }
+        out[j++] = in[i];
+    }
+    out[j] = 0;
+}
+
+/* POST 到 RPC 函数，返回 1 表示拿到了响应（响应放在 响应 里） */
+static int 调接口(const char *函数名, const char *载荷, char *响应, int 长度) {
+    FILE *f = fopen(请求文件, "wb");
+    if (!f) return 0;
+    fputs(载荷, f);
+    fclose(f);
+
+    char 命令[1024];
+    snprintf(命令, sizeof(命令),
+             "curl -s -m 25 -X POST \"%s%s\" "
+             "-H \"apikey: %s\" -H \"Authorization: Bearer %s\" "
+             "-H \"Content-Type: application/json\" "
+             "--data-binary @%s -o %s",
+             接口地址, 函数名, 榜公钥, 榜公钥, 请求文件, 响应文件);
+    int rc = system(命令);
+    if (rc != 0) { remove(请求文件); return 0; }
+
+    f = fopen(响应文件, "rb");
+    if (!f) return 0;
+    int n = (int)fread(响应, 1, 长度 - 1, f);
+    fclose(f);
+    响应[n > 0 ? n : 0] = 0;
+    remove(请求文件);
+    remove(响应文件);
+    return n > 0;
+}
+
+/* 找到 key 对应的值起点（跳过冒号和空格） */
+static const char *找值(const char *json, const char *key) {
+    char 模式[64];
+    snprintf(模式, sizeof(模式), "\"%s\"", key);
+    const char *p = strstr(json, 模式);
+    if (!p) return NULL;
+    p += strlen(模式);
+    while (*p == ' ' || *p == ':') p++;
+    return (*p == 0) ? NULL : p;
+}
+
+/* 取字符串值；成功返回 1 */
+static int 取字符串(const char *json, const char *key, char *out, int len) {
+    const char *p = 找值(json, key);
+    if (!p || *p != '"') return 0;
+    p++;
+    int j = 0;
+    while (*p && *p != '"' && j < len - 1) out[j++] = *p++;
+    out[j] = 0;
+    return 1;
+}
+
+/* 取布尔的 true；响应里可能是 "ok" : true */
+static int 取真值(const char *json, const char *key) {
+    const char *p = 找值(json, key);
+    return p && *p == 't';
+}
+
+/* 读身份文件：第一行名字，第二行 client_id */
+static int 读身份(char *名字, int 名字长, char *cid, int cid长) {
+    FILE *f = fopen(身份文件, "rb");
+    if (!f) return 0;
+    char 行[256];
+    int ok = 0;
+    if (fgets(行, sizeof(行), f)) {
+        行[strcspn(行, "\r\n")] = 0;
+        snprintf(名字, 名字长, "%s", 行);
+        if (fgets(行, sizeof(行), f)) {
+            行[strcspn(行, "\r\n")] = 0;
+            snprintf(cid, cid长, "%s", 行);
+            ok = (名字[0] && cid[0]);
+        }
+    }
+    fclose(f);
+    return ok;
+}
+
+static void 写身份(const char *名字, const char *cid) {
+    FILE *f = fopen(身份文件, "wb");
+    if (!f) return;
+    fprintf(f, "%s\n%s\n", 名字, cid);
+    fclose(f);
+}
+
+/* 开局没身份就问一次：登录/注册，回车跳过。返回 1 表示有账号 */
+static int 登录菜单(void) {
+    char 名字[64], cid[64], 选[16];
+
+    if (读身份(名字, sizeof 名字, cid, sizeof cid)) {
+        printf("已登录：%s。换账号输入 换，直接回车开玩。\n", 名字);
+        读一行(选, sizeof 选);
+        去空白(选);
+        if (strcmp(选, "换") != 0) return 1;
+    }
+
+    printf("输入 登 登录已有账号，注 注册新账号，直接回车跳过。\n");
+    读一行(选, sizeof 选);
+    去空白(选);
+    if (strcmp(选, "登") != 0 && strcmp(选, "注") != 0) return 0;
+
+    char 名[64], 密[64], 载荷[512], 响应[响应上限], 服务器名[64], 服务器cid[64];
+    printf("账号名（最多 4 个字）：");
+    读一行(名, sizeof 名);
+    去空白(名);
+    printf("密码（至少 4 位）：");
+    读一行(密, sizeof 密);
+    去空白(密);
+    if (!名[0] || strlen(密) < 4) { printf("名字或密码不合格，跳过。\n\n"); return 0; }
+
+    const char *函数 = (strcmp(选, "登") == 0) ? "login_player" : "register_player";
+    snprintf(载荷, sizeof(载荷), "{\"p_name\":\"%s\",\"p_password\":\"%s\"}", 名, 密);
+    if (!调接口(函数, 载荷, 响应, sizeof 响应)) {
+        printf("连不上服务器，这局先不上榜。\n\n");
+        return 0;
+    }
+    if (!取真值(响应, "ok")) {
+        char 提示[256] = "";
+        if (!取字符串(响应, "msg", 提示, sizeof 提示)) snprintf(提示, sizeof(提示), "服务器拒绝了");
+        printf("%s\n\n", 提示);
+        return 0;
+    }
+    if (!取字符串(响应, "name", 服务器名, sizeof 服务器名)) snprintf(服务器名, sizeof 服务器名, "%s", 名);
+    if (!取字符串(响应, "client_id", 服务器cid, sizeof 服务器cid)) {
+        printf("服务器没给身份，跳过。\n\n");
+        return 0;
+    }
+    写身份(服务器名, 服务器cid);
+    printf("%s成功：%s。\n\n", (strcmp(函数, "login_player") == 0) ? "登录" : "注册", 服务器名);
+    return 1;
+}
+
+/* 结算后把成绩传上去；失败只提示，不影响游戏 */
+static void 上传成绩(const 难度配置 *c, int 天, int 站数, int 钱, int 圈) {
+    char 名字[64], cid[64];
+    if (!读身份(名字, sizeof 名字, cid, sizeof cid)) {
+        printf("这局没登录，成绩留在本机。\n\n");
+        return;
+    }
+    char 名转[128], 载荷[512], 响应[响应上限];
+    JSON转义(名字, 名转, sizeof 名转);
+    snprintf(载荷, sizeof(载荷),
+             "{\"p_name\":\"%s\",\"p_client_id\":\"%s\",\"p_mode\":\"%s\","
+             "\"p_ending\":\"倒在路上\",\"p_days\":%d,\"p_stations\":%d,\"p_money\":%d}",
+             名转, cid, c->id, 天, 站数, 钱);
+    if (!调接口("submit_score", 载荷, 响应, sizeof 响应)) {
+        printf("连不上榜单服务器，这局成绩留在本机。\n\n");
+        return;
+    }
+    if (!取真值(响应, "ok")) {
+        char 提示[256] = "";
+        if (!取字符串(响应, "msg", 提示, sizeof 提示)) snprintf(提示, sizeof(提示), "服务器拒绝了");
+        printf("没上榜：%s\n\n", 提示);
+        return;
+    }
+    printf("成绩已上榜：%s · %d 天 · %d 站 · 剩 %d 块\n\n", 名字, 天, 站数, 钱);
+}
+
 /* ==================== 玩一局 ==================== */
 
 static void 玩一局(const 难度配置 *c) {
     int 血条 = c->初始血条;
     int 天 = 0;
     int 钱 = 0;
-    int 阶段 = 0;     /* 跑路版：0=在家，1 幼儿园，2 学校，3 大学 */
+    int 阶段 = 0;     /* 跑路版/无尽版：0=在家，1 幼儿园，2 学校，3 大学，4 终点站 */
+    int 圈 = 1;       /* 无尽版：第几圈 */
+    int 无尽 = (strcmp(c->id, "endless") == 0);
+    int 站台版 = (strcmp(c->id, "run") == 0 || 无尽);
     char 操作[输入长度];
     char 缓冲[输入长度];
 
@@ -506,20 +685,28 @@ static void 玩一局(const 难度配置 *c) {
     printf("==== 逃家游戏 · %s ====\n", c->名);
     if (strcmp(c->id, "run") == 0) {
         printf("血条 %d，不限天数。60 分以上考试给钱，攒够 60 块（车票 50 + 买通弟弟 10）就能出门。\n", c->上限);
+    } else if (无尽) {
+        printf("血条 %d，没有终点。一圈四站，跑到终点站就进下一圈，越往后扣血越狠、打车越贵。\n", c->上限);
     } else {
         printf("血条 %d，目标撑过 %d 天。\n", c->初始血条, c->目标天数);
     }
     printf("每天按回车考试；输入 跑 逃跑；110 报警；12345678 作者模式跳天数。\n");
     printf("输入「导出」存成 json，输入「导入」读存档（网页版、Python 版的包都能用）。\n\n");
 
+    登录菜单();
+
     for (;;) {
-        if (strcmp(c->id, "run") == 0 && 阶段 > 0) {
+        if (站台版 && 阶段 > 0) {
             const char *站 = (阶段 == 1) ? "幼儿园站" : ((阶段 == 2) ? "学校站" : ((阶段 == 3) ? "大学站" : "终点站"));
-            printf("———— 第 %d 天 · %s · 钱 %d 块 ————\n", 天, 站, 钱);
+            if (无尽) {
+                printf("———— 第 %d 天 · 第 %d 圈 · %s · 钱 %d 块 ————\n", 天, 圈, 站, 钱);
+            } else {
+                printf("———— 第 %d 天 · %s · 钱 %d 块 ————\n", 天, 站, 钱);
+            }
             if (阶段 >= 4) {
                 printf("走了（下车出城）/ 坐（再坐一站，会坐过站）：");
             } else {
-                printf("等（等车，不要钱）/ 打车（10 块，直接过站）：");
+                printf("等（等车，不要钱）/ 打车（%d 块，直接过站）：", 10 + (无尽 ? (圈 - 1) * 5 : 0));
             }
         } else {
             printf("———— 第 %d 天 ————\n", 天);
@@ -533,6 +720,18 @@ static void 玩一局(const 难度配置 *c) {
         去空白(操作);
 
         /* ---- 跑路版：站台 ---- */
+        if (站台版 && 阶段 >= 4 && 无尽) {
+            if (操作[0] == '\0' || strcmp(操作, "坐") == 0 || strcmp(操作, "继续") == 0 || strcmp(操作, "跑") == 0) {
+                圈 += 1;
+                阶段 = 1;
+                printf("车门关上，你在终点站没下车——反正下一站还会来。\n");
+                printf("这是第 %d 圈。扣血更狠了，打车也涨到 %d 块。\n\n", 圈, 10 + (圈 - 1) * 5);
+                continue;
+            }
+            printf("无尽版只有一条路：坐（继续下一圈）。\n\n");
+            continue;
+        }
+
         if (strcmp(c->id, "run") == 0 && 阶段 >= 4) {
             if (操作[0] == '\0' || strcmp(操作, "走了") == 0 || strcmp(操作, "下车") == 0) {
                 分隔线();
@@ -555,23 +754,31 @@ static void 玩一局(const 难度配置 *c) {
             continue;
         }
 
-        if (strcmp(c->id, "run") == 0 && 阶段 > 0) {
+        if (站台版 && 阶段 > 0) {
             if (操作[0] == '\0' || strcmp(操作, "等") == 0) {
-                if (过站(&阶段, &血条, 0)) break;
+                if (过站(&阶段, &血条, 0, 圈)) break;
                 if (血条 <= 0) {
-                    printf("\n你的血条归零……你倒在站台上。\nGAME OVER —— 没走出这条街。\n");
+                    if (无尽) {
+                        printf("\n你的血条归零……你倒在站台上。\nGAME OVER —— 无尽版撑了 %d 天、跑到第 %d 圈。\n", 天, 圈);
+                    } else {
+                        printf("\n你的血条归零……你倒在站台上。\nGAME OVER —— 没走出这条街。\n");
+                    }
                     break;
                 }
                 printf("血条 %d / %d，钱 %d 块\n\n", 血条, c->上限, 钱);
                 continue;
             }
             if (strcmp(操作, "打车") == 0) {
-                if (钱 < 10) {
-                    printf("司机看了看你手里的钱，摆摆手开走了。这一站只能等公交。\n\n");
+                int 车费 = 10 + (无尽 ? (圈 - 1) * 5 : 0);
+                if (钱 < 车费) {
+                    printf("司机看了看你手里的钱，摆摆手开走了（这站要 %d 块）。这一站只能等公交。\n\n", 车费);
                     continue;
                 }
-                钱 -= 10;
-                if (过站(&阶段, &血条, 1)) break;
+                钱 -= 车费;
+                if (过站(&阶段, &血条, 1, 圈)) {
+                    if (无尽) { printf("\n你的血条归零……你倒在站台上。\nGAME OVER —— 无尽版撑了 %d 天、跑到第 %d 圈。\n", 天, 圈); }
+                    break;
+                }
                 printf("血条 %d / %d，钱 %d 块\n\n", 血条, c->上限, 钱);
                 continue;
             }
@@ -581,7 +788,7 @@ static void 玩一局(const 难度配置 *c) {
 
         /* ---- 存档 ---- */
         if (strcmp(操作, "导出") == 0 || strcmp(操作, "导出存档") == 0) {
-            导出存档(c, 天, 血条, strcmp(c->id, "run") == 0 ? 钱 : -1, 阶段);
+            导出存档(c, 天, 血条, 站台版 ? 钱 : -1, 阶段);
             printf("\n");
             continue;
         }
@@ -617,7 +824,7 @@ static void 玩一局(const 难度配置 *c) {
 
         /* ---- 作者模式 ---- */
         if (strcmp(操作, "12345678") == 0) {
-            if (strcmp(c->id, "run") == 0) {
+            if (站台版) {
                 printf("设置你现在有多少钱：");
                 读一行(缓冲, 输入长度);
                 钱 = atoi(缓冲);
@@ -655,7 +862,7 @@ static void 玩一局(const 难度配置 *c) {
 
         /* ---- 逃跑 ---- */
         if (strcmp(操作, "跑") == 0) {
-            if (strcmp(c->id, "run") == 0) {
+            if (站台版) {
                 if (阶段 > 0) {
                     printf("你已经在出门的路上了，站台上只能等车或者打车。\n\n");
                     continue;
@@ -714,8 +921,8 @@ static void 玩一局(const 难度配置 *c) {
             break;
         }
 
-        if (strcmp(c->id, "run") == 0) {
-            /* 跑路版：60 分以上给钱，配 1-3 或 3-5 块 */
+        if (站台版) {
+            /* 跑路/无尽版：60 分以上给钱，配 1-3 或 3-5 块 */
             if (分数 >= 60) {
                 int 给 = (分数 >= 90) ? (3 + rand() % 3) : (1 + rand() % 3);
                 钱 += 给;
@@ -735,12 +942,23 @@ static void 玩一局(const 难度配置 *c) {
         记录("第 %d 天：考了 %d 分，血条 %d / %d", 天, 分数, 血条, c->上限);
 
         if (血条 <= 0) {
-            printf("\n你的血条归零……你死了。\nGAME OVER —— 没撑到 18 岁。\n");
+            if (无尽) {
+                printf("\n你的血条归零……你倒在半路上。\n");
+                printf("GAME OVER —— 无尽版撑了 %d 天、跑到第 %d 圈。\n", 天, 圈);
+            } else {
+                printf("\n你的血条归零……你死了。\nGAME OVER —— 没撑到 18 岁。\n");
+            }
             break;
         }
 
         天 += 1;
         printf("\n");
+    }
+
+    /* 结算后上榜 */
+    {
+        int 站数 = (阶段 > 0) ? ((圈 - 1) * 4 + 阶段) : 0;
+        上传成绩(c, 天, 站数, 钱, 圈);
     }
 }
 
@@ -754,6 +972,9 @@ static int 选难度(void) {
         if (难度表[i].目标天数 > 0) {
             printf("  %d. %-4s  血条 %3d，撑过 %d 天\n",
                    i + 1, 难度表[i].名, 难度表[i].初始血条, 难度表[i].目标天数);
+        } else if (strcmp(难度表[i].id, "endless") == 0) {
+            printf("  %d. %-4s  血条 %3d，一圈一圈跑，撑到死为止\n",
+                   i + 1, 难度表[i].名, 难度表[i].初始血条);
         } else {
             printf("  %d. %-4s  血条 %3d，不限天数，攒钱跑路\n",
                    i + 1, 难度表[i].名, 难度表[i].初始血条);
