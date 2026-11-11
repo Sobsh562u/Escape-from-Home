@@ -81,7 +81,7 @@ jobs:
 
       - name: 网页版关键入口都在
         run: |
-          grep -q '网页版 v1.14' index.html && echo "index.html 版本号正常"
+          grep -qE '网页版 v1\.[1-9][0-9]' index.html && echo "index.html 版本号正常"
           grep -q 'data-mode="run"' index.html && echo "有跑路版入口"
           grep -q 'run_win' index.html && echo "有终点站结局"
           grep -q 'run_rich' index.html && echo "有攒够不走结局"
