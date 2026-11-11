@@ -1,15 +1,20 @@
-## v1.16
+## v1.17.0
 
-- Windows 版重编：`逃家游戏.exe` 换成六难度版本，启动菜单能选到第 6 项「无尽版」
-- 编译方式改成 mingw-w64 交叉编译（`x86_64-w64-mingw32-gcc -O2`），不再依赖 MSYS2 手动点
-- 根目录 exe 与 `C版/` 同步，版本号、体积（约 514KB）、难度表全部对齐
-- 关闭 Issue #6
+- 出安卓包：网页版套壳 WebView，61KB，包名 com.ehgame.escape，minSdk 21 / targetSdk 34
+- 相关文件：`安卓/` 下 Manifest、MainActivity、资源与打包脚本；jszip 改为本地文件
+- 已知：还没做应用图标，装完是系统默认小人
 
-## v1.15
+## v1.16.0
 
-- 编译文档更新：Windows 端改用 MSYS2 UCRT64 的 gcc（PowerShell 里跑不通），补上 `-m run` 与 `-m endless` 两个参数
-- 发行版附件命名统一成 ASCII：`Escape-from-Home.exe` / `Escape-from-Home_linux` / `Escape-from-Home_endless.py`
-- 说明根目录与 `C版/` 两份 C 源码必须同步，避免下发旧版本
+- 桌面版 exe 重编为六难度合一，并修掉两处在 `-Wall -Wextra -Werror` 下编不过的问题
+- 修的是：`上传成绩` 里未使用的 `圈` 参数、`读身份` 里会触发 format-truncation 的 `snprintf`
+- Linux 版改为真静态链接，不再依赖运行环境
+- CI 合并成单一工作流，零警告编译 + 六难度冒烟 + 存档导出校验 + 网页入口检查
+
+## v1.15.0
+
+- 网页版头部加上「下载」「仓库」两个按钮，手机上也好点
+- README 改成列表结构，手机上不再是一大段文字
 
 ## v1.14
 
