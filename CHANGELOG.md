@@ -1,3 +1,9 @@
+## v1.15
+
+- 编译文档更新：Windows 端改用 MSYS2 UCRT64 的 gcc（PowerShell 里跑不通），补上 `-m run` 与 `-m endless` 两个参数
+- 发行版附件命名统一成 ASCII：`Escape-from-Home.exe` / `Escape-from-Home_linux` / `Escape-from-Home_endless.py`
+- 说明根目录与 `C版/` 两份 C 源码必须同步，避免下发旧版本
+
 ## v1.14
 
 - 网页版加了访问统计：每次打开页面往数据库记一条来源和 UA，不记 IP
