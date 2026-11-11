@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>逃家游戏 · Escape from Home</title>
+<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，六个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
+<meta name="keywords" content="逃家游戏,文字游戏,中文文字游戏,网页小游戏,免下载游戏,文字冒险,独立游戏,开源游戏,Python小游戏,HTML游戏,考试题材">
+<meta name="author" content="Sobsh562u">
+<link rel="canonical" href="https://Sobsh562u.github.io/Escape-from-Home/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="逃家游戏（Escape from Home）">
+<meta property="og:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
+<meta property="og:description" content="中文文字游戏，六个难度，网页版免下载，带在线总榜。">
+<meta property="og:url" content="https://Sobsh562u.github.io/Escape-from-Home/">
+<meta property="og:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
+<meta name="twitter:description" content="中文文字游戏，六个难度，网页版免下载，带在线总榜。">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://Sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。六个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2b2b'/%3E%3Cpath d='M8 20 L20 8 M14 8 h6 v6' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#1b1b1b;
+    --paper:#f7f4ee;
+    --paper2:#efe9dd;
+    --line:#d8cfbd;
+    --accent:#b7472a;
+    --accent2:#2f5d50;
+    --hp:#3f7d4f;
+    --hp-low:#b7472a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.6;
+    padding:16px 14px 40px;
+    min-height:100vh;
+    background-image:radial-gradient(circle at 20% 0%, rgba(183,71,42,.06), transparent 55%),
+                      radial-gradient(circle at 100% 100%, rgba(47,93,80,.07), transparent 60%);
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+  h1{font-size:22px;margin:0;letter-spacing:.5px;}
+  .sub{font-size:13px;color:#6d6455;margin-top:2px;}
+  .dl{
+    flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+    min-height:44px;padding:0 14px;border-radius:8px;
+    background:var(--ink);color:#fff;text-decoration:none;
+    font-size:14px;white-space:nowrap;
+  }
+  .dl:hover{background:#000;}
+  .hdlinks{display:flex;gap:8px;flex:0 0 auto}
+  .dl.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+  .dl.ghost:hover{background:rgba(0,0,0,.06)}
+  .dl svg{width:16px;height:16px;}
+
+  .tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .tab{
+    flex:1;min-height:44px;border:1px solid var(--line);background:var(--paper2);
+    color:#4a4235;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;
+  }
+  .tab[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .panel{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-bottom:14px;
+  }
+  .stats{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+  .stat{font-size:13px;color:#6d6455;}
+  .stat b{color:var(--ink);font-size:18px;font-weight:600;margin-left:4px;}
+  .hpbar{height:10px;border-radius:6px;background:#e7e0d2;overflow:hidden;flex:1 1 140px;min-width:140px;}
+  .hpfill{height:100%;width:100%;background:var(--hp);transition:width .25s ease,background .25s ease;}
+  .hpfill.low{background:var(--hp-low);}
+
+  #log{
+    height:230px;overflow-y:auto;font-size:14px;
+    border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);
+    padding:10px 0;margin:0 0 12px;
+    scroll-behavior:smooth;
+  }
+  #log p{margin:0 0 8px;animation:fade .18s ease-out;}
+  #log p.day{color:#8a7d64;font-size:13px;margin-top:14px;}
+  #log p.good{color:var(--accent2);}
+  #log p.bad{color:var(--accent);}
+  #log p.end{font-weight:600;}
+  @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+  [hidden]{display:none !important;}
+  .acts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .acts button{
+    min-height:46px;border-radius:8px;border:1px solid var(--line);
+    background:var(--paper2);color:var(--ink);font-size:15px;font-family:inherit;cursor:pointer;
+  }
+  .acts button:hover{border-color:#b9ab8e;}
+  .acts button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .acts button.primary:hover{background:#9d3b22;}
+  .acts button:disabled{opacity:.45;cursor:not-allowed;}
+
+  .jumpbox{display:none;gap:8px;margin-top:10px;}
+  .jumpbox.show{display:flex;}
+  .jumpbox input{
+    flex:1;min-height:46px;border:1px solid var(--line);border-radius:8px;
+    padding:0 12px;font-size:16px;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  .jumpbox button{
+    min-height:46px;padding:0 16px;border-radius:8px;border:1px solid var(--line);
+    background:var(--ink);color:#fff;font-size:14px;font-family:inherit;cursor:pointer;
+  }
+
+  footer{font-size:12px;color:#8a7d64;text-align:center;margin-top:20px;line-height:1.9;}
+  footer a{color:#8a7d64;}
+  .note{font-size:12px;color:#8a7d64;margin-top:10px;}
+  .footbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  .footbar button{
+    min-height:44px;padding:0 14px;border-radius:8px;border:1px dashed var(--line);
+    background:transparent;color:#6d6455;font-size:13px;font-family:inherit;cursor:pointer;
+  }
+  .footbar button:hover{border-color:#b9ab8e;color:var(--ink);}
+  .saveHint{font-size:12px;color:#a19680;margin:8px 0 0;}
+
+  .gallery{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;}
+  .gtop{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6d6455;margin-bottom:8px;}
+  .gtop b{color:var(--ink);}
+  .glist{display:grid;grid-template-columns:1fr;gap:6px;}
+  .gitem{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper2);}
+  .gitem.on{background:#fff;border-color:#c9bda3;}
+  .gitem .mk{flex:0 0 18px;text-align:center;color:#a19680;}
+  .gitem.on .mk{color:var(--accent2);font-weight:600;}
+  .gitem .nm{font-weight:600;color:var(--ink);}
+  .gitem.lock .nm{color:#a19680;font-weight:400;}
+  .gitem .ds{color:#8a7d64;font-size:12px;}
+  .best{margin-top:10px;font-size:12px;color:#6d6455;line-height:1.9;}
+
+  @media (min-width:768px){
+    .glist{grid-template-columns:repeat(2,1fr);}
+    body{padding:32px 24px 60px;}
+    h1{font-size:28px;}
+    #log{height:300px;}
+    .acts{grid-template-columns:repeat(4,1fr);}
+  }
+.lbmask{position:fixed;inset:0;background:rgba(20,18,16,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.lbcard{background:#fffdf8;border-radius:14px;max-width:420px;width:100%;max-height:80vh;overflow:auto;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.lbtop{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.lbx{border:0;background:none;font-size:22px;line-height:1;padding:4px 8px;cursor:pointer;color:#666}
+.lbtip{font-size:13px;color:#777;margin:6px 0 10px}
+.lbpid{font-size:13px;color:#8a6d3b;background:#faf3e0;border-radius:8px;padding:7px 10px;margin-bottom:10px;word-break:break-all}
+.lbform{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.lbform textarea{width:100%;padding:9px;font-size:16px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;resize:vertical;font-family:inherit}
+.lbform button{padding:10px;border:1px solid #e0c9c9;background:#faf3e0;border-radius:8px;font-size:15px;cursor:pointer}
+.lbform input{padding:9px;font-size:16px;border:1px solid #ddd;border-radius:8px;width:100%;box-sizing:border-box}
+.lbacts{display:flex;gap:8px}
+.lbdel{width:100%;margin:0 0 10px;padding:8px;border:1px solid #e0c9c9;background:#fdf3f3;color:#a4574f;border-radius:8px;font-size:13px;cursor:pointer}
+.lbacts button{flex:1;padding:9px;border:1px solid #ddd;background:#f5f2ea;border-radius:8px;font-size:15px;cursor:pointer}
+.lbme{font-size:13px;color:#8a7b5e;background:#f7f3e9;border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.lbacts{display:flex;gap:8px}
+.lbdel{width:100%;margin:0 0 10px;padding:8px;border:1px solid #e0c9c9;background:#fdf3f3;color:#a4574f;border-radius:8px;font-size:13px;cursor:pointer}
+.lbacts button{flex:1;padding:9px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:15px;cursor:pointer}
+.lbacts button:first-child{background:#f0e6d2}
+.lbauthmsg{font-size:13px;color:#a0503c;min-height:18px;margin:8px 0 0}
+.lblist{font-size:14px}
+.lbrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed #eee}
+.lbrow b{width:22px;color:#8a7b5e}
+.lbrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbrow i{font-style:normal;color:#777;font-size:13px}
+  .lbfilter{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+  .lbfilter button{font:inherit;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #d8d2c4;background:#fbf9f4;color:#5b5346;cursor:pointer;min-height:32px}
+  .lbfilter button.on{background:#e8dfcb;border-color:#b9a575;color:#3f3729;font-weight:600}
+  .lbmode{font-size:11px;color:#8a7d64;margin-left:6px}
+  .inboxmask{position:fixed;inset:0;background:rgba(20,18,15,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:60}
+  .inboxcard{background:#fdfbf6;border-radius:16px;max-width:520px;width:100%;max-height:82vh;overflow:auto;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.28)}
+  .inboxtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .inboxtop span{font-weight:600;font-size:16px}
+  .inboxrow{border-bottom:1px dashed #e3dccd;padding:10px 0}
+  .inboxrow .meta{font-size:12px;color:#8a7d64;margin-bottom:4px}
+  .inboxrow .txt{font-size:14px;line-height:1.6;color:#2c2620;white-space:pre-wrap;word-break:break-word}
+  .inboxrow .rp{font-size:13px;color:#6c8a5b;margin-top:6px}
+  .inboxrow input{width:100%;margin-top:8px;font:inherit;font-size:14px;padding:8px;border:1px solid #d8d2c4;border-radius:8px;background:#fff}
+  .inboxrow button{margin-top:6px;font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>逃家游戏</h1>
+      <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
+    </div>
+    <div class="hdlinks">
+      <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases" target="_blank" rel="noopener"
+         title="网页版打开就能玩，不用下载；这里下载的是手机/电脑的离线安装包">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
+        装离线版
+      </a>
+      <a class="dl ghost" href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.3-.4-4.2 1.6a10.4 10.4 0 0 0-5.4 0C5.6 2.3 4.3 2.7 4.3 2.7a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 3 9.2c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
+        仓库
+      </a>
+    </div>
+  </header>
+
+  <div class="tabs" role="group" aria-label="选择版本">
+    <button class="tab" data-mode="orig" aria-pressed="true">原始版</button>
+    <button class="tab" data-mode="revert" aria-pressed="false">反转版</button>
+    <button class="tab" data-mode="hard" aria-pressed="false">困难版</button>
+    <button class="tab" data-mode="limit" aria-pressed="false">极限版</button>
+    <button class="tab" data-mode="run" aria-pressed="false">跑路版</button>
+    <button class="tab" data-mode="endless" aria-pressed="false">无尽版</button>
+  </div>
+
+  <section class="panel">
+    <div class="stats">
+      <div class="stat">血条<b id="hpNum">100</b></div>
+      <div class="hpbar"><div class="hpfill" id="hpFill"></div></div>
+      <div class="stat">第<b id="dayNum">0</b>天</div>
+      <div class="stat" id="moneyWrap" hidden>钱<b id="moneyNum">0</b>块</div>
+      <div class="stat" id="loopWrap" hidden>圈<b id="loopNum">1</b></div>
+    </div>
+    <div id="log" aria-live="polite"></div>
+
+    <div class="acts" id="mainActs">
+      <button class="primary" id="btnExam">考试</button>
+      <button id="btnRun">逃跑</button>
+      <button id="btnCall">报警</button>
+      <button id="btnPaper">100 分试卷（每局一次）</button>
+      <button id="btnAuthor" hidden>作者模式</button>
+      <button id="btnInbox" hidden>投诉中心</button>
+    </div>
+
+    <div class="acts" id="stationBar" hidden>
+      <button class="primary" id="btnWait">等车</button>
+      <button id="btnTaxi">打车（10 块）</button>
+    </div>
+
+    <div class="jumpbox" id="jumpBox">
+      <input id="jumpInput" type="number" placeholder="跳到第几天（可负数）" inputmode="numeric">
+      <button id="jumpGo">跳</button>
+    </div>
+
+    <p class="note" id="note">原始版：撑过 5 天即通关。考 0 分扣 40 血。</p>
+
+    <div class="footbar">
+      <button id="btnRestart">重新开始本局</button>
+      <button id="btnExport">导出存档包</button>
+      <button id="btnImport">导入存档</button>
+      <button id="btnBoard">排行榜</button>
+      <input type="file" id="fileInput" accept=".zip,.json,.txt" hidden>
+    </div>
+    <p class="saveHint">本局进度会自动保存，关掉网页也还在。导出的是压缩包，里面记着你的天数、难度和经历。</p>
+
+    <div class="gallery">
+      <div class="gtop">
+        <span>结局图鉴 · 都打出来过没有</span>
+        <span><b id="gCount">0 / 23</b></span>
+      </div>
+      <div class="glist" id="gList"></div>
+      <div class="best" id="bestList"></div>
+    </div>
+  </section>
+
+  <div class="lbmask" id="fbMask" hidden>
+    <div class="lbcard" role="dialog" aria-modal="true" aria-label="反馈">
+      <div class="lbtop">
+        <span>反馈 / 建议</span>
+        <button class="lbx" id="fbClose" aria-label="关闭">×</button>
+      </div>
+      <p class="lbtip">不用 GitHub 账号也能发。哪里不好玩、哪里出错、想加什么，都写这儿。</p>
+      <div class="lbform">
+        <input id="fbName" type="text" maxlength="20" placeholder="怎么称呼你（可留空）">
+        <input id="fbLink" type="text" maxlength="32" placeholder="联系账号（选填）：GitHub 名 / 论坛名">
+        <textarea id="fbText" maxlength="1000" rows="5" placeholder="……"></textarea>
+        <button id="fbSend" type="button">发送</button>
+      </div>
+      <p class="lbauthmsg" id="fbMsg"></p>
+      <button class="lbdel" id="fbMine" type="button">查看我的留言 / 作者有没有回复</button>
+      <div class="lblist" id="fbMineList" hidden></div>
+    </div>
+  </div>
+
+  <div class="inboxmask" id="inboxMask" hidden>
+    <div class="inboxcard" role="dialog" aria-modal="true" aria-label="投诉中心">
+      <div class="inboxtop"><span>投诉中心 · 最近 30 条</span><button class="lbx" id="inboxClose" aria-label="关闭">×</button></div>
+      <p class="lbtip">只有作者能看。回复会存在数据库里，不对外公开。</p>
+      <div id="inboxList">加载中…</div>
+    </div>
+  </div>
+
+  <div class="lbmask" id="lbMask" hidden>
+    <div class="lbcard" role="dialog" aria-modal="true" aria-label="无尽榜">
+      <div class="lbtop">
+        <span>排行榜 · 总榜</span>
+        <button class="lbx" id="lbClose" aria-label="关闭">×</button>
+      </div>
+      <p class="lbtip">按撑过的天数、走过的站数排。名字全服唯一，注册后这个 ID 就是你的。</p>
+      <div class="lbme" id="lbMe">还没登录，登录后才能上榜。</div>
+      <div class="lbname">
+        <input id="lbName" type="text" maxlength="4" placeholder="名字（最多 4 字）">
+        <input id="lbPwd" type="password" maxlength="16" placeholder="密码（4–16 位）">
+      </div>
+      <div class="lbacts">
+        <button id="lbReg">注册</button>
+        <button id="lbLogin">登录</button>
+      </div>
+      <p class="lbauthmsg" id="lbMsg"></p>
+      <button class="lbdel" id="lbDel">删除我的成绩（5 天冷静期）</button>
+      <div class="lbfilter" id="lbFilter">
+        <button type="button" data-m="" class="on">全部</button>
+        <button type="button" data-m="orig">原始</button>
+        <button type="button" data-m="revert">反转</button>
+        <button type="button" data-m="hard">困难</button>
+        <button type="button" data-m="extreme">极限</button>
+        <button type="button" data-m="run">跑路</button>
+        <button type="button" data-m="endless">无尽</button>
+      </div>
+      <div class="lblist" id="lbList">正在拉榜单…</div>
+    </div>
+  </div>
+
+  <footer>
+    网页版 v1.15 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    MIT License · Copyright (c) 2026 Sobsh562u<br>
+    你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
+    <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
+  </footer>
+</div>
+
+<script src="https://fastly.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var MODES = {
+    orig: {
+      label: "原始版",
+      hp: 100, max: 100, goal: 5,
+      intro: "【原始版】第 0 天。撑过 5 天，就能在 18 岁那天走出这个家门。",
+      note: "原始版：撑过 5 天即通关。考 0 分扣 40 血，60 分以下扣 15 血，60 分以上加 10 血。逃跑会被抓回来打一顿，扣 20 血。",
+      run: function (s) {
+        return { hp: -20, keepDay: true, tone: "bad",
+          text: "你想走出这个家门，刚把门拉开一条缝，妈妈一把把你拽回来，抄起拖鞋就打——扣 20 血，这一天没过成。" };
+      },
+      call: function () {
+        return { end: true, ending: "orig_call", lines: [
+          "你拨通了 110……",
+          "警察问清地址，几分钟后警车停在楼下。",
+          "警察把你妈妈带走了。",
+          "你名下有房，明天 18 岁生日——自由了。",
+          "隐藏结局达成：正义报警。"
+        ]};
+      },
+      exam: function (s, score) {
+        if (score === 0) return { hp: -40, text: "妈妈：你怎么考了鸭蛋？", tone: "bad" };
+        if (score < 60) return { hp: -15, text: "妈妈：你怎么又考砸了？", tone: "bad" };
+        return { hp: 10, text: "妈妈：这次考得不错，奖励你。", tone: "good" };
+      },
+      win: "第 5 天结束，你还活着。明天就是你 18 岁生日，你掏出钥匙，打开那套写着你名字的房子。结局达成：逃出这个家。"
+    },
+    revert: {
+      label: "反转版",
+      hp: 100, max: 100, goal: 6570,
+      intro: "【反转版】第 0 天。这里的规则全是反的，先别急着高兴。",
+      note: "反转版：规则全反，考砸加血、考好扣血；要撑到 6570 天（18 岁）才高考，分数越高结局越惨。",
+      run: function (s) {
+        var d = s.day;
+        if (d < 3650) return { text: "你太小了，妈妈根本追不上，你跑掉了。结局达成：小小年纪成功逃家。", end: true, ending: "revert_early" };
+        if (d < 6570) return { text: "半大孩子，跑了又回来了。", hp: 0, end: false };
+        return { text: "都 18 岁了才跑？妈妈就在门口等着，当场抓回。", end: true, ending: "revert_caught" };
+      },
+      call: function () {
+        return { end: true, ending: "revert_call", lines: ["警察来了，把你抓走了。", "结局达成：报警反被抓。"] };
+      },
+      exam: function (s, score) {
+        var 加血池 = [20, 40, 60, 80, 100], 扣血池 = [20, 40, 60, 80, 10000];
+        if (score < 60) return { hp: 加血池[Math.floor(Math.random() * 5)], text: "妈妈大喜：考砸了她反而放心。", tone: "good" };
+        return { hp: -扣血池[Math.floor(Math.random() * 5)], text: "妈妈暴怒：考好了她怕你太优秀。", tone: "bad" };
+      },
+      gaokao: function (score) {
+        if (score >= 700) return { id: "revert_cheat", text: "妈妈：考这么高？肯定作弊！拿鸡毛掸子追着打。结局达成：考太高被当成作弊打死了。" };
+        if (score >= 400) return { id: "revert_repeat", text: "考了 " + score + " 分，本科——但妈妈逼你复读，关在家里不许出门。结局达成：考上本科却失去自由。" };
+        if (score >= 200) return { id: "revert_college", text: "考了 " + score + " 分，大专。妈妈懒得管你了，你搬出去住。结局达成：成绩一般反而自由了。" };
+        return { id: "revert_free", text: "考了 " + score + " 分，妈妈气到晕倒，没人管你了。结局达成：考砸反而没人管，自由了。" };
+      },
+      win: ""
+    },
+    hard: {
+      label: "困难版",
+      hp: 50, max: 50, goal: 10,
+      intro: "【困难版】第 0 天。只有 50 点血，要熬 10 天。",
+      note: "困难版：血条只有 50，要撑 10 天。考 0 分扣 25 血，跑也有代价，报警没人来救。",
+      run: function (s) {
+        if (Math.random() < 0.2) return { hp: -10, text: "天没黑你不敢跑，被妈妈抓个正着，扣 10 血。", tone: "bad" };
+        return { hp: -5, text: "黑灯瞎火跑出门，又冷又饿，扣 5 血。", tone: "bad" };
+      },
+      call: function () {
+        return { end: true, ending: "hard_call", lines: ["你拨通 110，警察说：小孩子别乱打电话！", "结局达成：被当成恶作剧，没人来救你。"] };
+      },
+      exam: function (s, score) {
+        if (score === 0) return { hp: -25, text: "妈妈：鸭蛋？！跪墙角！", tone: "bad" };
+        if (score < 60) return { hp: -15, text: "妈妈：又不及格！", tone: "bad" };
+        if (score < 90) return { hp: 5, text: "妈妈：还行，别骄傲。", tone: "good" };
+        return { hp: 8, text: "妈妈：不错。", tone: "good" };
+      },
+      win: "你撑过了 10 天。18 岁生日，名下有房。结局达成：困难模式通关。"
+    },
+    limit: {
+      label: "极限版",
+      hp: 100, max: 100, goal: 5,
+      intro: "【极限版】第 0 天。扣血等于 100 减去分数，考砸一次可能就没了。",
+      note: "极限版：扣血 = 100 - 分数，分数越低掉得越狠；考 0 分爸爸直接解皮带打死，血再多也没用。撑过 5 天通关。",
+      run: function (s) {
+        return { hp: -5, text: "你没跑，但爸爸盯着你写作业到半夜，扣 5 血。", tone: "bad" };
+      },
+      call: function () {
+        return { end: true, ending: "limit_call", lines: [
+          "你拨通 110，接电话的是爸爸。",
+          "爸爸：还敢报警？回家再说。",
+          "结局达成：报警被爸爸逮住。"
+        ]};
+      },
+      exam: function (s, score) {
+        if (score === 0) {
+          return { die: true, tone: "bad",
+            text: "爸爸：你竟然考零蛋？！爸爸解下皮带……啪啪啪——结局达成：被皮带打死（强制结束）。" };
+        }
+        var dmg = 100 - score;
+        return { hp: -dmg, tone: score < 60 ? "bad" : "good",
+          text: (score < 60 ? "爸爸：这么点分？皮带伺候！" : "爸爸：还算像样，皮带放下了。") };
+      },
+      win: "你撑过了 5 天，18 岁生日，名下有房。结局达成：极限模式通关。"
+    },
+    run: {
+      label: "跑路版",
+      hp: 100, max: 100, goal: Infinity, money: true,
+      intro: "【跑路版】第 0 天。每天考试攒钱，够 60 块就能出门坐车。",
+      note: "跑路版：60 分以上才有钱（60–89 分 1–3 块，90 分以上 3–5 块），60 分以下不给钱还扣血。车票 50 + 买通弟弟 10 = 60 块才能出门。出门后过三站：幼儿园、学校、大学，等车会被袭击，打车 10 块安全通过。钱够了也可以一直待在家里，不走。",
+      exam: function (s, score) {
+        if (score === 0) return { hp: -40, text: "妈妈：鸭蛋？跪下！", tone: "bad" };
+        if (score < 60) return { hp: -15, text: "妈妈：又不及格，一分钱都别想要。", tone: "bad" };
+        var m = score >= 90 ? (3 + rand(3)) : (1 + rand(3));
+        return { money: m, text: "妈妈：考得还行，赏你 " + m + " 块。", tone: "good" };
+      },
+      call: function () {
+        return { ending: "run_call", lines: [
+          "你拨通 110，接电话的是派出所。",
+          "警察：你妈又打你了？这个月第几次了。",
+          "你：……第三次。",
+          "警察：我们过去一趟，但你要不要考虑先离开那个家？",
+          "电话挂了。楼下的车灯闪了一下，又灭了。"
+        ] };
+      },
+      win: ""
+    }
+  };
+
+  MODES.endless = {
+    label: "无尽版",
+    hp: 100, max: 100, goal: Infinity, money: true,
+    intro: "【无尽版】第 0 天。考够 60 分才有钱出门，出门后四站一圈接一圈，没有尽头。",
+    note: "无尽版：幼儿园 → 学校 → 大学 → 终点站，一圈接一圈，没有通关。每进一圈，打车费 +5 块、被逮住多扣 10 血、平安率 −5%（最低 5%）。终点站是补给站：扣 15 血、平安 40%，过了它就进下一圈。血条归零就结算撑过的天数和站数。",
+    exam: null, call: null, win: ""
+  };
+
+  MODES.endless.exam = MODES.run.exam;
+  MODES.endless.call = MODES.run.call;
+
+  // ===== 结局图鉴 =====
+  var ENDING_KEY = "escapeHome_endings_v1";
+  var BEST_KEY = "escapeHome_best_v1";
+
+  var ENDINGS = {
+    orig_win:      { name: "逃出这个家", desc: "原始版 · 撑过 5 天" },
+    orig_call:     { name: "正义报警", desc: "原始版 · 报警，警察把妈妈带走" },
+    revert_early:  { name: "小小年纪成功逃家", desc: "反转版 · 3650 天之前就跑" },
+    revert_caught: { name: "门口被抓", desc: "反转版 · 拖到 18 岁才跑" },
+    revert_call:   { name: "报警反被抓", desc: "反转版 · 报警，抓的是你" },
+    revert_cheat:  { name: "被当成作弊打死", desc: "反转版 · 高考 700 分以上" },
+    revert_repeat: { name: "考上本科却失去自由", desc: "反转版 · 高考 400–699" },
+    revert_college:{ name: "成绩一般反而自由", desc: "反转版 · 高考 200–399" },
+    revert_free:   { name: "考砸反而没人管", desc: "反转版 · 高考 200 以下" },
+    hard_win:      { name: "困难模式通关", desc: "困难版 · 撑过 10 天" },
+    hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
+    limit_win:     { name: "极限模式通关", desc: "极限版 · 撑过 5 天" },
+    limit_call:    { name: "报警被爸爸逮住", desc: "极限版 · 报警，接电话的是爸爸" },
+    limit_die:     { name: "被皮带打死", desc: "极限版 · 考 0 分" },
+    died:          { name: "被打死", desc: "血条归零" },
+    paradox:       { name: "祖父悖论", desc: "作者模式跳到还没出生的年代" },
+    egg:           { name: "受精卵体外死亡", desc: "作者模式跳到负数（原始版）" },
+    run_win:       { name: "终点站", desc: "跑路版 · 过三站，走出城" },
+    run_die:       { name: "倒在路上", desc: "跑路版 · 站台上血条归零" },
+    run_rich:      { name: "攒够了也不走", desc: "跑路版 · 钱够 60 还留在家里" },
+    endless_die:   { name: "倒在站台上", desc: "无尽版 · 血条归零" },
+    run_hot:       { name: "坐过站", desc: "跑路版 · 终点站不下车，一路坐进很热的地方" },
+    run_call:      { name: "报警了，但没人送你走", desc: "跑路版 · 报警，警察来了也没人管" }
+  };
+
+  function getEndings() {
+    try {
+      var a = JSON.parse(localStorage.getItem(ENDING_KEY) || "[]");
+      return Array.isArray(a) ? a : [];
+    } catch (e) { return []; }
+  }
+
+  function unlockEnding(id) {
+    if (!id || !ENDINGS[id]) return;
+    var got = getEndings();
+    if (got.indexOf(id) >= 0) return;
+    got.push(id);
+    try { localStorage.setItem(ENDING_KEY, JSON.stringify(got)); } catch (e) {}
+    line("🏁 新结局解锁：" + ENDINGS[id].name + "（" + got.length + " / " + Object.keys(ENDINGS).length + "）", "end");
+    renderGallery();
+  }
+
+  function getBest() {
+    try { return JSON.parse(localStorage.getItem(BEST_KEY) || "{}") || {}; } catch (e) { return {}; }
+  }
+
+  function recordBest(mode, day, hp) {
+    var b = getBest(), cur = b[mode];
+    if (!cur || day < cur.day || (day === cur.day && hp > cur.hp)) {
+      b[mode] = { day: day, hp: hp };
+      try { localStorage.setItem(BEST_KEY, JSON.stringify(b)); } catch (e) {}
+    }
+    renderBest();
+  }
+
+  function renderBest() {
+    var b = getBest(), out = [];
+    ["orig", "revert", "hard", "limit", "run"].forEach(function (m) {
+      var v = b[m];
+      out.push(MODES[m].label + "：" + (v ? "最快第 " + v.day + " 天通关，剩 " + v.hp + " 血" : "还没通关"));
+    });
+    els.bestList.textContent = out.join(" · ");
+  }
+
+  function renderGallery() {
+    var got = getEndings(), ids = Object.keys(ENDINGS);
+    els.gList.innerHTML = "";
+    ids.forEach(function (id) {
+      var e = ENDINGS[id], on = got.indexOf(id) >= 0;
+      var box = document.createElement("div");
+      box.className = "gitem " + (on ? "on" : "lock");
+      var mk = document.createElement("div");
+      mk.className = "mk";
+      mk.textContent = on ? "✓" : "·";
+      var tx = document.createElement("div");
+      var nm = document.createElement("div");
+      nm.className = "nm";
+      nm.textContent = on ? e.name : "？？？";
+      var ds = document.createElement("div");
+      ds.className = "ds";
+      ds.textContent = on ? e.desc : "还没打出来";
+      tx.appendChild(nm);
+      tx.appendChild(ds);
+      box.appendChild(mk);
+      box.appendChild(tx);
+      els.gList.appendChild(box);
+    });
+    els.gCount.textContent = got.length + " / " + ids.length;
+    renderBest();
+  }
+
+  var state = null;
+  var els = {
+    log: document.getElementById("log"),
+    hpNum: document.getElementById("hpNum"),
+    dayNum: document.getElementById("dayNum"),
+    hpFill: document.getElementById("hpFill"),
+    note: document.getElementById("note"),
+    jump: document.getElementById("jumpBox"),
+    jumpInput: document.getElementById("jumpInput"),
+    btnExam: document.getElementById("btnExam"),
+    btnRun: document.getElementById("btnRun"),
+    btnCall: document.getElementById("btnCall"),
+    btnPaper: document.getElementById("btnPaper"),
+    btnAuthor: document.getElementById("btnAuthor"),
+    moneyWrap: document.getElementById("moneyWrap"),
+    moneyNum: document.getElementById("moneyNum"),
+    loopWrap: document.getElementById("loopWrap"),
+    loopNum: document.getElementById("loopNum"),
+    mainActs: document.getElementById("mainActs"),
+    stationBar: document.getElementById("stationBar"),
+    btnWait: document.getElementById("btnWait"),
+    btnTaxi: document.getElementById("btnTaxi"),
+    gList: document.getElementById("gList"),
+    gCount: document.getElementById("gCount"),
+    bestList: document.getElementById("bestList"),
+    btnBoard: document.getElementById("btnBoard"),
+    btnFeedback: document.getElementById("btnFeedback"),
+    fbMask: document.getElementById("fbMask"),
+    fbName: document.getElementById("fbName"),
+    fbLink: document.getElementById("fbLink"),
+    fbMine: document.getElementById("fbMine"),
+    fbMineList: document.getElementById("fbMineList"),
+    fbText: document.getElementById("fbText"),
+    fbSend: document.getElementById("fbSend"),
+    fbMsg: document.getElementById("fbMsg"),
+    fbClose: document.getElementById("fbClose"),
+    lbMask: document.getElementById("lbMask"),
+    lbClose: document.getElementById("lbClose"),
+    lbList: document.getElementById("lbList"),
+    lbFilter: document.getElementById("lbFilter"),
+    btnInbox: document.getElementById("btnInbox"),
+    inboxMask: document.getElementById("inboxMask"),
+    inboxList: document.getElementById("inboxList"),
+    inboxClose: document.getElementById("inboxClose"),
+    lbName: document.getElementById("lbName"),
+    lbPwd: document.getElementById("lbPwd"),
+    lbReg: document.getElementById("lbReg"),
+    lbLogin: document.getElementById("lbLogin"),
+    lbMe: document.getElementById("lbMe"),
+    lbMsg: document.getElementById("lbMsg"),
+    lbDel: document.getElementById("lbDel")
+  };
+
+  function rand(n) { return Math.floor(Math.random() * n); }
+
+  function line(text, cls) {
+    if (!state.log) state.log = [];
+    state.log.push({ t: text, c: cls || "" });
+    if (state.log.length > 200) state.log = state.log.slice(-200);
+    renderLine(text, cls);
+  }
+
+  function renderLine(text, cls) {
+    var p = document.createElement("p");
+    if (cls) p.className = cls;
+    p.textContent = text;
+    els.log.appendChild(p);
+    els.log.scrollTop = els.log.scrollHeight;
+  }
+
+  var SAVE_PREFIX = "escapeHome_save_v2_";
+
+  function saveState() {
+    if (!state) return;
+    try {
+      localStorage.setItem(SAVE_PREFIX + state.mode, JSON.stringify({
+        hp: state.hp, day: state.day, over: state.over, log: state.log,
+        money: state.money || 0, stage: state.stage || 0, paper: state.paperUsed ? 1 : 0, shield: state.shield ? 1 : 0
+      }));
+    } catch (e) {}
+  }
+
+  function loadSave(mode) {
+    try {
+      var raw = localStorage.getItem(SAVE_PREFIX + mode);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || typeof d.hp !== "number" || typeof d.day !== "number") return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function clearSave(mode) {
+    try { localStorage.removeItem(SAVE_PREFIX + mode); } catch (e) {}
+  }
+
+  function updateStats() {
+    els.hpNum.textContent = state.hp;
+    els.dayNum.textContent = state.day;
+    if (state.cfg.money) {
+      els.moneyWrap.hidden = false;
+      els.moneyNum.textContent = state.money || 0;
+    } else {
+      els.moneyWrap.hidden = true;
+    }
+    var rideMode = state.mode === "run" || state.mode === "endless";
+    var inStation = rideMode && (state.stage || 0) >= 1 && (state.stage || 0) <= 4 && !state.over;
+    var terminal = rideMode && state.stage === 4 && !state.over;
+    if (state.mode === "endless") {
+      els.loopWrap.hidden = false;
+      els.loopNum.textContent = state.loop || 1;
+    } else {
+      els.loopWrap.hidden = true;
+    }
+    els.stationBar.hidden = !inStation;
+    els.mainActs.style.display = inStation ? "none" : "";
+    if (terminal && state.mode === "run") {
+      els.btnWait.textContent = "走了（下车出城）";
+      els.btnTaxi.textContent = "再坐一站（坐过站）";
+    } else if (terminal) {
+      els.btnWait.textContent = "补给后进下一圈";
+      els.btnTaxi.textContent = "打车进下一圈（" + endlessTaxiCost() + " 块）";
+    } else if (state.mode === "endless") {
+      els.btnWait.textContent = "等车";
+      els.btnTaxi.textContent = "打车（" + endlessTaxiCost() + " 块）";
+    } else {
+      els.btnWait.textContent = "等车";
+      els.btnTaxi.textContent = "打车（10 块）";
+    }
+    var pct = Math.max(0, Math.min(100, (state.hp / state.cfg.max) * 100));
+    els.hpFill.style.width = pct + "%";
+    els.hpFill.className = "hpfill" + (pct <= 30 ? " low" : "");
+    saveState();
+  }
+
+  var EVENTS = [
+    { hp: 5, text: "妈妈接了个电话，出门半小时。你趴在桌上，喘了口气。" },
+    { hp: 5, text: "邻居阿姨敲门，塞给你一包饼干。你没敢说谢谢。" },
+    { hp: -5, text: "妈妈翻你的书包，翻出一张皱巴巴的测验卷，又数落了你一顿。" },
+    { hp: 0, text: "楼下有人放歌，你趴在窗台上听完了整首。这一刻没人管你。" },
+    { hp: -8, text: "半夜停电，你摸黑找手电筒，膝盖磕在桌角上。" },
+    { hp: 3, text: "你在作业本背面偷偷画了一扇门，画完心里松了一点。" },
+    { hp: 0, text: "妈妈突然问你：你是不是想离开这个家？你没敢回答。" },
+    { hp: 4, text: "雨下了一整天，妈妈没来查作业，你睡了个囫囵觉。" }
+  ];
+
+  function maybeEvent() {
+    if (Math.random() > 0.45) return false;
+    var ev = EVENTS[rand(EVENTS.length)];
+    line(ev.text, ev.hp > 0 ? "good" : (ev.hp < 0 ? "bad" : "day"));
+    if (ev.hp > 0) line("恢复 " + ev.hp + " 血。", "good");
+    if (ev.hp < 0) line("扣 " + (-ev.hp) + " 血。", "bad");
+    if (ev.hp) {
+      if (applyHp(ev.hp)) return true;
+    }
+    return false;
+  }
+
+  function reset(mode, forceNew) {
+    var cfg = MODES[mode];
+    state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1 };
+    els.log.innerHTML = "";
+    els.jump.classList.remove("show");
+    els.note.textContent = cfg.note;
+    renderGallery();
+
+    var saved = forceNew ? null : loadSave(mode);
+    if (saved && !saved.over && saved.log && saved.log.length) {
+      state.hp = saved.hp;
+      state.day = saved.day;
+      state.money = saved.money || 0;
+      state.stage = saved.stage || 0;
+      state.loop = saved.loop || 1;
+      state.paperUsed = !!saved.paper;
+      state.shield = !!saved.shield;
+      state.log = saved.log;
+      state.log.forEach(function (it) { renderLine(it.t, it.c); });
+      renderLine("（接着上一局继续 · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + cfg.max + (cfg.money ? " · 钱 " + state.money + " 块" : "") + "）", "day");
+      setButtons(false);
+      updateStats();
+      return;
+    }
+    if (saved && saved.over) clearSave(mode);
+
+    line(cfg.intro, "day");
+    line("———— 第 0 天 ————", "day");
+    setButtons(false);
+    updateStats();
+    saveState();
+  }
+
+  function setButtons(disabled) {
+    [els.btnExam, els.btnRun, els.btnCall, els.btnAuthor, els.btnWait, els.btnTaxi].forEach(function (b) { b.disabled = disabled; });
+  }
+
+  function clamp() {
+    if (state.hp > state.cfg.max) state.hp = state.cfg.max;
+    if (state.hp < 0) state.hp = 0;
+  }
+
+  // ===== 联网排行榜（Supabase）=====
+  var SB_URL = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/scores";
+  var SB_KEY = "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET";
+
+  function myCid() {
+    var c = localStorage.getItem("ehq_cid");
+    if (!c || c.length < 8) {
+      c = "c" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("ehq_cid", c);
+    }
+    return c;
+  }
+
+  function myName() {
+    return localStorage.getItem("ehq_name") || "";
+  }
+
+  function isReg() { return localStorage.getItem("ehq_reg") === "1" && !!myName(); }
+
+  function myPid() { return localStorage.getItem("ehq_pid") || ""; }
+
+  function isReg() { return !!localStorage.getItem("ehq_pid") && !!myName(); }
+
+  function saveMe(d) {
+    localStorage.setItem("ehq_name", d.name);
+    localStorage.setItem("ehq_cid", d.client_id);
+    localStorage.setItem("ehq_pid", d.player_id);
+    localStorage.setItem("ehq_reg", "1");
+    showMe();
+  }
+
+  function msg(t) { els.lbMsg.textContent = t; }
+
+  function showMe() {
+    if (isReg()) {
+      els.lbMe.textContent = "已登录：" + myName() + " · 玩家ID " + myPid();
+    } else {
+      els.lbMe.textContent = "还没登录，注册后才有玩家 ID，才能上榜。";
+    }
+  }
+
+  function callRpc(fn, name, pwd) {
+    return fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: name, p_password: pwd })
+    }).then(function (r) { return r.json(); });
+  }
+
+  /* 注册：名字 + 密码，服务器分配 6 位玩家 ID，密码只存 bcrypt 哈希 */
+  function doRegister(name, pwd) {
+    return callRpc("register_player", name, pwd).then(function (r) {
+      if (!r || !r.ok) { msg((r && r.msg) || "注册失败"); return false; }
+      saveMe(r);
+      msg("注册成功，你的玩家 ID 是 " + r.player_id + "。");
+      return true;
+    });
+  }
+
+  /* 登录：服务器核对密码哈希 */
+  function doLogin(name, pwd) {
+    return callRpc("login_player", name, pwd).then(function (r) {
+      if (!r || !r.ok) { msg((r && r.msg) || "登录失败"); return false; }
+      saveMe(r);
+      msg("登录成功，欢迎回来 " + r.name + "。");
+      return true;
+    });
+  }
+
+  function submitScore(endingId) {
+    if (state.cheat) {
+      line("这局用过作者模式，按规矩不上榜。", "day");
+      return;
+    }
+    if (!isReg()) {
+      line("还没登录，这局成绩不上榜。点「排行榜」注册一个玩家 ID 就能上榜。", "day");
+      return;
+    }
+    fetch(SB_URL.replace("/scores", "/rpc/submit_score"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        p_name: myName(),
+        p_client_id: myCid(),
+        p_mode: state.mode,
+        p_ending: String(endingId || "died").slice(0, 20),
+        p_days: Math.max(0, Math.min(20000, state.day || 0)),
+        p_stations: Math.max(0, Math.min(20000, (state.mode === "endless" ? (state.loop || 1) * 4 : (state.stage || 0)))),
+        p_money: Math.max(0, Math.min(1000000, state.money || 0))
+      })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (!r || !r.ok) { line("这局没上榜：" + ((r && r.msg) || "网络问题"), "day"); return; }
+      if (r.updated) line("上榜了：" + r.days + " 天 · " + r.stations + " 站（榜上只留你最好的一条）", "day");
+      else line("这局没超过你的最好成绩（" + r.days + " 天 · " + r.stations + " 站），榜上不变。", "day");
+    }).catch(function () { line("榜单连不上，这局先没上传。", "day"); });
+  }
+
+  var LB_FILTER = "";
+  var LB_MODENAME = { orig: "原始", revert: "反转", hard: "困难", extreme: "极限", run: "跑路", endless: "无尽" };
+
+  function lbUrl() {
+    var q = SB_URL + "?select=name,player_id,mode,days,stations,money&deleted_at=is.null&order=days.desc,stations.desc&limit=20";
+    if (LB_FILTER) q += "&mode=eq." + LB_FILTER;
+    return q;
+  }
+
+  function openBoard() {
+    els.lbMask.hidden = false;
+    els.lbName.value = localStorage.getItem("ehq_name") || "";
+    showMe();
+    loadBoard();
+  }
+
+  function loadBoard() {
+    els.lbList.textContent = "正在拉榜单…";
+    fetch(lbUrl(), {
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+    }).then(function (r) { return r.json(); }).then(function (rows) {
+      if (!Array.isArray(rows) || !rows.length) {
+        els.lbList.textContent = LB_FILTER ? "这个难度还没人上榜。" : "还没有人上榜，你上第一个吧。";
+        return;
+      }
+      els.lbList.innerHTML = "";
+      rows.forEach(function (it, i) {
+        var d = document.createElement("div");
+        d.className = "lbrow";
+        var b = document.createElement("b"); b.textContent = (i + 1);
+        var sp = document.createElement("span");
+        sp.textContent = (it.player_id ? it.player_id + " " : "") + (it.name || "匿名");
+        if (it.mode && LB_MODENAME[it.mode]) {
+          var tag = document.createElement("em");
+          tag.className = "lbmode";
+          tag.textContent = LB_MODENAME[it.mode];
+          sp.appendChild(tag);
+        }
+        var em = document.createElement("i");
+        em.textContent = (it.days || 0) + " 天 · " + (it.stations || 0) + " 站";
+        d.appendChild(b); d.appendChild(sp); d.appendChild(em);
+        els.lbList.appendChild(d);
+      });
+    }).catch(function () { els.lbList.textContent = "榜单暂时拉不下来，等会儿再试。"; });
+  }
+
+  function gameOver(reason, endingId) {
+    state.over = true;
+    setButtons(true);
+    if (reason) line(reason, "end");
+    line("这局结束了。点「重新开始本局」再玩一次。", "day");
+    unlockEnding(endingId);
+    saveState();
+    submitScore(endingId);
+  }
+
+  function applyHp(delta) {
+    if (delta < 0 && state.shield) {
+      state.shield = false;
+      line("100 分试卷挡在中间——妈妈一看这分数，手停在半空，这次没打下来。", "good");
+      updateStats();
+      saveState();
+      return false;
+    }
+    state.hp += delta;
+    clamp();
+    updateStats();
+    if (state.hp <= 0) {
+      gameOver("血条归零，你被打死了。GAME OVER。", "died");
+      return true;
+    }
+    return false;
+  }
+
+  function nextDay() {
+    if (state.mode === "run" && (state.money || 0) >= 60) {
+      unlockEnding("run_rich");
+    }
+    if (state.mode === "revert" && state.day >= 6570) {
+      var gscore = rand(751);
+      line("高考！你考了 " + gscore + " 分！", "day");
+      var g = state.cfg.gaokao(gscore);
+      gameOver(g.text, g.id);
+      return;
+    }
+    state.day += 1;
+    updateStats();
+    if (state.day >= state.cfg.goal && state.mode !== "revert") {
+      recordBest(state.mode, state.day, state.hp);
+      gameOver(state.cfg.win, state.mode + "_win");
+      return;
+    }
+    line("———— 第 " + state.day + " 天 ————", "day");
+  }
+
+  function doExam() {
+    if (state.over) return;
+    var score = rand(101);
+    line("你考了 " + score + " 分。", "day");
+    var r = state.cfg.exam(state, score);
+    if (r.die) { line(r.text, r.tone || "bad"); gameOver("游戏结束。", "limit_die"); return; }
+    if (r.money) { state.money = (state.money || 0) + r.money; }
+    if (r.money) {
+      line(r.text + "（钱： +" + r.money + "，现在 " + state.money + " 块）", r.tone || "good");
+    } else if (typeof r.hp === "number" && r.hp !== 0) {
+      if (r.hp < 0) line(r.text + " 扣 " + (-r.hp) + " 血。", "bad");
+      else line(r.text + " 加 " + r.hp + " 血。", "good");
+      if (applyHp(r.hp)) return;
+    } else {
+      line(r.text, r.tone);
+    }
+    line("血条 " + state.hp + " / " + state.cfg.max, "day");
+    if (maybeEvent()) return;
+    nextDay();
+  }
+
+  var STATIONS = [
+    { name: "幼儿园站", hp: 20, safe: 0.25,
+      wait: "站台边上蹲着一群小孩，尖叫着绕着你跑，声音直接钻进脑子里。",
+      good: "你从孩子堆里挤了过去，衣服被拽歪了，人没事。" },
+    { name: "学校站", hp: 30, safe: 0.20,
+      wait: "你小学的班主任正站在站牌底下，一眼就认出你了。",
+      good: "你把帽檐压得很低贴着墙走，班主任正忙着训别的学生，没追上来。" },
+    { name: "大学站", hp: 40, safe: 0.15,
+      wait: "你哥在站台上抽烟，看见你，把烟一扔就冲过来。",
+      good: "公交刚好进站，你混在人堆里挤上去，你哥扑了个空。" },
+    { name: "终点站", hp: 0, safe: 1, terminal: true }
+  ];
+
+  function endlessTaxiCost() { return 10 + ((state.loop || 1) - 1) * 5; }
+
+  function endlessStation() {
+    var base = STATIONS[(state.stage || 1) - 1];
+    if (!base) return null;
+    if (base.terminal) {
+      return { name: "终点站（补给站）", hp: 15, safe: 0.40, terminal: true,
+        wait: "检票员走过来，伸手：票。",
+        good: "你把票举起来，检票员看了一眼，顺手从兜里摸出半瓶水塞给你。" };
+    }
+    var l = (state.loop || 1) - 1;
+    return { name: base.name, hp: base.hp + l * 10, safe: Math.max(0.05, base.safe - l * 0.05),
+             wait: base.wait, good: base.good };
+  }
+
+  function stationOps() {
+    if (state.mode === "endless") return endlessStation();
+    return STATIONS[(state.stage || 1) - 1];
+  }
+
+  function passStation() {
+    if (state.mode === "endless") {
+      state.stage = (state.stage || 1) + 1;
+      if (state.stage === 4) {
+        line("车报站：终点站到了。检票员站在门口。", "day");
+        updateStats(); saveState(); return;
+      }
+      if (state.stage > 4) {
+        state.loop = (state.loop || 1) + 1;
+        state.stage = 1;
+        line("———— 第 " + state.loop + " 圈 · 打车 " + endlessTaxiCost() + " 块，被逮住要扣 " + endlessStation().hp + " 血 ————", "day");
+        updateStats(); saveState(); return;
+      }
+      line("过了这一站，下一站：" + endlessStation().name + "。", "day");
+      updateStats(); saveState(); return;
+    }
+    state.stage = (state.stage || 1) + 1;
+    if (state.stage === 4) {
+      line("车报站：终点站到了。车门开着，外面是凉的夜风。", "day");
+      line("下车就走——这一步是真的出城。要是继续坐着不动，就坐过站了。", "day");
+      updateStats();
+      saveState();
+      return;
+    }
+    line("过了这一站，下一站：" + STATIONS[state.stage - 1].name + "。", "day");
+    updateStats();
+    saveState();
+  }
+
+  /* 终点站：下车出城 */
+  function leaveHere() {
+    gameOver("你在终点站下了车。出城的公路在眼前展开，天亮的时候你已经不在这个城市了。结局达成：终点站。", "run_win");
+  }
+
+  /* 终点站：继续坐，坐过站 */
+  function ridePast() {
+    state.stage = 5;
+    line("你没下车。车门关上，车一直往前开。", "day");
+    line("路边的树越来越少，车窗开始烫手，报站的声音也说不出站名了。", "bad");
+    line("等你终于下来，脚下是一片晒得发白的地，墙上写着四个字：欢迎过站。", "bad");
+    updateStats();
+    gameOver("你坐过站了，并且这里没有回头的车。结局达成：坐过站。", "run_hot");
+  }
+
+  function doWait() {
+    if (state.over) return;
+    var st = stationOps();
+    if (!st) return;
+    if (st.terminal && state.mode === "endless") {
+      line(st.wait, "day");
+      if (Math.random() < st.safe) {
+        line(st.good, "good");
+      } else {
+        line("票没找到，被扣在站里，扣 15 血。", "bad");
+        if (applyHp(-15)) { gameOver("你倒在终点站的检票口。GAME OVER。", "endless_die"); return; }
+      }
+      state.stage = 5; passStation(); return;
+    }
+    if (st.terminal) { leaveHere(); return; }
+    line(st.wait, "day");
+    if (Math.random() < st.safe) {
+      line(st.good, "good");
+    } else {
+      line("被逮住了，扣 " + st.hp + " 血。", "bad");
+      if (applyHp(-st.hp)) {
+        gameOver("你倒在" + st.name + "的站台上。GAME OVER。", "run_die");
+        return;
+      }
+    }
+    passStation();
+  }
+
+  function doTaxi() {
+    if (state.over) return;
+    var st = stationOps();
+    if (!st) return;
+    if (st.terminal && state.mode !== "endless") { ridePast(); return; }
+    var cost = state.mode === "endless" ? endlessTaxiCost() : 10;
+    if ((state.money || 0) < cost) {
+      line("司机看了看你手里的钱，摆摆手开走了。这一站只能等公交。", "bad");
+      return;
+    }
+    state.money -= cost;
+    line("你招手拦了辆出租，塞过去 " + cost + " 块，司机一脚油门直接把你送过这一站。", "good");
+    updateStats();
+    passStation();
+  }
+
+  function runHome() {
+    var money = state.money || 0;
+    if (money >= 60) {
+      state.money -= 60;
+      line("你把 50 块塞进售票窗口，又给了弟弟 10 块。弟弟数了数，没吭声，把门开了一条缝。", "good");
+      line("你走出家门，夜风灌进领口，公交站牌就在街口。", "day");
+      line("从这里开始，等车不要钱，但那几站都是熟人；打车 10 块，司机直接把你送过去。", "day");
+      state.stage = 1;
+      updateStats();
+      saveState();
+      return;
+    }
+    if (money >= 50) {
+      line("你攥着 50 块去买票，弟弟横在门口：没好处费，别想走。", "bad");
+      line("扣 10 血。", "bad");
+      if (applyHp(-10)) return;
+    } else {
+      line("你想走出这个家门，刚把门拉开一条缝，妈妈一把把你拽回来，抄起拖鞋就打——扣 20 血，这一天没过成。", "bad");
+      if (applyHp(-20)) return;
+    }
+    updateStats();
+    saveState();
+  }
+
+  function doRun() {
+    if (state.over) return;
+    if (state.mode === "run" || state.mode === "endless") { runHome(); return; }
+    var r = state.cfg.run(state);
+    if (r.lines) {
+      r.lines.forEach(function (t) { line(t, "end"); });
+      gameOver("游戏结束。");
+      return;
+    }
+    line(r.text, r.tone || "bad");
+    if (r.end) { gameOver("游戏结束。", r.ending); return; }
+    if (r.hp) { if (applyHp(r.hp)) return; }
+    if (r.hp && r.keepDay) return;
+    if (maybeEvent()) return;
+    nextDay();
+  }
+
+  function doCall() {
+    if (state.over) return;
+    if (typeof state.cfg.call !== "function") return;
+    var r = state.cfg.call(state);
+    r.lines.forEach(function (t) { line(t, "day"); });
+    gameOver("游戏结束。", r.ending);
+  }
+
+  els.btnWait.addEventListener("click", doWait);
+  els.btnTaxi.addEventListener("click", doTaxi);
+  els.btnPaper.addEventListener("click", function () {
+    if (!state || state.over) return;
+    if (state.paperUsed) { line("这张 100 分试卷这局已经用掉了，全局只能交一次。", "day"); return; }
+    state.paperUsed = true;
+    state.shield = true;
+    state.hp = Math.min(state.cfg.max, state.hp + 100);
+    updateStats();
+    saveState();
+    line("你交上来一张 100 分试卷。血条补了 100（现在 " + state.hp + " / " + state.cfg.max + "），下一巴掌打不下来。", "good");
+  });
+
+  els.btnExam.addEventListener("click", doExam);
+  els.btnRun.addEventListener("click", doRun);
+  els.btnCall.addEventListener("click", doCall);
+  els.lbFilter.addEventListener("click", function (e) {
+    var t = e.target.closest("button[data-m]");
+    if (!t) return;
+    LB_FILTER = t.getAttribute("data-m") || "";
+    Array.prototype.forEach.call(els.lbFilter.children, function (b) {
+      b.classList.toggle("on", b === t);
+    });
+    loadBoard();
+  });
+  els.btnBoard.addEventListener("click", openBoard);
+
+  els.btnFeedback.addEventListener("click", function () { els.fbMask.hidden = false; });
+  els.fbClose.addEventListener("click", function () { els.fbMask.hidden = true; });
+  els.fbMask.addEventListener("click", function (e) { if (e.target === els.fbMask) els.fbMask.hidden = true; });
+  els.fbMine.addEventListener("click", function () {
+    var cid = myCid();
+    els.fbMineList.hidden = false;
+    els.fbMineList.textContent = "正在查…";
+    fetch(SB_URL.replace("/scores", "/rpc/my_feedback"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_client_id: cid })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (!r || !r.ok) { els.fbMineList.textContent = (r && r.msg) || "查不到"; return; }
+      var rows = r.rows || [];
+      if (!rows.length) { els.fbMineList.textContent = "这台设备还没发过留言。"; return; }
+      els.fbMineList.innerHTML = "";
+      rows.forEach(function (it) {
+        var d = document.createElement("div");
+        d.className = "lbrow";
+        var sp = document.createElement("span");
+        sp.style.whiteSpace = "pre-wrap";
+        sp.textContent = (it.created_at || "").slice(0, 16).replace("T", " ") + "｜" + it.content;
+        var em = document.createElement("i");
+        em.textContent = it.reply ? "作者回复：" + it.reply : "还没回复";
+        em.style.whiteSpace = "pre-wrap";
+        d.appendChild(sp); d.appendChild(em);
+        els.fbMineList.appendChild(d);
+      });
+    }).catch(function () { els.fbMineList.textContent = "连不上服务器"; });
+  });
+
+  els.fbSend.addEventListener("click", function () {
+    var t = (els.fbText.value || "").trim();
+    if (t.length < 2) { els.fbMsg.textContent = "多写几个字吧。"; return; }
+    els.fbMsg.textContent = "发送中…";
+    fetch(SB_URL.replace("/scores", "/rpc/submit_feedback"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: els.fbName.value || "", p_content: t, p_link: els.fbLink.value || "", p_client_id: myCid() })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      els.fbMsg.textContent = (r && r.msg) || "发送失败";
+      if (r && r.ok) { els.fbText.value = ""; els.fbName.value = ""; els.fbLink.value = ""; }
+    }).catch(function () { els.fbMsg.textContent = "网络不通，稍后再试"; });
+  });
+  els.lbClose.addEventListener("click", function () { els.lbMask.hidden = true; });
+  els.lbMask.addEventListener("click", function (e) { if (e.target === els.lbMask) els.lbMask.hidden = true; });
+  els.lbReg.addEventListener("click", function () {
+    var n = (els.lbName.value || "").trim().slice(0, 4);
+    var pw = (els.lbPwd.value || "");
+    if (!n) { msg("先填名字。"); return; }
+    if (pw.length < 4) { msg("密码至少 4 位。"); return; }
+    if (isReg()) { msg("你已经注册了，名字不能改。"); return; }
+    msg("注册中…");
+    doRegister(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
+  });
+
+  els.lbDel.addEventListener("click", function () {
+    if (!isReg()) { msg("先登录再删。"); return; }
+    if (!window.confirm("删掉你的上榜成绩？下架后 5 天内还能反悔（重打一局会覆盖），5 天后彻底删除。")) return;
+    msg("提交删除…");
+    fetch(SB_URL.replace("/scores", "/rpc/delete_my_score"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: myName(), p_client_id: myCid() })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      msg((r && r.msg) || "删除失败");
+      if (r && r.ok) openBoard();
+    }).catch(function () { msg("网络不通，稍后再试"); });
+  });
+
+  els.lbLogin.addEventListener("click", function () {
+    var n = (els.lbName.value || "").trim().slice(0, 4);
+    var pw = (els.lbPwd.value || "");
+    if (!n || !pw) { msg("名字和密码都要填。"); return; }
+    msg("登录中…");
+    doLogin(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
+  });
+
+  document.getElementById("btnRestart").addEventListener("click", function () {
+    clearSave(state.mode);
+    reset(state.mode, true);
+    line("———— 重新开始 ————", "day");
+    saveState();
+  });
+
+  // ===== 存档包：导出 / 导入 =====
+  function buildPack() {
+    return {
+      game: "逃家游戏 Escape from Home 网页版",
+      packVersion: 2,
+      mode: state.mode,
+      modeLabel: state.cfg.label,
+      day: state.day,
+      hp: state.hp,
+      max: state.cfg.max,
+      savedAt: new Date().toLocaleString("zh-CN"),
+      log: state.log,
+      money: (state.cfg.money ? (state.money || 0) : undefined),
+      stage: (state.cfg.money ? (state.stage || 0) : undefined)
+    };
+  }
+
+  function packToText(p) {
+    var lines = [
+      "逃家游戏 · 存档包",
+      "导出时间：" + p.savedAt,
+      "难度：" + p.modeLabel,
+      "进度：第 " + p.day + " 天",
+      "血条：" + p.hp + " / " + p.max,
+      "",
+      "—— 这段时间你经历过 ——"
+    ];
+    (p.log || []).forEach(function (it, i) {
+      lines.push((i + 1) + ". " + it.t);
+    });
+    return lines.join("\n");
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 800);
+  }
+
+  document.getElementById("btnExport").addEventListener("click", function () {
+    if (state.over) {
+      line("这局已经结束了，重新开一局再导出吧。", "bad");
+      return;
+    }
+    var pack = buildPack();
+    var base = "逃家游戏存档-" + pack.modeLabel + "-第" + pack.day + "天";
+    var pwd = window.prompt("给存档设个密码？（留空＝不加密，直接发给别人就能接着玩）", "");
+    if (pwd === null) return;
+    pwd = pwd.trim();
+
+    var ready;
+    if (pwd) {
+      if (!window.crypto || !crypto.subtle) {
+        line("这个页面不在安全环境（没 https），加密用不了，改导出成明文存档。", "bad");
+        ready = Promise.resolve(JSON.stringify(pack, null, 2));
+        pwd = "";
+      } else {
+        ready = encryptSave(pack, pwd);
+      }
+    } else {
+      ready = Promise.resolve(JSON.stringify(pack, null, 2));
+    }
+
+    ready.then(function (json) {
+      var note = packToText(pack) + (pwd ? "\n\n注意：这份存档带密码保护，导入时要输入导出时设的密码。" : "");
+      if (window.JSZip) {
+        var zip = new window.JSZip();
+        zip.file("存档.json", json);
+        zip.file("存档说明.txt", note);
+        zip.generateAsync({ type: "blob" }).then(function (blob) {
+          downloadBlob(blob, base + (pwd ? "-加密" : "") + ".zip");
+          line("存档包已导出" + (pwd ? "（已加密，别人没密码打不开）" : "（未加密）"), "good");
+        });
+      } else {
+        downloadBlob(new Blob([json], { type: "application/json" }), base + ".json");
+        line("网络不通，已导出成 json 存档文件。", "day");
+      }
+    }).catch(function () {
+      line("加密失败，换个密码再试。", "bad");
+    });
+  });
+
+  // ===== 存档加密（可选密码，AES-GCM + PBKDF2）=====
+  function b64(bytes) {
+    var arr = new Uint8Array(bytes), s = "";
+    for (var i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+    return btoa(s);
+  }
+
+  function unb64(str) {
+    var s = atob(str), arr = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) arr[i] = s.charCodeAt(i);
+    return arr;
+  }
+
+  function deriveKey(pwd, salt) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey("raw", enc.encode(pwd), "PBKDF2", false, ["deriveKey"]).then(function (mat) {
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 10000, hash: "SHA-256" },
+        mat, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    });
+  }
+
+  function encryptSave(pack, pwd) {
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return deriveKey(pwd, salt).then(function (key) {
+      return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, new TextEncoder().encode(JSON.stringify(pack)));
+    }).then(function (buf) {
+      return JSON.stringify({
+        encrypted: true, algo: "AES-GCM / PBKDF2-SHA256",
+        salt: b64(salt), iv: b64(iv), data: b64(buf)
+      }, null, 2);
+    });
+  }
+
+  function decryptSave(obj, pwd) {
+    var salt = unb64(obj.salt), iv = unb64(obj.iv), data = unb64(obj.data);
+    return deriveKey(pwd, salt).then(function (key) {
+      return crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+    }).then(function (buf) {
+      return JSON.parse(new TextDecoder().decode(buf));
+    });
+  }
+
+  function applyPack(pack) {
+    if (!pack || !MODES[pack.mode]) return false;
+    if (typeof pack.day !== "number" || typeof pack.hp !== "number") return false;
+    var mode = pack.mode;
+    state = { mode: mode, cfg: MODES[mode], hp: pack.hp, day: pack.day, over: false, log: [] };
+    state.hp = Math.max(0, Math.min(state.cfg.max, state.hp));
+    if (state.hp <= 0) state.hp = 1;
+    state.money = (typeof pack.money === "number") ? pack.money : 0;
+    state.stage = (typeof pack.stage === "number") ? pack.stage : 0;
+    els.log.innerHTML = "";
+    els.jump.classList.remove("show");
+    els.note.textContent = state.cfg.note;
+    var logs = (pack.log || []).filter(function (it) { return it && it.t; });
+    if (!logs.length) logs = [{ t: state.cfg.intro, c: "day" }];
+    state.log = logs.slice(-200);
+    state.log.forEach(function (it) { renderLine(it.t, it.c); });
+    renderLine("（已导入存档包 · " + state.cfg.label + " · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + state.cfg.max + "）", "day");
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (b) {
+      b.setAttribute("aria-pressed", b.dataset.mode === mode ? "true" : "false");
+    });
+    setButtons(false);
+    updateStats();
+    saveState();
+    return true;
+  }
+
+  var fileInput = document.getElementById("fileInput");
+
+  document.getElementById("btnImport").addEventListener("click", function () {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", function () {
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    var isZip = /\.zip$/i.test(file.name);
+
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      if (!isZip) {
+        tryLoading(text);
+        return;
+      }
+      if (!window.JSZip) {
+        line("网络不通，压缩包解不开。可以直接导入解压出来的存档.json。", "bad");
+        return;
+      }
+      window.JSZip.loadAsync(file).then(function (zip) {
+        var entry = null;
+        zip.forEach(function (path, f) {
+          if (!entry && /\.json$/i.test(path)) entry = f;
+        });
+        if (!entry) {
+          line("这个压缩包里没有存档.json，不是存档包。", "bad");
+          return;
+        }
+        entry.async("string").then(function (s) { tryLoading(s); });
+      }).catch(function () {
+        line("压缩包读取失败，可能损坏了。", "bad");
+      });
+    };
+
+    function tryLoading(str) {
+      var pack;
+      try {
+        pack = JSON.parse(str);
+      } catch (e) {
+        line("这不是有效的存档文件。", "bad");
+        fileInput.value = "";
+        return;
+      }
+      if (pack && pack.encrypted) {
+        if (!window.crypto || !crypto.subtle) {
+          line("这个页面不在安全环境（没 https），解不开加密存档。", "bad");
+          fileInput.value = "";
+          return;
+        }
+        var pwd = window.prompt("这份存档带密码，请输入导出时设的密码：", "");
+        if (pwd === null) {
+          line("取消了导入。", "day");
+          fileInput.value = "";
+          return;
+        }
+        decryptSave(pack, pwd.trim()).then(function (real) {
+          if (applyPack(real)) {
+            line("密码正确，存档导入成功，接着玩吧。", "good");
+          } else {
+            line("存档内容不对（缺难度或天数），导入失败。", "bad");
+          }
+          fileInput.value = "";
+        }).catch(function () {
+          line("密码不对，或者这份存档被改坏了。", "bad");
+          fileInput.value = "";
+        });
+        return;
+      }
+      if (applyPack(pack)) {
+        line("存档导入成功，接着玩吧。", "good");
+      } else {
+        line("存档内容不对（缺难度或天数），导入失败。", "bad");
+      }
+      fileInput.value = "";
+    }
+
+    reader.readAsText(file);
+  });
+  var AUTHOR_KEY = "562u";
+  var authorTaps = 0, authorTimer = null;
+  document.querySelector("h1").addEventListener("click", function () {
+    authorTaps += 1;
+    clearTimeout(authorTimer);
+    authorTimer = setTimeout(function () { authorTaps = 0; }, 1600);
+    if (authorTaps >= 3) {
+      authorTaps = 0;
+      var k = window.prompt("作者口令：");
+      if (k === AUTHOR_KEY) {
+        els.btnAuthor.hidden = false;
+        els.btnInbox.hidden = false;
+        line("作者模式已开启。用它的局不上榜。", "day");
+      }
+    }
+  });
+
+  var INBOX_KEY = "wW";
+
+  function inboxRpc(fn, body) {
+    return fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); });
+  }
+
+  function renderInbox(rows) {
+    els.inboxList.innerHTML = "";
+    if (!rows.length) { els.inboxList.textContent = "还没有人留言。"; return; }
+    rows.forEach(function (it) {
+      var d = document.createElement("div");
+      d.className = "inboxrow";
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "#" + it.id + " · " + (it.name || "匿名") + (it.link ? " · " + it.link : "") +
+        " · " + (it.created_at || "").slice(0, 16).replace("T", " ");
+      var txt = document.createElement("div");
+      txt.className = "txt";
+      txt.textContent = it.content;
+      d.appendChild(meta); d.appendChild(txt);
+      if (it.reply) {
+        var rp = document.createElement("div");
+        rp.className = "rp";
+        rp.textContent = "已回复：" + it.reply;
+        d.appendChild(rp);
+      }
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.maxLength = 300; inp.placeholder = "回复这条（最多 300 字）";
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.textContent = it.reply ? "改回复" : "回复";
+      btn.addEventListener("click", function () {
+        var v = (inp.value || "").trim();
+        if (!v) { inp.focus(); return; }
+        btn.disabled = true; btn.textContent = "发送中…";
+        inboxRpc("reply_feedback", { p_key: INBOX_KEY, p_id: it.id, p_reply: v }).then(function (r) {
+          if (r && r.ok) { loadInbox(); } else { btn.disabled = false; btn.textContent = "回复"; alert((r && r.msg) || "没成功"); }
+        }).catch(function () { btn.disabled = false; btn.textContent = "回复"; });
+      });
+      d.appendChild(inp); d.appendChild(btn);
+      els.inboxList.appendChild(d);
+    });
+  }
+
+  function loadInbox() {
+    els.inboxList.textContent = "加载中…";
+    inboxRpc("list_feedback", { p_key: INBOX_KEY }).then(function (r) {
+      if (!r || !r.ok) { els.inboxList.textContent = (r && r.msg) || "读不出来"; return; }
+      renderInbox(r.rows || []);
+    }).catch(function () { els.inboxList.textContent = "连不上数据库"; });
+  }
+
+  els.btnInbox.addEventListener("click", function () {
+    var k = window.prompt("投诉中心口令：");
+    if (!k) return;
+    if (k.trim() !== INBOX_KEY) { alert("口令不对"); return; }
+    els.inboxMask.hidden = false;
+    loadInbox();
+  });
+  els.inboxClose.addEventListener("click", function () { els.inboxMask.hidden = true; });
+  els.inboxMask.addEventListener("click", function (e) { if (e.target === els.inboxMask) els.inboxMask.hidden = true; });
+
+  els.btnAuthor.addEventListener("click", function () {
+    if (state.over) return;
+    els.jumpInput.placeholder = (state.mode === "run") ? "设置你现在有多少钱" : "跳到第几天（可负数）";
+    els.jump.classList.toggle("show");
+    if (els.jump.classList.contains("show")) els.jumpInput.focus();
+  });
+  document.getElementById("jumpGo").addEventListener("click", function () {
+    var v = parseInt(els.jumpInput.value, 10);
+    state.cheat = true;
+    if (isNaN(v)) { line("请输入一个数字。", "bad"); return; }
+    if (state.mode === "run") {
+      if (v < 0) { line("钱不能是负数。", "bad"); return; }
+      state.money = v;
+      els.jump.classList.remove("show");
+      els.jumpInput.value = "";
+      line("作者模式：你现在手上有 " + v + " 块。（60 块才够车票加买通弟弟）", "day");
+      updateStats();
+      saveState();
+      return;
+    }
+    if (state.mode === "revert" || state.mode === "hard") {
+      state.day = v;
+      els.jump.classList.remove("show");
+      els.jumpInput.value = "";
+      updateStats();
+      if (state.day >= state.cfg.goal && state.mode === "hard") {
+        recordBest("hard", state.day, state.hp);
+        gameOver(state.cfg.win, "hard_win");
+        return;
+      }
+      if (state.day < 0) {
+        line("你跳到了第 " + v + " 天，也就是还没出生的年代。妈妈都还没出生，谁在逼你考试？", "day");
+        gameOver("结局达成：祖父悖论。", "paradox");
+        return;
+      }
+      line("———— 第 " + state.day + " 天 ————", "day");
+    } else {
+      state.day = v;
+      els.jump.classList.remove("show");
+      els.jumpInput.value = "";
+      updateStats();
+      if (v < 0) {
+        line("你跳到了第 " + v + " 天……", "day");
+        if (v <= -100) {
+          gameOver("穿越到妈妈还没出生的年代。结局达成：祖父悖论。", "paradox");
+        } else {
+          gameOver("你还是个受精卵。结局达成：受精卵体外死亡。", "egg");
+        }
+        return;
+      }
+      line("———— 第 " + state.day + " 天 ————", "day");
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (b) {
+        b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+      });
+      reset(btn.dataset.mode);
+    });
+  });
+
+  reset("orig");
+
+  /* 访问统计：只记来源和 UA，不记 IP */
+  try {
+    fetch(SB_URL.replace("/scores", "/rpc/log_visit"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        p_client_id: myCid(),
+        p_ua: String(navigator.userAgent || "").slice(0, 300),
+        p_ref: String(document.referrer || "").slice(0, 300),
+        p_path: String(location.pathname || "/").slice(0, 200)
+      })
+    }).catch(function () {});
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
