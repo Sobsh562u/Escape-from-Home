@@ -79,7 +79,7 @@
   .hpfill.low{background:var(--hp-low);}
 
   #log{
-    height:230px;overflow-y:auto;font-size:14px;
+    min-height:120px;max-height:260px;overflow-y:auto;font-size:14px;
     border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);
     padding:10px 0;margin:0 0 12px;
     scroll-behavior:smooth;
@@ -96,6 +96,7 @@
   .acts button{
     min-height:46px;border-radius:8px;border:1px solid var(--line);
     background:var(--paper2);color:var(--ink);font-size:15px;font-family:inherit;cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .acts button:hover{border-color:#b9ab8e;}
   .acts button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -152,7 +153,7 @@
     .glist{grid-template-columns:repeat(2,1fr);}
     body{padding:32px 24px 60px;}
     h1{font-size:28px;}
-    #log{height:300px;}
+    #log{min-height:150px;max-height:320px;}
     .acts{grid-template-columns:repeat(4,1fr);}
   }
 .lbmask{position:fixed;inset:0;background:rgba(20,18,16,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
@@ -238,7 +239,7 @@
       <button class="primary" id="btnExam">考试</button>
       <button id="btnRun">逃跑</button>
       <button id="btnCall">报警</button>
-      <button id="btnPaper">100 分试卷（每局一次）</button>
+      <button id="btnPaper" title="每局只能用一次：交上去直接补满血条，这一巴掌打不下来">100 分卷</button>
       <button id="btnAuthor" hidden>作者模式</button>
       <button id="btnInbox" hidden>投诉中心</button>
     </div>
@@ -324,7 +325,7 @@
         <button type="button" data-m="orig">原始</button>
         <button type="button" data-m="revert">反转</button>
         <button type="button" data-m="hard">困难</button>
-        <button type="button" data-m="extreme">极限</button>
+        <button type="button" data-m="limit">极限</button>
         <button type="button" data-m="run">跑路</button>
         <button type="button" data-m="endless">无尽</button>
       </div>
@@ -333,7 +334,7 @@
   </div>
 
   <footer>
-    网页版 v1.15 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.16 · 六难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
     <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -809,6 +810,7 @@
   function msg(t) { els.lbMsg.textContent = t; }
 
   function showMe() {
+    if (els.lbDel) els.lbDel.hidden = !isReg();
     if (isReg()) {
       els.lbMe.textContent = "已登录：" + myName() + " · 玩家ID " + myPid();
     } else {
@@ -873,7 +875,7 @@
   }
 
   var LB_FILTER = "";
-  var LB_MODENAME = { orig: "原始", revert: "反转", hard: "困难", extreme: "极限", run: "跑路", endless: "无尽" };
+  var LB_MODENAME = { orig: "原始", revert: "反转", hard: "困难", limit: "极限", extreme: "极限", run: "跑路", endless: "无尽" };
 
   function lbUrl() {
     var q = SB_URL + "?select=name,player_id,mode,days,stations,money&deleted_at=is.null&order=days.desc,stations.desc&limit=20";
