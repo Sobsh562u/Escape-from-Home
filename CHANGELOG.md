@@ -1,3 +1,10 @@
+## v1.18.0
+
+- 出 Godot 版：`Godot版/` 里是最小工程（`project.godot` + `main.gd`），GDScript 搭 UI，2D
+- 带上排行榜：注册、登录、开局与结束自动上报、拉前 20 名，玩家信息存 `user://player.cfg`
+- 发行版附件：`Escape-from-Home-godot.exe`（Windows 导出，约 103MB）与 `.pck`
+- 这个包还是 prerelease，等主玩法稳定再转正
+
 ## v1.17.0
 
 - 出安卓包：网页版套壳 WebView，61KB，包名 com.ehgame.escape，minSdk 21 / targetSdk 34
