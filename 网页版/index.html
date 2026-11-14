@@ -19,7 +19,7 @@
 <meta name="twitter:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
 <meta name="twitter:description" content="中文文字游戏，六个难度，网页版免下载，带在线总榜。">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://Sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。六个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。六个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2b2b'/%3E%3Cpath d='M8 20 L20 8 M14 8 h6 v6' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   :root{
@@ -1326,6 +1326,36 @@
     }, 800);
   }
 
+  // 让用户自己挑目录保存（支持文件选择器的浏览器），不支持就退回下载
+ function saveBlob(blob, filename) {
+    return new Promise(function (resolve) {
+      if (!window.showSaveFilePicker) {
+        downloadBlob(blob, filename);
+        resolve("download");
+        return;
+      }
+      var handleP;
+      try {
+        handleP = window.showSaveFilePicker({ suggestedName: filename });
+      } catch (e) {
+        downloadBlob(blob, filename);
+        resolve("download");
+        return;
+      }
+      handleP.then(function (handle) {
+        return handle.createWritable().then(function (w) {
+          return w.write(blob).then(function () { return w.close(); });
+        });
+      }).then(function () {
+        resolve("picked");
+      }).catch(function (e) {
+        if (e && e.name === "AbortError") { resolve("cancel"); return; }
+        downloadBlob(blob, filename);
+        resolve("download");
+      });
+    });
+  }
+
   document.getElementById("btnExport").addEventListener("click", function () {
     if (state.over) {
       line("这局已经结束了，重新开一局再导出吧。", "bad");
@@ -1357,12 +1387,16 @@
         zip.file("存档.json", json);
         zip.file("存档说明.txt", note);
         zip.generateAsync({ type: "blob" }).then(function (blob) {
-          downloadBlob(blob, base + (pwd ? "-加密" : "") + ".zip");
-          line("存档包已导出" + (pwd ? "（已加密，别人没密码打不开）" : "（未加密）"), "good");
+          return saveBlob(blob, base + (pwd ? "-加密" : "") + ".zip").then(function (how) {
+            if (how === "cancel") { line("取消了，没有导出。", "day"); return; }
+            line("存档包已导出" + (pwd ? "（已加密，别人没密码打不开）" : "（未加密）") + (how === "picked" ? "，放在你刚选的位置" : ""), "good");
+          });
         });
       } else {
-        downloadBlob(new Blob([json], { type: "application/json" }), base + ".json");
-        line("网络不通，已导出成 json 存档文件。", "day");
+        saveBlob(new Blob([json], { type: "application/json" }), base + ".json").then(function (how) {
+          if (how === "cancel") { line("取消了，没有导出。", "day"); return; }
+          line("网络不通，已导出成 json 存档文件。", "day");
+        });
       }
     }).catch(function () {
       line("加密失败，换个密码再试。", "bad");
