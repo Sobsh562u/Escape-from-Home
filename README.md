@@ -2,7 +2,7 @@
 
 ![逃家游戏](assets/social-preview.png)
 
-**[▶ 在线试玩](https://Sobsh562u.github.io/Escape-from-Home/)** —— 手机电脑打开就能玩，不用下载。
+**[▶ 在线试玩](https://sobsh562u.github.io/Escape-from-Home/)** —— 手机电脑打开就能玩，不用下载。
 
 你被关在家里天天考试，唯一的盼头是撑到 18 岁、名下有套房，然后逃出去。
 
@@ -22,6 +22,7 @@
 - [网页版说明](#网页版说明)
 - [完整文档](#完整文档)
 - [项目结构](#项目结构)
+- [网站与收录](#网站与收录)
 - [常见问题](#常见问题)
 - [版本对比](#版本对比)
 - [许可证](#许可证)
@@ -52,7 +53,7 @@ python3 逃家游戏_原始版.py
 
 按你的设备选一个：
 
-- **手机 / 不想装东西**：[网页在线版](https://Sobsh562u.github.io/Escape-from-Home/) —— 打开就能玩，存档在浏览器里
+- **手机 / 不想装东西**：[网页在线版](https://sobsh562u.github.io/Escape-from-Home/) —— 打开就能玩，存档在浏览器里
 - **Windows（主力）**：`逃家游戏.exe` —— 仓库里直接点，或去 [Releases](https://github.com/Sobsh562u/Escape-from-Home/releases) 下载。双击运行，六个难度都在里面，不用装 Python。exe 已重编为六难度版（v1.19.0），启动后选 1-6
 - **安卓手机**：`Escape-from-Home-android.apk` —— 去 [Releases v1.17.0](https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.17.0) 下载，包体约 61KB，安卓 5.0 以上。网页版套壳（WebView），游戏逻辑与网页版一致；自签名，安装时要在设置里允许「未知来源」
 - **Linux（主力）**：`逃家游戏_linux` —— 静态链接，`chmod +x 逃家游戏_linux` 后运行，不挑发行版
@@ -270,7 +271,10 @@ Windows 上双击 `.py` 文件也行。不需要装任何第三方库。
 
 ```
 Escape-from-Home/
-├── index.html                 网页版（单文件）
+├── index.html                 网页版（单文件，线上主页面）
+├── about.html                 静态说明页（给搜索引擎的可读正文）
+├── sitemap.xml / robots.txt    站点地图与抓取规则
+├── 17f928c18695128e5a98944d06c0252a.txt  IndexNow 站点密钥
 ├── 逃家游戏_C版.c              桌面版本体，六难度合一
 ├── 逃家游戏.exe                Windows 可执行
 ├── 逃家游戏_linux              Linux 可执行（静态）
@@ -284,8 +288,21 @@ Escape-from-Home/
 ├── 文档-规则与结局.md
 ├── 文档-存档包格式.md
 ├── 文档-编译与发布.md
+├── 文档-网站与收录.md
 └── .gitattributes              语言统计 + 换行符统一
 ```
+
+## 网站与收录
+
+线上页面是 GitHub Pages 自动发布的，仓库一提交就生效。为了让搜索引擎读得到，仓库里多了几样东西：
+
+- `about.html`：纯静态说明页，把玩法、难度、结局、平台、存档规则用 HTML 写清楚，爬虫不渲染 JS 也能读到
+- `sitemap.xml`：只列标准地址（首页与 `about.html`），不放重复页
+- `robots.txt`：放行全部抓取，并指向 sitemap
+- 首页 `<head>` 里的 `msvalidate.01` meta：必应站长工具的站点验证标记，删了会掉验证，别动
+- IndexNow 密钥文件：用来主动推送 URL 更新，文件名的随机串与内容一致才有用
+
+细节（含怎么重新验证、怎么推送更新）见 [文档-网站与收录.md](文档-网站与收录.md)。
 
 ## 常见问题
 
@@ -302,7 +319,7 @@ Escape-from-Home/
 导出时设个密码，存档就是 AES-GCM 密文，改一个字节就解不开。不设密码的话，本地程序无法验证真伪——这是没有服务器的必然结果。
 
 **Q：手机上能玩桌面版吗？**
-安卓有 APK（网页版套壳 WebView，安装包在 Releases 里），iOS 只能通过 [在线试玩](https://Sobsh562u.github.io/Escape-from-Home/) 打开。桌面版是 Windows/Linux 程序，装不到手机上。
+安卓有 APK（网页版套壳 WebView，安装包在 Releases 里），iOS 只能通过 [在线试玩](https://sobsh562u.github.io/Escape-from-Home/) 打开。桌面版是 Windows/Linux 程序，装不到手机上。
 
 **Q：排行榜要联网吗？**
 要。账号和成绩都存在 Supabase 的数据库里，离线也能玩，只是这局成绩传不上去。
