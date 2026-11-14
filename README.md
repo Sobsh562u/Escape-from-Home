@@ -55,7 +55,7 @@ python3 逃家游戏_原始版.py
 
 - **手机 / 不想装东西**：[网页在线版](https://sobsh562u.github.io/Escape-from-Home/) —— 打开就能玩，存档在浏览器里
 - **Windows（主力）**：`逃家游戏.exe` —— 仓库里直接点，或去 [Releases](https://github.com/Sobsh562u/Escape-from-Home/releases) 下载。双击运行，六个难度都在里面，不用装 Python。exe 已重编为六难度版（v1.19.0），启动后选 1-6
-- **安卓手机**：`Escape-from-Home-android.apk` —— 去 [Releases v1.17.0](https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.17.0) 下载，包体约 61KB，安卓 5.0 以上。网页版套壳（WebView），游戏逻辑与网页版一致；自签名，安装时要在设置里允许「未知来源」
+- **安卓手机**：`Escape-from-Home-android.apk` —— 去 [Releases v1.19.0](https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.19.0) 下载，包体约 65KB，安卓 5.0 以上。网页版套壳（WebView），六个难度全在，带在线总榜；导出存档直接落到手机的「下载」目录；自签名，安装时要在设置里允许「未知来源」
 - **Linux（主力）**：`逃家游戏_linux` —— 静态链接，`chmod +x 逃家游戏_linux` 后运行，不挑发行版
 - **有 Python 3**：`逃家游戏_原始版.py` 等六个脚本，`python3` 直接跑（跑路版是 `逃家游戏_跑路版.py`）
 - **想看源码**：`逃家游戏_C版.c` —— 桌面版本体，单文件，只依赖 libc
