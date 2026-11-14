@@ -24,6 +24,10 @@ bash make_apk.sh
 
 依赖 JDK 17 和 Android SDK（`build-tools;34.0.0`、`platforms;android-34`）。
 
+## 导出存档
+
+网页里的导出按钮会调用 `MainActivity.SaveBridge.saveFile`，把存档文件直接写进系统「下载」目录（Android 10+ 走 MediaStore，更早走公共下载目录），不用经过 WebView 的下载机制。
+
 ## 要点
 
 - **jszip 本地化**：网页版原来从 jsdelivr 拉 jszip，打包时改成读本地 `assets/jszip.min.js`，断网也能导出存档。
