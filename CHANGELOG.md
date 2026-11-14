@@ -1,3 +1,25 @@
+## 站点 v2026-11-14
+
+- 首页加 `about.html` 静态说明页，补 `sitemap.xml`、`robots.txt`、IndexNow 密钥
+- 首页与 `about.html` 加 `VideoGame` 结构化数据；canonical 统一为小写域名
+- 新增 `文档-网站与收录.md`，记录发布方式、必应验证与收录维护
+- 新增内容页 `玩法与难度.html`（六难度对照表、跑路版攒钱、无尽版递减）、`结局图鉴.html`（23 个结局）、自定义 `404.html`，首页页脚加内链，sitemap 扩到 4 条
+- 网页版「导出存档包」改用系统保存对话框（File System Access API 的 `showSaveFilePicker`），用户可自选目录；浏览器不支持时自动退回下载
+- README 项目结构同步上述文件
+
+## v1.19.0
+
+- 修无尽版规则不一致：桌面版（C 版）每圈扣血从 +5 改为 +10、平安率每圈 −5%（最低 5%），与网页版、Python 版三端一致
+- 重新编译 Windows exe 与 Linux 静态版，附件替换为此版本；旧包里的无尽版规则偏宽松
+- 文档同步：`文档-规则与结局.md` 的数值、`README.md` 的结局数（23）、Python 脚本数量（六个）、联网说明
+
+## v1.18.0
+
+- 出 Godot 版：`Godot版/` 里是最小工程（`project.godot` + `main.gd`），GDScript 搭 UI，2D
+- 带上排行榜：注册、登录、开局与结束自动上报、拉前 20 名，玩家信息存 `user://player.cfg`
+- 发行版附件：`Escape-from-Home-godot.exe`（Windows 导出，约 103MB）与 `.pck`
+- 这个包还是 prerelease，等主玩法稳定再转正
+
 ## v1.17.0
 
 - 出安卓包：网页版套壳 WebView，61KB，包名 com.ehgame.escape，minSdk 21 / targetSdk 34
