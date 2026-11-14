@@ -273,6 +273,9 @@ Windows 上双击 `.py` 文件也行。不需要装任何第三方库。
 Escape-from-Home/
 ├── index.html                 网页版（单文件，线上主页面）
 ├── about.html                 静态说明页（给搜索引擎的可读正文）
+├── 玩法与难度.html            规则页：六难度对照表
+├── 结局图鉴.html              结局页：23 个结局与触发条件
+├── 404.html                   自定义错误页（noindex）
 ├── sitemap.xml / robots.txt    站点地图与抓取规则
 ├── 17f928c18695128e5a98944d06c0252a.txt  IndexNow 站点密钥
 ├── 逃家游戏_C版.c              桌面版本体，六难度合一
@@ -297,7 +300,7 @@ Escape-from-Home/
 线上页面是 GitHub Pages 自动发布的，仓库一提交就生效。为了让搜索引擎读得到，仓库里多了几样东西：
 
 - `about.html`：纯静态说明页，把玩法、难度、结局、平台、存档规则用 HTML 写清楚，爬虫不渲染 JS 也能读到
-- `sitemap.xml`：只列标准地址（首页与 `about.html`），不放重复页
+- `sitemap.xml`：只列标准地址（首页、`about.html`、`玩法与难度.html`、`结局图鉴.html`），不放重复页；`404.html` 不进 sitemap
 - `robots.txt`：放行全部抓取，并指向 sitemap
 - 首页 `<head>` 里的 `msvalidate.01` meta：必应站长工具的站点验证标记，删了会掉验证，别动
 - IndexNow 密钥文件：用来主动推送 URL 更新，文件名的随机串与内容一致才有用
