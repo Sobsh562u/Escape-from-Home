@@ -7,6 +7,12 @@
 - 网页版「导出存档包」改用系统保存对话框（File System Access API 的 `showSaveFilePicker`），用户可自选目录；浏览器不支持时自动退回下载
 - README 项目结构同步上述文件
 
+## v1.19.0 安卓包重发
+
+- 安卓 APK 内容升到 v1.19.0：六个难度全模式、在线总榜（Supabase）都在，规则与网页版一致
+- 安卓壳加 `SaveBridge`：导出存档不再依赖 WebView 下载，改由原生层写入系统「下载」目录（Android 10 以上走 MediaStore，更早的走公共下载目录）
+- 附件加到 v1.19.0 Release：`Escape-from-Home-android.apk`（66,087 B，versionCode 3，versionName 1.19.0）
+
 ## v1.19.0
 
 - 修无尽版规则不一致：桌面版（C 版）每圈扣血从 +5 改为 +10、平安率每圈 −5%（最低 5%），与网页版、Python 版三端一致
