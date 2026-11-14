@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://Sobsh562u.github.io/Escape-from-Home/sitemap.xml
+Sitemap: https://sobsh562u.github.io/Escape-from-Home/sitemap.xml
