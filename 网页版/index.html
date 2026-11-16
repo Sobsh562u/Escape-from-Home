@@ -788,30 +788,51 @@
   var SB_URL = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/scores";
   var SB_KEY = "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET";
 
+  // ===== 登录态持久化：cookie + localStorage 双写 =====
+  function setCk(k, v, days) {
+    try {
+      document.cookie = k + "=" + encodeURIComponent(v) + "; path=/; max-age=" +
+        (days || 365) * 86400 + "; SameSite=Lax";
+    } catch (e) {}
+  }
+  function getCk(k) {
+    try {
+      var m = document.cookie.match(new RegExp("(?:^|; )" + k + "=([^;]*)"));
+      return m ? decodeURIComponent(m[1]) : "";
+    } catch (e) { return ""; }
+  }
+  function lsGet(k) {
+    try { var v = localStorage.getItem(k); if (v) return v; } catch (e) {}
+    return getCk(k) || "";
+  }
+  function lsSet(k, v) {
+    try { localStorage.setItem(k, v); } catch (e) {}
+    setCk(k, v, 365);
+  }
+
   function myCid() {
-    var c = localStorage.getItem("ehq_cid");
+    var c = lsGet("ehq_cid");
     if (!c || c.length < 8) {
       c = "c" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem("ehq_cid", c);
+      lsSet("ehq_cid", c);
     }
     return c;
   }
 
   function myName() {
-    return localStorage.getItem("ehq_name") || "";
+    return lsGet("ehq_name") || "";
   }
 
-  function isReg() { return localStorage.getItem("ehq_reg") === "1" && !!myName(); }
+  function myPid() { return lsGet("ehq_pid") || ""; }
 
-  function myPid() { return localStorage.getItem("ehq_pid") || ""; }
-
-  function isReg() { return !!localStorage.getItem("ehq_pid") && !!myName(); }
+  /* 有玩家 ID 且有名字就算登录中，cookie 里存着就不会因为清缓存丢登录 */
+  function isReg() { return !!myPid() && !!myName(); }
 
   function saveMe(d) {
-    localStorage.setItem("ehq_name", d.name);
-    localStorage.setItem("ehq_cid", d.client_id);
-    localStorage.setItem("ehq_pid", d.player_id);
-    localStorage.setItem("ehq_reg", "1");
+    lsSet("ehq_name", d.name);
+    if (d.client_id) lsSet("ehq_cid", d.client_id);
+    lsSet("ehq_pid", d.player_id);
+    lsSet("ehq_reg", "1");
     showMe();
   }
 
@@ -893,7 +914,7 @@
 
   function openBoard() {
     els.lbMask.hidden = false;
-    els.lbName.value = localStorage.getItem("ehq_name") || "";
+    els.lbName.value = lsGet("ehq_name") || "";
     showMe();
     loadBoard();
   }
