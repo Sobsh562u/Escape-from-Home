@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>存档与账号：存档包怎么导出、加密、跨设备接着玩</title>
+<meta name="description" content="逃家游戏的存档说明：网页版导出 zip、桌面版导出 json、怎么在两个版本之间互通、加密存档怎么设置密码、账号和玩家 ID 怎么注册、总榜为什么有些成绩不上榜。">
+<link rel="canonical" href="https://sobsh562u.github.io/Escape-from-Home/存档与账号.html">
+<style>
+  body{margin:0;padding:32px 20px 60px;background:#faf7f1;color:#3f3729;
+       font:16px/1.85 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  main{max-width:760px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 6px;line-height:1.4}
+  .lead{color:#6b6455;font-size:15px;margin:0 0 26px}
+  h2{font-size:18px;margin:28px 0 10px;padding-left:10px;border-left:3px solid #c9b98a}
+  p{margin:0 0 14px}
+  ul,ol{padding-left:22px;margin:0 0 14px}
+  li{margin-bottom:6px}
+  a{color:#8a6d2f}
+  code{background:#f1ebdd;padding:1px 5px;border-radius:4px;font-size:13px}
+  footer{margin-top:38px;padding-top:16px;border-top:1px solid #ddd6c6;color:#8b8375;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <h1>存档与账号</h1>
+  <p class="lead">一局打到一半，换台设备也能接着打。存档包在网页版、桌面版、Python 版之间是通的。</p>
+
+  <h2>怎么导出</h2>
+  <ul>
+    <li>网页版：点「导出存档包」，浏览器会问你存到哪，自己选目录</li>
+    <li>安卓包：点同一个按钮，文件直接落到手机的「下载」目录，会有提示</li>
+    <li>桌面版 / Python 版：输入 <code>导出</code>，会生成文件</li>
+  </ul>
+
+  <h2>文件格式不一样，但内容能互通</h2>
+  <p>网页版和 Python 版导出的是 zip，里面装着 <code>存档.json</code> 和一份可读的说明文本；C 版导出的是纯 json。想把网页版的存档拿去桌面版续玩，先把 zip 解压，取出里面的 <code>存档.json</code> 再导入。</p>
+
+  <h2>给存档加密码</h2>
+  <p>网页版导出时可以填密码。加了密码的存档按 AES-GCM 加密，别人拿到文件也打不开，只能在网页版里输入密码解开。密码丢了这份存档就解不开了，没有找回的办法。</p>
+
+  <h2>存档里到底记了什么</h2>
+  <p>游戏名、版本号、难度、第几天、血条与血条上限、存档时间，还有这几天经历过的事。也就是说导入之后，你的进度和日志都能对得上。</p>
+
+  <h2>账号和玩家 ID</h2>
+  <p>想上在线总榜要注册：填一个名字和密码，服务器会给你一个 6 位玩家 ID。名字是榜上显示的名字，密码只存哈希，服务器那边看不到明文。</p>
+  <p>注册后这局结束自动提交成绩。榜上每个名字只留最好的一条记录，刷更低的分不会覆盖。</p>
+
+  <h2>什么情况下不上榜</h2>
+  <ul>
+    <li>没登录：成绩只在本地，不上传</li>
+    <li>用过作者模式：按规矩不上榜</li>
+    <li>断网：提交会失败，但游戏本身照常能玩</li>
+  </ul>
+
+  <p><a href="https://sobsh562u.github.io/Escape-from-Home/">回到游戏</a> · <a href="新手入门.html">新手入门</a> · <a href="常见问题.html">常见问题</a></p>
+  <footer>《逃家游戏》· MIT License · Copyright (c) 2026 Sobsh562u</footer>
+</main>
+</body>
+</html>
