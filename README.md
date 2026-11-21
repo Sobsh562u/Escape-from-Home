@@ -55,7 +55,7 @@ python3 逃家游戏_原始版.py
 
 - **手机 / 不想装东西**：[网页在线版](https://sobsh562u.github.io/Escape-from-Home/) —— 打开就能玩，存档在浏览器里
 - **Windows（主力）**：`逃家游戏.exe` —— 仓库里直接点，或去 [Releases](https://github.com/Sobsh562u/Escape-from-Home/releases) 下载。双击运行，六个难度都在里面，不用装 Python。exe 已重编为六难度版（v1.19.0），启动后选 1-6
-- **安卓手机**：`Escape-from-Home-android.apk` —— 去 [Releases v1.19.0](https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.19.0) 下载，包体约 65KB，安卓 5.0 以上。网页版套壳（WebView），六个难度全在，带在线总榜；导出存档直接落到手机的「下载」目录；自签名，安装时要在设置里允许「未知来源」
+- **安卓手机**：`Escape-from-Home-android.apk` —— 去 [Releases v1.17.0](https://github.com/Sobsh562u/Escape-from-Home/releases/tag/v1.17.0) 下载，包体约 61KB，安卓 5.0 以上。网页版套壳（WebView），游戏逻辑与网页版一致；自签名，安装时要在设置里允许「未知来源」
 - **Linux（主力）**：`逃家游戏_linux` —— 静态链接，`chmod +x 逃家游戏_linux` 后运行，不挑发行版
 - **有 Python 3**：`逃家游戏_原始版.py` 等六个脚本，`python3` 直接跑（跑路版是 `逃家游戏_跑路版.py`）
 - **想看源码**：`逃家游戏_C版.c` —— 桌面版本体，单文件，只依赖 libc
@@ -244,6 +244,8 @@ Windows 上双击 `.py` 文件也行。不需要装任何第三方库。
 - **每人只留最好一条**：打完一局自动上传，比你自己榜上那条好就顶替掉；成绩相同算新的；差了就不传，日志会提示
 - **自己删**：弹窗里「删除我的成绩（5 天冷静期）」，点了立刻下架，5 天后自动彻底清除
 - **反馈**：页脚「反馈 / 建议」，不用 GitHub 账号也能发，写进数据库不公开
+- **登录态**：名字、玩家 ID、设备号同时写 localStorage 与 cookie（一年期），清缓存、换页面、安卓包重启都不掉登录
+- **动态口令**：排行榜弹窗里可开「动态口令（本机锁）」，生成 TOTP 密钥存进验证器 App，之后打开游戏要先输 6 位码；密钥就是恢复码，丢了解不开
 
 ### 作者模式
 
@@ -273,9 +275,6 @@ Windows 上双击 `.py` 文件也行。不需要装任何第三方库。
 Escape-from-Home/
 ├── index.html                 网页版（单文件，线上主页面）
 ├── about.html                 静态说明页（给搜索引擎的可读正文）
-├── 玩法与难度.html            规则页：六难度对照表
-├── 结局图鉴.html              结局页：23 个结局与触发条件
-├── 404.html                   自定义错误页（noindex）
 ├── sitemap.xml / robots.txt    站点地图与抓取规则
 ├── 17f928c18695128e5a98944d06c0252a.txt  IndexNow 站点密钥
 ├── 逃家游戏_C版.c              桌面版本体，六难度合一
@@ -300,7 +299,7 @@ Escape-from-Home/
 线上页面是 GitHub Pages 自动发布的，仓库一提交就生效。为了让搜索引擎读得到，仓库里多了几样东西：
 
 - `about.html`：纯静态说明页，把玩法、难度、结局、平台、存档规则用 HTML 写清楚，爬虫不渲染 JS 也能读到
-- `sitemap.xml`：只列标准地址（首页、`about.html`、`玩法与难度.html`、`结局图鉴.html`），不放重复页；`404.html` 不进 sitemap
+- `sitemap.xml`：只列标准地址（首页与 `about.html`），不放重复页
 - `robots.txt`：放行全部抓取，并指向 sitemap
 - 首页 `<head>` 里的 `msvalidate.01` meta：必应站长工具的站点验证标记，删了会掉验证，别动
 - IndexNow 密钥文件：用来主动推送 URL 更新，文件名的随机串与内容一致才有用
