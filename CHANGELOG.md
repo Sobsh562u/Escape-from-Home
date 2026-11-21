@@ -1,30 +1,11 @@
-## 站点 v2026-11-14
+## 站点 v2026-11-21
 
-- 首页加 `about.html` 静态说明页，补 `sitemap.xml`、`robots.txt`、IndexNow 密钥
-- 首页与 `about.html` 加 `VideoGame` 结构化数据；canonical 统一为小写域名
-- 新增 `文档-网站与收录.md`，记录发布方式、必应验证与收录维护
-- 新增内容页 `玩法与难度.html`（六难度对照表、跑路版攒钱、无尽版递减）、`结局图鉴.html`（23 个结局）、自定义 `404.html`，首页页脚加内链，sitemap 扩到 4 条
-- 网页版「导出存档包」改用系统保存对话框（File System Access API 的 `showSaveFilePicker`），用户可自选目录；浏览器不支持时自动退回下载
-- README 项目结构同步上述文件
-
-## v1.19.0 安卓包重发
-
-- 安卓 APK 内容升到 v1.19.0：六个难度全模式、在线总榜（Supabase）都在，规则与网页版一致
-- 安卓壳加 `SaveBridge`：导出存档不再依赖 WebView 下载，改由原生层写入系统「下载」目录（Android 10 以上走 MediaStore，更早的走公共下载目录）
-- 附件加到 v1.19.0 Release：`Escape-from-Home-android.apk`（66,087 B，versionCode 3，versionName 1.19.0）
-
-## v1.19.0
-
-- 修无尽版规则不一致：桌面版（C 版）每圈扣血从 +5 改为 +10、平安率每圈 −5%（最低 5%），与网页版、Python 版三端一致
-- 重新编译 Windows exe 与 Linux 静态版，附件替换为此版本；旧包里的无尽版规则偏宽松
-- 文档同步：`文档-规则与结局.md` 的数值、`README.md` 的结局数（23）、Python 脚本数量（六个）、联网说明
-
-## v1.18.0
-
-- 出 Godot 版：`Godot版/` 里是最小工程（`project.godot` + `main.gd`），GDScript 搭 UI，2D
-- 带上排行榜：注册、登录、开局与结束自动上报、拉前 20 名，玩家信息存 `user://player.cfg`
-- 发行版附件：`Escape-from-Home-godot.exe`（Windows 导出，约 103MB）与 `.pck`
-- 这个包还是 prerelease，等主玩法稳定再转正
+- 新增三张内容页：`新手入门.html`（难度怎么选、每回合操作）、`存档与账号.html`（存档格式与加密、玩家 ID、不上榜的几种情况）、`常见问题.html`（系统拦截、导入失败、没上榜排查）
+- 首页与网页版页脚内链补齐为六项，sitemap 扩到 7 条
+- 修 `网页版/index.html` 的子目录死链：副本内链全部改 `../`，之前从 `/网页版/` 点开会 404
+- 登录态改用 cookie 持久化：名字、玩家 ID、设备号双写 localStorage 与 cookie（一年期，`path=/`，`SameSite=Lax`），清缓存不再掉登录
+- 加动态口令（TOTP，本机锁）：开启后打开游戏先弹锁屏，输 6 位码才能进；算法与 RFC 6238 对齐，允许前后各一个 30 秒窗口
+- 推广素材补 `推广素材/封面-横版.png` 与 `推广素材/预览-游戏界面.png`
 
 ## v1.17.0
 
