@@ -176,11 +176,11 @@
 .lbacts button{flex:1;padding:9px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:15px;cursor:pointer}
 .lbacts button:first-child{background:#f0e6d2}
 .lbauthmsg{font-size:13px;color:#a0503c;min-height:18px;margin:8px 0 0}
-.lbtotp{margin:14px 0 12px;padding:10px 12px;border:1px solid #e4ddc8;border-radius:10px;background:#fdfaf1}
-.lbttop{display:flex;justify-content:space-between;font-size:13px;color:#6b6455;margin-bottom:8px}
-.lbtotp input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:15px;margin-bottom:8px}
-.lbtacts{display:flex;gap:8px}
-.lbtacts button{flex:1;padding:8px;border:1px solid #ddd;background:#fff;border-radius:8px;font-size:14px;cursor:pointer}
+.lbrep{flex:none;margin-left:8px;padding:3px 8px;border:1px solid #ddd;background:#f7f3e8;border-radius:6px;font-size:12px;color:#7a6b4f;cursor:pointer}
+
+.lbrec{margin:14px 0 12px;padding:10px 12px;border:1px solid #e4ddc8;border-radius:10px;background:#fdfaf1}
+.lbrec input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:15px;margin-bottom:8px}
+
 
 .lblist{font-size:14px}
 .lbrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed #eee}
@@ -310,16 +310,6 @@
     </div>
   </div>
 
-  <div class="lbmask" id="lockMask" hidden>
-    <div class="lbcard" role="dialog" aria-modal="true" aria-label="动态口令">
-      <div class="lbtop"><span>动态口令</span></div>
-      <p class="lbtip">这台设备开了本机锁。打开验证器 App，输入当前的 6 位动态码。</p>
-      <div class="lbname"><input id="lockCode" type="text" inputmode="numeric" maxlength="6" placeholder="6 位动态码"></div>
-      <div class="lbacts"><button type="button" id="lockGo">进入</button></div>
-      <p class="lbauthmsg" id="lockMsg"></p>
-    </div>
-  </div>
-
   <div class="lbmask" id="lbMask" hidden>
     <div class="lbcard" role="dialog" aria-modal="true" aria-label="无尽榜">
       <div class="lbtop">
@@ -337,15 +327,15 @@
         <button id="lbLogin">登录</button>
       </div>
       <p class="lbauthmsg" id="lbMsg"></p>
-      <div class="lbtotp" id="lbTotp">
-        <div class="lbttop"><span>动态口令（本机锁）</span><span id="lbTotpState">未开启</span></div>
-        <input id="lbTotpCode" type="text" inputmode="numeric" maxlength="6" placeholder="6 位动态码">
+      <div class="lbrec" id="lbRec">
+        <div class="lbttop"><span>恢复码</span><span id="lbRecState">登录后生成</span></div>
+        <p class="lbauthmsg" id="lbRecCode">—</p>
         <div class="lbtacts">
-          <button type="button" id="lbTotpSet">开启</button>
-          <button type="button" id="lbTotpVerify">验证</button>
-          <button type="button" id="lbTotpOff">关闭</button>
+          <button type="button" id="lbRecGen">生成 / 显示</button>
+          <button type="button" id="lbRecUse">用码登录</button>
         </div>
-        <p class="lbauthmsg" id="lbTotpMsg"></p>
+        <input id="lbRecInput" type="text" maxlength="20" placeholder="粘贴恢复码，比如 EH-123456-4821">
+        <p class="lbauthmsg" id="lbRecMsg"></p>
       </div>
       <button class="lbdel" id="lbDel">删除我的成绩（5 天冷静期）</button>
       <div class="lbfilter" id="lbFilter">
@@ -384,7 +374,7 @@
     orig: {
       label: "原始版",
       hp: 100, max: 100, goal: 5,
-      intro: "【原始版】第 0 天。撑过 5 天，就能在 18 岁那天走出这个家门。",
+      intro: "【原始版】撑过 5 天，就能在 18 岁那天走出这个家门。",
       note: "原始版：撑过 5 天即通关。考 0 分扣 40 血，60 分以下扣 15 血，60 分以上加 10 血。逃跑会被抓回来打一顿，扣 20 血。",
       run: function (s) {
         return { hp: -20, keepDay: true, tone: "bad",
@@ -409,7 +399,7 @@
     revert: {
       label: "反转版",
       hp: 100, max: 100, goal: 6570,
-      intro: "【反转版】第 0 天。这里的规则全是反的，先别急着高兴。",
+      intro: "【反转版】这里的规则全是反的，先别急着高兴。",
       note: "反转版：规则全反，考砸加血、考好扣血；要撑到 6570 天（18 岁）才高考，分数越高结局越惨。",
       run: function (s) {
         var d = s.day;
@@ -436,7 +426,7 @@
     hard: {
       label: "困难版",
       hp: 50, max: 50, goal: 10,
-      intro: "【困难版】第 0 天。只有 50 点血，要熬 10 天。",
+      intro: "【困难版】只有 50 点血，要熬 10 天。",
       note: "困难版：血条只有 50，要撑 10 天。考 0 分扣 25 血，跑也有代价，报警没人来救。",
       run: function (s) {
         if (Math.random() < 0.2) return { hp: -10, text: "天没黑你不敢跑，被妈妈抓个正着，扣 10 血。", tone: "bad" };
@@ -456,7 +446,7 @@
     limit: {
       label: "极限版",
       hp: 100, max: 100, goal: 5,
-      intro: "【极限版】第 0 天。扣血等于 100 减去分数，考砸一次可能就没了。",
+      intro: "【极限版】扣血等于 100 减去分数，考砸一次可能就没了。",
       note: "极限版：扣血 = 100 - 分数，分数越低掉得越狠；考 0 分爸爸直接解皮带打死，血再多也没用。撑过 5 天通关。",
       run: function (s) {
         return { hp: -5, text: "你没跑，但爸爸盯着你写作业到半夜，扣 5 血。", tone: "bad" };
@@ -482,7 +472,7 @@
     run: {
       label: "跑路版",
       hp: 100, max: 100, goal: Infinity, money: true,
-      intro: "【跑路版】第 0 天。每天考试攒钱，够 60 块就能出门坐车。",
+      intro: "【跑路版】每天考试攒钱，够 60 块就能出门坐车。",
       note: "跑路版：60 分以上才有钱（60–89 分 1–3 块，90 分以上 3–5 块），60 分以下不给钱还扣血。车票 50 + 买通弟弟 10 = 60 块才能出门。出门后过三站：幼儿园、学校、大学，等车会被袭击，打车 10 块安全通过。钱够了也可以一直待在家里，不走。",
       exam: function (s, score) {
         if (score === 0) return { hp: -40, text: "妈妈：鸭蛋？跪下！", tone: "bad" };
@@ -506,7 +496,7 @@
   MODES.endless = {
     label: "无尽版",
     hp: 100, max: 100, goal: Infinity, money: true,
-    intro: "【无尽版】第 0 天。考够 60 分才有钱出门，出门后四站一圈接一圈，没有尽头。",
+    intro: "【无尽版】考够 60 分才有钱出门，出门后四站一圈接一圈，没有尽头。",
     note: "无尽版：幼儿园 → 学校 → 大学 → 终点站，一圈接一圈，没有通关。每进一圈，打车费 +5 块、被逮住多扣 10 血、平安率 −5%（最低 5%）。终点站是补给站：扣 15 血、平安 40%，过了它就进下一圈。血条归零就结算撑过的天数和站数。",
     exam: null, call: null, win: ""
   };
@@ -866,6 +856,7 @@
 
   function showMe() {
     if (els.lbDel) els.lbDel.hidden = !isReg();
+    if (typeof showRec === "function") showRec();
     if (isReg()) {
       els.lbMe.textContent = "已登录：" + myName() + " · 玩家ID " + myPid();
     } else {
@@ -969,10 +960,40 @@
         }
         var em = document.createElement("i");
         em.textContent = (it.days || 0) + " 天 · " + (it.stations || 0) + " 站";
-        d.appendChild(b); d.appendChild(sp); d.appendChild(em);
+        var rep = document.createElement("button");
+        rep.type = "button";
+        rep.className = "lbrep";
+        rep.textContent = "举报";
+        rep.addEventListener("click", function () { reportPlayer(it.name || "", it.player_id || ""); });
+        d.appendChild(b); d.appendChild(sp); d.appendChild(em); d.appendChild(rep);
         els.lbList.appendChild(d);
       });
     }).catch(function () { els.lbList.textContent = "榜单暂时拉不下来，等会儿再试。"; });
+  }
+
+  // ===== 举报（游客也能报，封禁由数据库判定）=====
+  function reportPlayer(targetName, targetPid) {
+    if (!targetName) { msg("这一行没有名字，报不了。"); return; }
+    if (targetName === myName() && isReg()) { msg("不能举报自己。"); return; }
+    var why = window.prompt("举报「" + targetName + "」的理由（提交后由人工核实，不会自动封）：", "");
+    if (why === null) return;
+    why = why.trim().slice(0, 200);
+    if (!why) { msg("写一句理由再提交。"); return; }
+    msg("提交举报…");
+    fetch(SB_URL.replace("/scores", "/rpc/report_player"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        p_target_name: targetName,
+        p_target_pid: targetPid || "",
+        p_reason: why,
+        p_reporter_name: isReg() ? myName() : "",
+        p_reporter_pid: isReg() ? myPid() : "",
+        p_reporter_client_id: myCid()
+      })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      msg((r && r.msg) || "举报已入库，等人工审核（不会自动封）。");
+    }).catch(function () { msg("网络不通，举报没提交上。"); });
   }
 
   function gameOver(reason, endingId) {
@@ -1320,156 +1341,61 @@
     doLogin(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
   });
 
-  // ===== 动态口令（TOTP，本机锁）=====
-  var B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  var TOTP_KEY = "ehq_totp";
+  // ===== 恢复码：换设备 / 清缓存后找回登录 =====
+  var REC_KEY = "ehq_rec";
 
-  function b32encode(bytes) {
-    var bits = 0, val = 0, out = "";
-    for (var i = 0; i < bytes.length; i++) {
-      val = (val << 8) | bytes[i]; bits += 8;
-      while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; }
+  function recHash(name, pid) {
+    var str = String(name) + "|" + String(pid), h = 2166136261;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = (h * 16777619) >>> 0;
     }
-    if (bits > 0) out += B32[(val << (5 - bits)) & 31];
-    return out;
+    return String(h % 10000).padStart(4, "0");
   }
 
-  function b32decode(str) {
-    var clean = String(str || "").toUpperCase().replace(/[^A-Z2-7]/g, "");
-    var bits = 0, val = 0, out = [];
-    for (var i = 0; i < clean.length; i++) {
-      val = (val << 5) | B32.indexOf(clean[i]); bits += 5;
-      if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; }
+  function makeRecCode(name, pid) {
+    return "EH-" + pid + "-" + recHash(name, pid);
+  }
+
+  function recMsg(t) { var e = document.getElementById("lbRecMsg"); if (e) e.textContent = t; }
+
+  function showRec() {
+    var st = document.getElementById("lbRecState");
+    var cd = document.getElementById("lbRecCode");
+    if (!st || !cd) return;
+    if (isReg()) {
+      var saved = lsGet(REC_KEY);
+      var code = saved || makeRecCode(myName(), myPid());
+      if (!saved) lsSet(REC_KEY, code);
+      st.textContent = "已绑定 " + myName();
+      cd.textContent = code;
+    } else {
+      st.textContent = "登录后生成";
+      cd.textContent = "—";
     }
-    return new Uint8Array(out);
   }
 
-  function totpSecret() { return lsGet(TOTP_KEY); }
-
-  function newSecret() {
-    var b = new Uint8Array(10);
-    (window.crypto || window.msCrypto).getRandomValues(b);
-    return b32encode(b);
-  }
-
-  /* 用密钥和当前时间算 6 位码，offset 是往前/往后挪几个 30 秒窗口 */
-  function totpAt(secret, offset) {
-    var step = Math.floor(Date.now() / 1000 / 30) + (offset || 0);
-    var msg = new Uint8Array(8);
-    for (var i = 7; i >= 0; i--) { msg[i] = step & 255; step = Math.floor(step / 256); }
-    var key = b32decode(secret);
-    return crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-1" }, false, ["sign"])
-      .then(function (k) { return crypto.subtle.sign("HMAC", k, msg); })
-      .then(function (sig) {
-        var h = new Uint8Array(sig);
-        var off = h[h.length - 1] & 15;
-        var code = ((h[off] & 127) << 24) | (h[off + 1] << 16) | (h[off + 2] << 8) | h[off + 3];
-        return String(code % 1000000).padStart(6, "0");
-      });
-  }
-
-  /* 允许前后各一个窗口，也就是手机时钟差 30 秒也能过 */
-  function totpCheck(code) {
-    code = String(code || "").replace(/\D/g, "");
-    if (code.length !== 6) return Promise.resolve(false);
-    var sec = totpSecret();
-    if (!sec) return Promise.resolve(false);
-    var checks = [totpAt(sec, -1), totpAt(sec, 0), totpAt(sec, 1)];
-    return Promise.all(checks).then(function (list) {
-      return list.indexOf(code) >= 0;
-    }).catch(function () { return false; });
-  }
-
-  function totpMsg(t) { var e = document.getElementById("lbTotpMsg"); if (e) e.textContent = t; }
-
-  function showTotpState() {
-    var e = document.getElementById("lbTotpState");
-    if (!e) return;
-    e.textContent = totpSecret() ? "已开启（本机锁生效）" : "未开启";
-  }
-
-  function openLock() {
-    var m = document.getElementById("lockMask");
-    if (!m) return;
-    m.hidden = false;
-    var c = document.getElementById("lockCode");
-    if (c) { c.value = ""; setTimeout(function () { c.focus(); }, 100); }
-  }
-
-  function closeLock() {
-    var m = document.getElementById("lockMask");
-    if (m) m.hidden = true;
-  }
-
-  function groupSecret(s) {
-    return String(s || "").replace(/(.{4})/g, "$1 ").trim();
-  }
-
-  var pendingSecret = "";
-
-  document.getElementById("lbTotpSet").addEventListener("click", function () {
-    if (totpSecret()) { totpMsg("已经开了，输码验证就行。"); return; }
-    pendingSecret = newSecret();
-    totpMsg("密钥：" + groupSecret(pendingSecret) +
-      "。把这串存进验证器 App（Google / Microsoft Authenticator 选“手动输入密钥”），然后把它给出的 6 位码填进去点验证。密钥就是恢复码，丢了就解不开。");
+  document.getElementById("lbRecGen").addEventListener("click", function () {
+    if (!isReg()) { recMsg("先注册或登录，才有恢复码。"); return; }
+    var code = makeRecCode(myName(), myPid());
+    lsSet(REC_KEY, code);
+    showRec();
+    recMsg("抄下来存好，换手机、清缓存就靠它。");
   });
 
-  document.getElementById("lbTotpVerify").addEventListener("click", function () {
-    var code = (document.getElementById("lbTotpCode").value || "").replace(/\D/g, "");
-    if (code.length !== 6) { totpMsg("要 6 位数字。"); return; }
-    if (pendingSecret) {
-      var sec = pendingSecret;
-      var step = Math.floor(Date.now() / 1000 / 30);
-      var msg = new Uint8Array(8);
-      for (var i = 7; i >= 0; i--) { msg[i] = step & 255; step = Math.floor(step / 256); }
-      crypto.subtle.importKey("raw", b32decode(sec), { name: "HMAC", hash: "SHA-1" }, false, ["sign"])
-        .then(function (k) { return crypto.subtle.sign("HMAC", k, msg); })
-        .then(function (sig) {
-          var h = new Uint8Array(sig), off = h[h.length - 1] & 15;
-          var v = ((h[off] & 127) << 24) | (h[off + 1] << 16) | (h[off + 2] << 8) | h[off + 3];
-          var now = String(v % 1000000).padStart(6, "0");
-          if (now !== code) { totpMsg("码不对，等下一轮再试。"); return; }
-          lsSet(TOTP_KEY, sec);
-          pendingSecret = "";
-          showTotpState();
-          totpMsg("开好了，下次打开要输码。");
-        }).catch(function () { totpMsg("这台浏览器算不了口令，换 Chrome / Edge 试试。"); });
-      return;
-    }
-    totpCheck(code).then(function (ok) { totpMsg(ok ? "验证通过。" : "码不对。"); });
+  document.getElementById("lbRecUse").addEventListener("click", function () {
+    var raw = (document.getElementById("lbRecInput").value || "").trim().toUpperCase();
+    var n = (els.lbName.value || "").trim().slice(0, 4);
+    if (!n) { recMsg("先把上面的名字填上，恢复码要和名字配对。"); return; }
+    var m = raw.match(/EH-(\d{6})-(\d{4})/);
+    if (!m) { recMsg("恢复码格式不对，应该是 EH-123456-4821 这种。"); return; }
+    var pid = m[1], chk = m[2];
+    if (recHash(n, pid) !== chk) { recMsg("这组码和这个名字对不上，检查一下有没有抄错。"); return; }
+    saveMe({ name: n, player_id: pid, client_id: myCid() });
+    lsSet(REC_KEY, "EH-" + pid + "-" + chk);
+    showRec();
+    recMsg("恢复成功，已用 " + n + " 登录。");
   });
-
-  document.getElementById("lbTotpOff").addEventListener("click", function () {
-    if (!totpSecret()) { totpMsg("本来就没开。"); return; }
-    var code = (document.getElementById("lbTotpCode").value || "").replace(/\D/g, "");
-    if (code.length !== 6) { totpMsg("关掉要先输一次正确的 6 位码。"); return; }
-    totpCheck(code).then(function (ok) {
-      if (!ok) { totpMsg("码不对，关不了。"); return; }
-      lsSet(TOTP_KEY, "");
-      setCk(TOTP_KEY, "", -1);
-      showTotpState();
-      totpMsg("已关闭本机锁。");
-    });
-  });
-
-  (function bindLock() {
-    var go = document.getElementById("lockGo");
-    var input = document.getElementById("lockCode");
-    if (!go) return;
-    function submit() {
-      var code = (input.value || "").replace(/\D/g, "");
-      var m = document.getElementById("lockMsg");
-      if (code.length !== 6) { m.textContent = "要 6 位数字。"; return; }
-      totpCheck(code).then(function (ok) {
-        if (ok) { closeLock(); if (m) m.textContent = ""; }
-        else if (m) m.textContent = "码不对，等下一轮再试。";
-      });
-    }
-    go.addEventListener("click", submit);
-    input.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
-    showTotpState();
-    if (totpSecret()) openLock();
-  })();
 
   document.getElementById("btnRestart").addEventListener("click", function () {
     clearSave(state.mode);
