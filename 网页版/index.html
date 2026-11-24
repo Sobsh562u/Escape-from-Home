@@ -210,6 +210,26 @@
   .inboxrow .rp{font-size:13px;color:#6c8a5b;margin-top:6px}
   .inboxrow input{width:100%;margin-top:8px;font:inherit;font-size:14px;padding:8px;border:1px solid #d8d2c4;border-radius:8px;background:#fff}
   .inboxrow button{margin-top:6px;font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer}
+  .phonemask{position:fixed;inset:0;background:rgba(20,18,15,.62);display:flex;align-items:center;justify-content:center;padding:14px;z-index:70}
+  .phonecard{background:#f7f4ec;border-radius:18px;max-width:380px;width:100%;max-height:86vh;overflow:auto;padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);border:1px solid #ded5c2}
+  .phtop{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#8a7d64;margin-bottom:8px}
+  .phtop button{font:inherit;font-size:18px;background:none;border:0;color:#8a7d64;cursor:pointer;padding:0 4px}
+  .phscreen{background:#efe9db;border-radius:14px;padding:14px;min-height:180px}
+  .phapps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .phapp{background:#fdfbf6;border:1px solid #ded5c2;border-radius:12px;padding:12px 6px;text-align:center;font-size:13px;color:#3f3729;cursor:pointer;font:inherit}
+  .phapp:disabled{opacity:.45;cursor:not-allowed}
+  .phbtn{font:inherit;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer;margin:4px 6px 4px 0}
+  .phbtn.warn{border-color:#c88a7a;background:#f4e0da;color:#8c3222}
+  .phemerg{width:100%;margin-top:10px;font:inherit;font-size:14px;padding:10px;border-radius:10px;border:1px solid #c88a7a;background:#f7e5df;color:#8c3222;cursor:pointer;font-weight:600}
+  .phrow{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+  .phrow input[type=text],.phrow input[type=password],.phrow input[type=number],.phrow textarea{font:inherit;font-size:14px;padding:8px;border:1px solid #d8d2c4;border-radius:8px;background:#fff;flex:1;min-width:120px}
+  .phrow textarea{min-height:60px;resize:vertical;width:100%}
+  .phlist{margin-top:8px}
+  .phitem{background:#fdfbf6;border:1px solid #e3dccd;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:13px;line-height:1.6;color:#2c2620;word-break:break-word}
+  .phitem b{display:block;font-size:14px;margin-bottom:2px}
+  .phitem .m{color:#8a7d64;font-size:12px}
+  .phtime{font-size:12px;color:#8a7d64;margin-top:6px}
+  .phmsg{font-size:13px;color:#6c8a5b;margin:8px 2px 0;min-height:18px}
 </style>
 </head>
 <body>
@@ -256,7 +276,8 @@
     <div class="acts" id="mainActs">
       <button class="primary" id="btnExam">考试</button>
       <button id="btnRun">逃跑</button>
-      <button id="btnCall">报警</button>
+      <button id="btnCall" hidden>报警</button>
+      <button id="btnPhone">手机</button>
       <button id="btnPaper" title="每局只能用一次：交上去直接补满血条，这一巴掌打不下来">100 分卷</button>
       <button id="btnShop">道具店</button>
       <button id="btnAuthor" hidden>作者模式</button>
@@ -270,6 +291,14 @@
       </div>
       <div id="shopList"></div>
       <p class="lbauthmsg" id="shopMsg"></p>
+    </div>
+
+    <div class="phonemask" id="phoneMask" hidden>
+      <div class="phonecard">
+        <div class="phtop"><span id="phTitle">手机</span><button type="button" id="phClose" aria-label="关闭">×</button></div>
+        <div id="phBody"></div>
+        <p class="phmsg" id="phMsg"></p>
+      </div>
     </div>
 
     <div class="acts" id="stationBar" hidden>
@@ -784,7 +813,7 @@
   function reset(mode, forceNew) {
     var cfg = MODES[mode];
     state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1,
-              items: {}, lampUses: 0, coinPaid: false };
+              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
@@ -1030,7 +1059,11 @@
     { id: "lamp", name: "应急台灯", price: 6, once: false, max: 2,
       desc: "买了立刻回 10 血，一局最多买 2 盏。" },
     { id: "lucky", name: "幸运橡皮", price: 8, once: true,
-      desc: "本局考试分数不低于 65 分。反转版不适用（那里考高反而挨打）。" }
+      desc: "本局考试分数不低于 65 分。反转版不适用（那里考高反而挨打）。" },
+    { id: "phone", name: "完整版手机", price: 30, once: true, g: "full",
+      desc: "能装 APP 的手机：短视频、短信、通话全都有。买了永久有效，换难度也在。" },
+    { id: "sim", name: "电话卡", price: 8, once: true, g: "sim",
+      desc: "插上才能给别人打电话、发短信，收件人填名字或 6 位玩家 ID 都行。" }
   ];
 
   function coins() { return parseInt(lsGet(COIN_KEY) || "0", 10) || 0; }
@@ -1060,12 +1093,13 @@
       var b = document.createElement("b");
       b.textContent = it.name + " · " + it.price + " 金币";
       var p = document.createElement("div");
-      p.textContent = it.desc + (hasItem(it.id) ? "（本局已有）" : "");
+      p.textContent = it.desc + (it.g ? (phone[it.g] ? "（已拥有）" : "") : (hasItem(it.id) ? "（本局已有）" : ""));
       info.appendChild(b); info.appendChild(p);
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = hasItem(it.id) && it.once ? "已买" : "买";
-      btn.disabled = !!(hasItem(it.id) && it.once);
+      var owned = it.g ? !!phone[it.g] : hasItem(it.id);
+      btn.textContent = owned && it.once ? "已买" : "买";
+      btn.disabled = !!(owned && it.once);
       btn.addEventListener("click", function () { buyItem(it); });
       d.appendChild(info); d.appendChild(btn);
       list.appendChild(d);
@@ -1076,9 +1110,18 @@
     if (!state || state.over) { shopMsg("这局已经结束了，道具下局用。"); return; }
     if (it.id === "lucky" && state.mode === "revert") { shopMsg("反转版用不上橡皮，那儿的规矩反着来。"); return; }
     if (it.id === "lamp" && (state.lampUses || 0) >= 2) { shopMsg("这局两盏都用过了。"); return; }
-    if (it.once && hasItem(it.id)) { shopMsg("这个本局已经买过了。"); return; }
+    if (it.once && (it.g ? phone[it.g] : hasItem(it.id))) { shopMsg("这个已经买过了。"); return; }
     if (coins() < it.price) { shopMsg("金币不够，还差 " + (it.price - coins()) + " 个。"); return; }
     addCoins(-it.price);
+    if (it.g) {
+      phone[it.g] = true;
+      savePhone();
+      line(it.g === "full"
+        ? "你从二手市场拎回来一台完整版手机，屏幕上能装 APP 了。"
+        : "你买了一张电话卡，插进手机，信号格亮了。", "good");
+      shopMsg("买好了，剩 " + coins() + " 金币。");
+      updateStats(); saveState(); renderShop(); return;
+    }
     if (it.id === "lamp") {
       state.lampUses = (state.lampUses || 0) + 1;
       state.hp = Math.min(state.cfg.max, state.hp + 10);
@@ -1094,6 +1137,9 @@
     shopMsg("买好了，剩 " + coins() + " 金币。");
   }
 
+  document.getElementById("btnPhone").addEventListener("click", openPhone);
+  document.getElementById("phClose").addEventListener("click", closePhone);
+
   document.getElementById("btnShop").addEventListener("click", function () {
     var p = document.getElementById("shopPanel");
     p.hidden = !p.hidden;
@@ -1102,6 +1148,297 @@
   document.getElementById("shopClose").addEventListener("click", function () {
     document.getElementById("shopPanel").hidden = true;
   });
+
+  /* ===================== 手机 ===================== */
+  var PHONE_KEY = "ehq_phone_v1";
+
+  function loadPhone() {
+    var d = {};
+    try { d = JSON.parse(localStorage.getItem(PHONE_KEY) || "{}") || {}; } catch (e) { d = {}; }
+    return {
+      full: !!d.full,
+      sim: !!d.sim,
+      pass: typeof d.pass === "string" ? d.pass : "",
+      vol: typeof d.vol === "number" ? d.vol : 50,
+      limit: typeof d.limit === "number" ? d.limit : 120,
+      videos: Array.isArray(d.videos) ? d.videos : [],
+      msgs: Array.isArray(d.msgs) ? d.msgs : []
+    };
+  }
+  function savePhone() { try { localStorage.setItem(PHONE_KEY, JSON.stringify(phone)); } catch (e) {} }
+  var phone = loadPhone();
+
+  var phTimer = null, phUnlocked = false, phView = "home";
+
+  function phEl(id) { return document.getElementById(id); }
+  function phMsg(t) { var e = phEl("phMsg"); if (e) e.textContent = t || ""; }
+
+  function phUsedText() {
+    var used = (state && state.phoneUse) || 0;
+    var lim = phone.limit;
+    function f(n) { var m = Math.floor(n / 60), ss = n % 60; return m + ":" + (ss < 10 ? "0" : "") + ss; }
+    return "今天已用 " + f(used) + " / " + f(lim);
+  }
+
+  function openPhone() {
+    if (!state) { return; }
+    phView = (phone.pass && !phUnlocked) ? "lock" : "home";
+    phEl("phoneMask").hidden = false;
+    renderPhone();
+    if (phTimer) clearInterval(phTimer);
+    phTimer = setInterval(phoneTick, 1000);
+  }
+  function closePhone() {
+    phEl("phoneMask").hidden = true;
+    if (phTimer) { clearInterval(phTimer); phTimer = null; }
+  }
+
+  function phoneTick() {
+    if (!state || state.over) { closePhone(); return; }
+    if (phView === "lock") { return; }
+    if (state.phoneBurned) { return; }
+    state.phoneUse = (state.phoneUse || 0) + 1;
+    // 音量开太大，妈妈听得见
+    if (phone.vol >= 80 && Math.random() < 0.03 && state.hp > 1) {
+      state.hp = Math.max(1, state.hp - 5);
+      line("外放声音太大了，妈妈在隔壁敲墙：「小点声！」扣 5 血。", "bad");
+      updateStats(); saveState();
+    }
+    if (state.phoneUse > phone.limit) {
+      state.phoneBurned = true;
+      line("你抱着手机刷到后半夜，眼睛熬得通红。第二天早上起不来，脑袋像被人拿锤子敲——熬穿了，扣 10 血。", "bad");
+      updateStats(); saveState();
+      closePhone();
+      if (applyHp(-10)) return;
+      return;
+    }
+    var t = phEl("phTime");
+    if (t) t.textContent = phUsedText();
+  }
+
+  function renderPhone() {
+    var body = phEl("phBody");
+    var title = phEl("phTitle");
+    body.innerHTML = "";
+    phMsg("");
+    if (!state) { body.textContent = "先选个难度开始游戏。"; return; }
+    if (phView === "lock") {
+      title.textContent = "锁屏";
+      var sc = document.createElement("div"); sc.className = "phscreen";
+      var h = document.createElement("div");
+      h.textContent = "这台手机你设了密码。";
+      h.style.marginBottom = "10px";
+      sc.appendChild(h);
+      var row = document.createElement("div"); row.className = "phrow";
+      var inp = document.createElement("input");
+      inp.type = "password"; inp.placeholder = "输入密码"; inp.id = "phPass";
+      var ok = document.createElement("button");
+      ok.type = "button"; ok.className = "phbtn"; ok.textContent = "解锁";
+      ok.addEventListener("click", function () {
+        if (inp.value === phone.pass) { phUnlocked = true; phView = "home"; renderPhone(); }
+        else phMsg("密码不对。");
+      });
+      row.appendChild(inp); row.appendChild(ok);
+      sc.appendChild(row);
+      var em = document.createElement("button");
+      em.type = "button"; em.className = "phemerg"; em.textContent = "紧急拨号 · 110";
+      em.addEventListener("click", function () { closePhone(); doCall(); });
+      sc.appendChild(em);
+      var tip = document.createElement("p"); tip.className = "phtime";
+      tip.textContent = "忘了密码也能紧急拨号。";
+      sc.appendChild(tip);
+      body.appendChild(sc);
+      return;
+    }
+
+    title.textContent = phone.full ? "完整版手机" : "学校发的老人机";
+    var scr = document.createElement("div"); scr.className = "phscreen";
+
+    if (phView === "home") {
+      var st = document.createElement("div");
+      st.textContent = phone.full
+        ? "屏幕亮着，能装 APP 了。"
+        : "没有 APP，也下不了软件。想刷视频、发短信，得先去道具店换一台完整版手机。";
+      st.style.lineHeight = "1.7";
+      scr.appendChild(st);
+      if (!phone.sim) {
+        var s2 = document.createElement("p"); s2.className = "phtime";
+        s2.textContent = "卡槽是空的——没电话卡，打不了电话、发不了短信。";
+        scr.appendChild(s2);
+      }
+      var apps = document.createElement("div"); apps.className = "phapps";
+      var list = [];
+      if (phone.full) list.push(["video", "短视频"]);
+      if (phone.sim) { list.push(["sms", "短信"]); list.push(["call", "通话"]); }
+      list.push(["settings", "设置"]);
+      var seen = {};
+      list.forEach(function (a) {
+        if (seen[a[0]]) return; seen[a[0]] = 1;
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "phapp"; b.textContent = a[1];
+        b.addEventListener("click", function () { phView = a[0]; renderPhone(); });
+        apps.appendChild(b);
+      });
+      if (!phone.sim && phone.full) {
+        var b3 = document.createElement("button");
+        b3.type = "button"; b3.className = "phapp"; b3.textContent = "短信";
+        b3.disabled = true; b3.title = "需要电话卡";
+        apps.appendChild(b3);
+      }
+      scr.appendChild(apps);
+      var em2 = document.createElement("button");
+      em2.type = "button"; em2.className = "phemerg"; em2.textContent = "紧急拨号 · 110";
+      em2.addEventListener("click", function () { closePhone(); doCall(); });
+      scr.appendChild(em2);
+      var tt = document.createElement("p"); tt.className = "phtime"; tt.id = "phTime";
+      tt.textContent = phUsedText();
+      scr.appendChild(tt);
+    }
+
+    if (phView === "video") {
+      var vt = document.createElement("div");
+      vt.textContent = "你打开短视频，手指一划，屏幕里全是别人家的生活。";
+      vt.style.marginBottom = "8px";
+      scr.appendChild(vt);
+      var r1 = document.createElement("div"); r1.className = "phrow";
+      var ti = document.createElement("input"); ti.type = "text"; ti.placeholder = "视频标题，比如：今天又考砸了";
+      var pb = document.createElement("button"); pb.type = "button"; pb.className = "phbtn"; pb.textContent = "发布";
+      pb.addEventListener("click", function () {
+        var t = ti.value.trim();
+        if (!t) { phMsg("先写个标题。"); return; }
+        phone.videos.unshift({ title: t, views: rand(30) + 20, likes: rand(30) + 5, day: Math.max(1, state.day) });
+        phone.videos = phone.videos.slice(0, 12);
+        savePhone(); renderPhone(); phMsg("发出去了，有人开始刷到。");
+      });
+      r1.appendChild(ti); r1.appendChild(pb);
+      scr.appendChild(r1);
+      var sw = document.createElement("button"); sw.type = "button"; sw.className = "phbtn"; sw.textContent = "刷十分钟（+10 秒用机）";
+      sw.addEventListener("click", function () {
+        state.phoneUse = (state.phoneUse || 0) + 10;
+        phone.videos.forEach(function (v) { v.views += rand(40); });
+        savePhone(); renderPhone(); phMsg("刷着刷着又过去十分钟。");
+      });
+      scr.appendChild(sw);
+      var vl = document.createElement("div"); vl.className = "phlist";
+      if (!phone.videos.length) { var e0 = document.createElement("p"); e0.className = "phtime"; e0.textContent = "你还没发过视频。"; vl.appendChild(e0); }
+      phone.videos.forEach(function (v) {
+        var it = document.createElement("div"); it.className = "phitem";
+        var bt = document.createElement("b"); bt.textContent = v.title;
+        var m = document.createElement("div"); m.className = "m";
+        m.textContent = "第 " + v.day + " 天发 · 播放 " + v.views + " · 点赞 " + v.likes;
+        it.appendChild(bt); it.appendChild(m); vl.appendChild(it);
+      });
+      scr.appendChild(vl);
+    }
+
+    if (phView === "sms") {
+      if (!phone.sim) {
+        scr.textContent = "没电话卡，短信发不出去。";
+      } else {
+        var srow = document.createElement("div"); srow.className = "phrow";
+        var to = document.createElement("input"); to.type = "text"; to.placeholder = "发给谁：名字或 6 位玩家 ID";
+        srow.appendChild(to); scr.appendChild(srow);
+        var trow = document.createElement("div"); trow.className = "phrow";
+        var ta = document.createElement("textarea"); ta.placeholder = "写点什么";
+        trow.appendChild(ta); scr.appendChild(trow);
+        var send = document.createElement("button"); send.type = "button"; send.className = "phbtn"; send.textContent = "发送";
+        send.addEventListener("click", function () {
+          var who = to.value.trim(), txt = ta.value.trim();
+          if (!who) { phMsg("填一下收件人。"); return; }
+          if (!txt) { phMsg("内容是空的。"); return; }
+          var reply = phReply(who);
+          phone.msgs.unshift({ to: who, txt: txt, reply: reply, day: Math.max(1, state.day) });
+          phone.msgs = phone.msgs.slice(0, 20);
+          savePhone(); renderPhone(); phMsg("短信发出去了。");
+        });
+        scr.appendChild(send);
+        var ml = document.createElement("div"); ml.className = "phlist";
+        phone.msgs.forEach(function (m) {
+          var it = document.createElement("div"); it.className = "phitem";
+          var bt = document.createElement("b"); bt.textContent = "发给 " + m.to;
+          var mm = document.createElement("div"); mm.className = "m"; mm.textContent = "第 " + m.day + " 天";
+          var tx = document.createElement("div"); tx.textContent = m.txt;
+          var rp = document.createElement("div"); rp.className = "m"; rp.textContent = "对方回：" + m.reply;
+          it.appendChild(bt); it.appendChild(mm); it.appendChild(tx); it.appendChild(rp);
+          ml.appendChild(it);
+        });
+        scr.appendChild(ml);
+      }
+    }
+
+    if (phView === "call") {
+      if (!phone.sim) {
+        scr.textContent = "没电话卡，电话打不出去。";
+      } else {
+        var crow = document.createElement("div"); crow.className = "phrow";
+        var ci = document.createElement("input"); ci.type = "text"; ci.placeholder = "打给谁：名字或 6 位玩家 ID";
+        var cb = document.createElement("button"); cb.type = "button"; cb.className = "phbtn"; cb.textContent = "拨打";
+        cb.addEventListener("click", function () {
+          var who = ci.value.trim();
+          if (!who) { phMsg("填一下打给谁。"); return; }
+          var ok = Math.random() < 0.8;
+          phMsg(ok ? ("通了。" + who + "：" + phReply(who)) : "响了很久，没人接。");
+        });
+        crow.appendChild(ci); crow.appendChild(cb); scr.appendChild(crow);
+        var note = document.createElement("p"); note.className = "phtime";
+        note.textContent = "报警不用拨号盘，锁屏和首页都有「紧急拨号 · 110」。";
+        scr.appendChild(note);
+      }
+    }
+
+    if (phView === "settings") {
+      var volRow = document.createElement("div"); volRow.className = "phrow";
+      var lab = document.createElement("span"); lab.textContent = "音量 " + phone.vol;
+      var rg = document.createElement("input"); rg.type = "range"; rg.min = "0"; rg.max = "100"; rg.value = String(phone.vol);
+      rg.addEventListener("input", function () { lab.textContent = "音量 " + rg.value; });
+      rg.addEventListener("change", function () { phone.vol = parseInt(rg.value, 10) || 0; savePhone(); phMsg("音量调到 " + phone.vol + "。超过 80 容易被听见。"); });
+      volRow.appendChild(lab); volRow.appendChild(rg); scr.appendChild(volRow);
+
+      var limRow = document.createElement("div"); limRow.className = "phrow";
+      var ll = document.createElement("span"); ll.textContent = "用机上限（秒）";
+      var li = document.createElement("input"); li.type = "number"; li.min = "30"; li.max = "900"; li.value = String(phone.limit);
+      var lb = document.createElement("button"); lb.type = "button"; lb.className = "phbtn"; lb.textContent = "保存";
+      lb.addEventListener("click", function () {
+        var v = parseInt(li.value, 10);
+        if (!v || v < 30) { phMsg("最少 30 秒。"); return; }
+        phone.limit = Math.min(900, v); savePhone(); phMsg("超时上限改成 " + phone.limit + " 秒。");
+      });
+      limRow.appendChild(ll); limRow.appendChild(li); limRow.appendChild(lb); scr.appendChild(limRow);
+
+      var pRow = document.createElement("div"); pRow.className = "phrow";
+      var pi = document.createElement("input"); pi.type = "text"; pi.placeholder = "设置锁屏密码（留空 = 取消密码）";
+      var pbtn = document.createElement("button"); pbtn.type = "button"; pbtn.className = "phbtn"; pbtn.textContent = "保存密码";
+      pbtn.addEventListener("click", function () {
+        phone.pass = pi.value.trim(); phUnlocked = true; savePhone(); phMsg(phone.pass ? "密码设好了，下次开手机要输。" : "密码取消了。");
+      });
+      pRow.appendChild(pi); pRow.appendChild(pbtn); scr.appendChild(pRow);
+
+      var back = document.createElement("button"); back.type = "button"; back.className = "phbtn"; back.textContent = "回桌面";
+      back.addEventListener("click", function () { phView = "home"; renderPhone(); });
+      scr.appendChild(back);
+    }
+
+    if (phView !== "home") {
+      var bk = document.createElement("button");
+      bk.type = "button"; bk.className = "phbtn"; bk.textContent = "返回桌面";
+      bk.addEventListener("click", function () { phView = "home"; renderPhone(); });
+      scr.appendChild(bk);
+    }
+    body.appendChild(scr);
+  }
+
+  function phReply(who) {
+    var id = (who.match(/\d{6}/) || [])[0];
+    if (id === "337640") return "我是深度求索，你也在逃？";
+    if (id === "544418") return "作者在，别报我名字。";
+    if (id === "114788") return "豆包：我先睡了，明天聊。";
+    if (!id) return "你是谁？我不认识这个名字。";
+    var arr = ["收到。", "你还好吗？", "别在手机上留太多话。", "我这边也在熬。", "有空再说。"];
+    return arr[rand(arr.length)];
+  }
+
+  /* ===================== 手机结束 ===================== */
+
 
   /* 结算发金币：普通通关 1 个；跑路版按带出去的钱；无尽版按走完的圈 */
   function awardCoins(endingId) {
@@ -1165,6 +1502,8 @@
       return;
     }
     state.day += 1;
+    state.phoneUse = 0;
+    state.phoneBurned = false;
     updateStats();
     if (state.day >= state.cfg.goal && state.mode !== "revert") {
       recordBest(state.mode, state.day, state.hp);
