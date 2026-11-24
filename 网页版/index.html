@@ -1244,6 +1244,8 @@
   var phone = loadPhone();
 
   var phTimer = null, phUnlocked = false, phView = "home";
+  var PH_SMS = { tab: "in", rows: [], used: 0, cap: 60, msg: "", loading: false, need: true,
+                 attach: null, aname: "", atype: "" };
 
   function phEl(id) { return document.getElementById(id); }
   function phMsg(t) { var e = phEl("phMsg"); if (e) e.textContent = t || ""; }
@@ -1290,6 +1292,51 @@
     }
     var t = phEl("phTime");
     if (t) t.textContent = phUsedText();
+  }
+
+  function smsReady() { return !!(state && phone.sim && isReg()); }
+
+  function smsRpc(fn, body) {
+    return fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); });
+  }
+
+  function smsLoad(force) {
+    if (!smsReady()) return;
+    if (PH_SMS.loading && !force) return;
+    PH_SMS.loading = true;
+    var fn = PH_SMS.tab === "out" ? "ehq_sms_outbox" : "ehq_sms_inbox";
+    smsRpc(fn, { p_me: myPid(), p_cid: myCid() }).then(function (r) {
+      PH_SMS.loading = false;
+      if (!r || !r.ok) { PH_SMS.msg = (r && r.msg) || "读不出来"; }
+      else { PH_SMS.rows = r.rows || []; PH_SMS.used = r.used || 0; PH_SMS.cap = r.cap || 60; PH_SMS.msg = ""; }
+      if (phView === "sms") renderPhone();
+    }).catch(function () {
+      PH_SMS.loading = false; PH_SMS.msg = "连不上服务器";
+      if (phView === "sms") renderPhone();
+    });
+  }
+
+  function smsDel(id) {
+    smsRpc("ehq_sms_del", { p_me: myPid(), p_cid: myCid(), p_id: id }).then(function (r) {
+      if (r && r.ok) { PH_SMS.need = true; smsLoad(true); }
+      else phMsg((r && r.msg) || "删不掉");
+    }).catch(function () { phMsg("网络不通"); });
+  }
+
+  function smsAttach(id) {
+    phMsg("取附件中…");
+    smsRpc("ehq_sms_attach", { p_me: myPid(), p_cid: myCid(), p_id: id }).then(function (r) {
+      if (!r || !r.ok || !r.data) { phMsg((r && r.msg) || "取不到附件"); return; }
+      var href = "data:" + (r.type || "application/octet-stream") + ";base64," + r.data;
+      var a = document.createElement("a");
+      a.href = href; a.download = r.name || "附件";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      phMsg("附件已保存到下载目录。");
+    }).catch(function () { phMsg("下载失败"); });
   }
 
   function renderPhone() {
@@ -1408,56 +1455,173 @@
     }
 
     if (phView === "sms") {
+      if (phone.sim && isReg() && PH_SMS.tab !== "new" && PH_SMS.need) {
+        PH_SMS.need = false;
+        smsLoad(true);
+      }
       if (!phone.sim) {
-        scr.textContent = "没电话卡，短信发不出去。";
+        scr.textContent = "没电话卡，短信发不出去。先去道具店买一张。";
+      } else if (!isReg()) {
+        var need = document.createElement("div");
+        need.textContent = "发短信要账号。先在排行榜弹窗里注册，拿到 6 位玩家 ID 再回来。";
+        need.style.lineHeight = "1.7";
+        scr.appendChild(need);
       } else {
-        var srow = document.createElement("div"); srow.className = "phrow";
-        var to = document.createElement("input"); to.type = "text"; to.placeholder = "发给谁：名字或 6 位玩家 ID";
-        srow.appendChild(to); scr.appendChild(srow);
-        var trow = document.createElement("div"); trow.className = "phrow";
-        var ta = document.createElement("textarea"); ta.placeholder = "写点什么";
-        trow.appendChild(ta); scr.appendChild(trow);
-        var send = document.createElement("button"); send.type = "button"; send.className = "phbtn"; send.textContent = "发送";
-        send.addEventListener("click", function () {
-          var who = to.value.trim(), txt = ta.value.trim();
-          if (!who) { phMsg("填一下收件人。"); return; }
-          if (!txt) { phMsg("内容是空的。"); return; }
-          var reply = phReply(who);
-          phone.msgs.unshift({ to: who, txt: txt, reply: reply, day: Math.max(1, state.day) });
-          phone.msgs = phone.msgs.slice(0, 20);
-          savePhone(); renderPhone(); phMsg("短信发出去了。");
+        var tabs = document.createElement("div"); tabs.className = "phrow";
+        [["in", "收件箱"], ["out", "发件箱"], ["new", "写短信"]].forEach(function (t) {
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "phbtn";
+          b.textContent = t[1];
+          if (PH_SMS.tab === t[0]) b.style.background = "#e2d7ba";
+          b.addEventListener("click", function () {
+            PH_SMS.tab = t[0]; PH_SMS.need = true; PH_SMS.msg = ""; renderPhone();
+          });
+          tabs.appendChild(b);
         });
-        scr.appendChild(send);
-        var ml = document.createElement("div"); ml.className = "phlist";
-        phone.msgs.forEach(function (m) {
-          var it = document.createElement("div"); it.className = "phitem";
-          var bt = document.createElement("b"); bt.textContent = "发给 " + m.to;
-          var mm = document.createElement("div"); mm.className = "m"; mm.textContent = "第 " + m.day + " 天";
-          var tx = document.createElement("div"); tx.textContent = m.txt;
-          var rp = document.createElement("div"); rp.className = "m"; rp.textContent = "对方回：" + m.reply;
-          it.appendChild(bt); it.appendChild(mm); it.appendChild(tx); it.appendChild(rp);
-          ml.appendChild(it);
-        });
-        scr.appendChild(ml);
+        scr.appendChild(tabs);
+
+        var q = document.createElement("p"); q.className = "phtime";
+        q.textContent = "容量 " + PH_SMS.used + " / " + PH_SMS.cap + " 条" +
+          (PH_SMS.used >= PH_SMS.cap - 5 ? "，快满了，删几条旧的" : "");
+        scr.appendChild(q);
+
+        if (PH_SMS.tab === "new") {
+          var r1 = document.createElement("div"); r1.className = "phrow";
+          var to = document.createElement("input"); to.type = "text";
+          to.placeholder = "收件人：6 位玩家 ID"; to.maxLength = 6;
+          r1.appendChild(to); scr.appendChild(r1);
+
+          var r2 = document.createElement("div"); r2.className = "phrow";
+          var ta = document.createElement("textarea");
+          ta.placeholder = "写点什么（也可以只发附件）"; ta.maxLength = 500;
+          r2.appendChild(ta); scr.appendChild(r2);
+
+          var r3 = document.createElement("div"); r3.className = "phrow";
+          var fi = document.createElement("input"); fi.type = "file";
+          fi.accept = ".txt,.json,.zip,.md";
+          var affInfo = document.createElement("span"); affInfo.className = "phtime";
+          affInfo.textContent = PH_SMS.aname ? ("附件：" + PH_SMS.aname) : "可带一个附件（≤200KB）";
+          fi.addEventListener("change", function () {
+            var f = fi.files && fi.files[0];
+            if (!f) return;
+            if (f.size > 200 * 1024) { phMsg("附件超过 200KB，会被拒绝。"); fi.value = ""; return; }
+            var fr = new FileReader();
+            fr.onload = function () {
+              var d = String(fr.result || "");
+              PH_SMS.attach = d.slice(d.indexOf(",") + 1);
+              PH_SMS.aname = f.name;
+              PH_SMS.atype = f.type || "application/octet-stream";
+              renderPhone();
+              phMsg("附件挂上了：" + f.name);
+            };
+            fr.readAsDataURL(f);
+          });
+          r3.appendChild(fi); r3.appendChild(affInfo); scr.appendChild(r3);
+
+          if (PH_SMS.aname) {
+            var clr = document.createElement("button");
+            clr.type = "button"; clr.className = "phbtn"; clr.textContent = "拿掉附件";
+            clr.addEventListener("click", function () {
+              PH_SMS.attach = null; PH_SMS.aname = ""; PH_SMS.atype = ""; renderPhone();
+            });
+            scr.appendChild(clr);
+          }
+
+          var send = document.createElement("button");
+          send.type = "button"; send.className = "phbtn"; send.textContent = "发送";
+          send.addEventListener("click", function () {
+            var who = to.value.trim(), txt = ta.value.trim();
+            if (!who) { phMsg("填收件人的玩家 ID。"); return; }
+            if (!txt && !PH_SMS.attach) { phMsg("写点东西，或者带个附件。"); return; }
+            send.disabled = true; send.textContent = "发送中…";
+            smsRpc("ehq_sms_send", {
+              p_from: myPid(), p_cid: myCid(), p_to: who, p_body: txt,
+              p_aname: PH_SMS.aname || null, p_adata: PH_SMS.attach || null, p_atype: PH_SMS.atype || null
+            }).then(function (r) {
+              send.disabled = false; send.textContent = "发送";
+              if (!r || !r.ok) { phMsg((r && r.msg) || "发送失败"); return; }
+              PH_SMS.attach = null; PH_SMS.aname = ""; PH_SMS.atype = "";
+              PH_SMS.tab = "out"; PH_SMS.need = true;
+              renderPhone();
+              phMsg("发出去了，对方在收件箱能看到。");
+            }).catch(function () { send.disabled = false; send.textContent = "发送"; phMsg("网络不通"); });
+          });
+          scr.appendChild(send);
+
+          var tip = document.createElement("p"); tip.className = "phtime";
+          tip.textContent = "最多存 60 条，满了会提示「聊得太火热了」，删几条就能继续。";
+          scr.appendChild(tip);
+        } else {
+          var list = document.createElement("div"); list.className = "phlist";
+          if (PH_SMS.loading) {
+            var l0 = document.createElement("p"); l0.className = "phtime"; l0.textContent = "加载中…";
+            list.appendChild(l0);
+          } else if (!PH_SMS.rows.length) {
+            var l1 = document.createElement("p"); l1.className = "phtime";
+            l1.textContent = PH_SMS.tab === "in" ? "还没人给你发短信。" : "你还没发过短信。";
+            list.appendChild(l1);
+          }
+          PH_SMS.rows.forEach(function (m) {
+            var it = document.createElement("div"); it.className = "phitem";
+            var bt = document.createElement("b");
+            bt.textContent = PH_SMS.tab === "in"
+              ? ("来自 " + (m.sender_name || m.sender_id) + " · " + m.sender_id)
+              : ("发给 " + m.receiver_id);
+            var mm = document.createElement("div"); mm.className = "m";
+            mm.textContent = (m.created_at || "").slice(0, 16).replace("T", " ") +
+              (PH_SMS.tab === "in" && !m.read_at ? " · 新" : "");
+            it.appendChild(bt); it.appendChild(mm);
+            if (m.body) {
+              var tx = document.createElement("div"); tx.textContent = m.body;
+              it.appendChild(tx);
+            }
+            if (m.attach_name) {
+              var ab = document.createElement("button");
+              ab.type = "button"; ab.className = "phbtn";
+              ab.textContent = "附件：" + m.attach_name + "（点我下载）";
+              ab.addEventListener("click", function () { smsAttach(m.id, m.attach_name, m.attach_type); });
+              it.appendChild(ab);
+            }
+            var del = document.createElement("button");
+            del.type = "button"; del.className = "phbtn"; del.textContent = "删掉";
+            del.addEventListener("click", function () { smsDel(m.id); });
+            it.appendChild(del);
+            list.appendChild(it);
+          });
+          scr.appendChild(list);
+
+          var rf = document.createElement("button");
+          rf.type = "button"; rf.className = "phbtn"; rf.textContent = "刷新";
+          rf.addEventListener("click", function () { PH_SMS.need = true; renderPhone(); });
+          scr.appendChild(rf);
+        }
+        if (PH_SMS.msg) { phMsg(PH_SMS.msg); }
       }
     }
 
     if (phView === "call") {
       if (!phone.sim) {
-        scr.textContent = "没电话卡，电话打不出去。";
+        scr.textContent = "没电话卡，电话打不出去。先去道具店买一张。";
       } else {
         var crow = document.createElement("div"); crow.className = "phrow";
-        var ci = document.createElement("input"); ci.type = "text"; ci.placeholder = "打给谁：名字或 6 位玩家 ID";
+        var ci = document.createElement("input"); ci.type = "tel";
+        ci.placeholder = "号码或 6 位玩家 ID"; ci.maxLength = 11;
         var cb = document.createElement("button"); cb.type = "button"; cb.className = "phbtn"; cb.textContent = "拨打";
         cb.addEventListener("click", function () {
           var who = ci.value.trim();
-          if (!who) { phMsg("填一下打给谁。"); return; }
-          var ok = Math.random() < 0.8;
-          phMsg(ok ? ("通了。" + who + "：" + phReply(who)) : "响了很久，没人接。");
+          if (!/^[0-9]{3,11}$/.test(who)) { phMsg("填个号码，3–11 位数字。"); return; }
+          if (who === myPid()) { phMsg("你拨的是自己的号，桌上的手机震了一下。"); return; }
+          var lines = [
+            "响了两声就通了，对面「喂」了一声，背景里是电视声。",
+            "接通了，对方说「这么晚还打过来」，然后就沉默了。",
+            "通了，对面在走路，风很大，说话断断续续。",
+            "接通，对方听完你说的，只回了一句「你自己看着办」。"
+          ];
+          phMsg("接通 " + who + "：" + lines[Math.floor(Math.random() * lines.length)]);
         });
         crow.appendChild(ci); crow.appendChild(cb); scr.appendChild(crow);
         var note = document.createElement("p"); note.className = "phtime";
-        note.textContent = "报警不用拨号盘，锁屏和首页都有「紧急拨号 · 110」。";
+        note.textContent = "紧急拨号 110 在锁屏和桌面，不用进拨号盘。";
         scr.appendChild(note);
       }
     }
