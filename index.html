@@ -1129,10 +1129,16 @@
       desc: "买了立刻回 10 血，一局最多买 2 盏。" },
     { id: "lucky", name: "幸运橡皮", price: 8, once: true,
       desc: "本局考试分数不低于 65 分。反转版不适用（那里考高反而挨打）。" },
-    { id: "phone", name: "完整版手机", price: 30, once: true, g: "full",
-      desc: "能装 APP 的手机：短视频、短信、通话全都有。买了永久有效，换难度也在。" },
-    { id: "sim", name: "电话卡", price: 8, once: true, g: "sim",
-      desc: "插上才能给别人打电话、发短信，收件人填名字或 6 位玩家 ID 都行。" }
+    { id: "phone", name: "完整版手机（永久）", price: 30, once: true, g: "full",
+      desc: "能装 APP 的手机：短视频、短信、通话全都有。永久拥有，换难度、重开本局都在。" },
+    { id: "sim", name: "电话卡（永久）", price: 8, once: true, g: "sim",
+      desc: "插上才能给别人打电话、发短信，收件人填名字或 6 位玩家 ID 都行。永久拥有。" },
+    { id: "powerbank", name: "充电宝", price: 5,
+      desc: "本局手机用机上限 +60 秒，熬夜被抓的线往后挪一点。" },
+    { id: "earbuds", name: "耳机", price: 7,
+      desc: "手机音量开到 100 也不会被妈妈听见，本局有效。" },
+    { id: "review", name: "复习资料", price: 6, once: true,
+      desc: "本局考试分数 +10（最高 100）。反转版不适用。" }
   ];
 
   function coins() { return parseInt(lsGet(COIN_KEY) || "0", 10) || 0; }
@@ -1177,7 +1183,7 @@
 
   function buyItem(it) {
     if (!state || state.over) { shopMsg("这局已经结束了，道具下局用。"); return; }
-    if (it.id === "lucky" && state.mode === "revert") { shopMsg("反转版用不上橡皮，那儿的规矩反着来。"); return; }
+    if ((it.id === "lucky" || it.id === "review") && state.mode === "revert") { shopMsg("反转版用不上这个，那儿的规矩反着来。"); return; }
     if (it.id === "lamp" && (state.lampUses || 0) >= 2) { shopMsg("这局两盏都用过了。"); return; }
     if (it.once && (it.g ? phone[it.g] : hasItem(it.id))) { shopMsg("这个已经买过了。"); return; }
     if (coins() < it.price) { shopMsg("金币不够，还差 " + (it.price - coins()) + " 个。"); return; }
@@ -1242,9 +1248,10 @@
   function phEl(id) { return document.getElementById(id); }
   function phMsg(t) { var e = phEl("phMsg"); if (e) e.textContent = t || ""; }
 
+  function phLimit() { return phone.limit + (hasItem("powerbank") ? 60 : 0); }
   function phUsedText() {
     var used = (state && state.phoneUse) || 0;
-    var lim = phone.limit;
+    var lim = phLimit();
     function f(n) { var m = Math.floor(n / 60), ss = n % 60; return m + ":" + (ss < 10 ? "0" : "") + ss; }
     return "今天已用 " + f(used) + " / " + f(lim);
   }
@@ -1268,12 +1275,12 @@
     if (state.phoneBurned) { return; }
     state.phoneUse = (state.phoneUse || 0) + 1;
     // 音量开太大，妈妈听得见
-    if (phone.vol >= 80 && Math.random() < 0.03 && state.hp > 1) {
+    if (phone.vol >= 80 && !hasItem("earbuds") && Math.random() < 0.03 && state.hp > 1) {
       state.hp = Math.max(1, state.hp - 5);
       line("外放声音太大了，妈妈在隔壁敲墙：「小点声！」扣 5 血。", "bad");
       updateStats(); saveState();
     }
-    if (state.phoneUse > phone.limit) {
+    if (state.phoneUse > phLimit()) {
       state.phoneBurned = true;
       line("你抱着手机刷到后半夜，眼睛熬得通红。第二天早上起不来，脑袋像被人拿锤子敲——熬穿了，扣 10 血。", "bad");
       updateStats(); saveState();
@@ -1587,6 +1594,7 @@
   function doExam() {
     if (state.over) return;
     var score = rand(101);
+    if (hasItem("review") && state.mode !== "revert") score = Math.min(100, score + 10);
     if (hasItem("lucky") && state.mode !== "revert" && score < 65) score = 65;
     line("你考了 " + score + " 分。", "day");
     var r = state.cfg.exam(state, score);
