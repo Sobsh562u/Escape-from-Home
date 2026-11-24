@@ -2292,7 +2292,7 @@
         var v = (inp.value || "").trim();
         if (!v) { inp.focus(); return; }
         btn.disabled = true; btn.textContent = "发送中…";
-        inboxRpc("reply_feedback", { p_key: inboxPwd, p_id: it.id, p_reply: v }).then(function (r) {
+        inboxRpc("ehq_fb_reply", { p_key: inboxPwd, p_id: it.id, p_reply: v }).then(function (r) {
           if (r && r.ok) { loadInbox(); } else { btn.disabled = false; btn.textContent = "回复"; alert((r && r.msg) || "没成功"); }
         }).catch(function () { btn.disabled = false; btn.textContent = "回复"; });
       });
@@ -2303,7 +2303,7 @@
         del.style.marginLeft = "6px";
         del.addEventListener("click", function () {
           if (!confirm("清空这条回复？")) return;
-          inboxRpc("clear_reply", { p_key: inboxPwd, p_id: it.id }).then(function (r) {
+          inboxRpc("ehq_fb_clear", { p_key: inboxPwd, p_id: it.id }).then(function (r) {
             if (r && r.ok) { loadInbox(); } else { alert((r && r.msg) || "没成功"); }
           }).catch(function () { alert("网络不通"); });
         });
@@ -2315,7 +2315,7 @@
 
   function loadInbox() {
     els.inboxList.textContent = "加载中…";
-    inboxRpc("list_feedback", { p_key: inboxPwd }).then(function (r) {
+    inboxRpc("ehq_fb_list", { p_key: inboxPwd }).then(function (r) {
       if (!r || !r.ok) { els.inboxList.textContent = (r && r.msg) || "读不出来"; return; }
       renderInbox(r.rows || []);
     }).catch(function () { els.inboxList.textContent = "连不上数据库"; });
