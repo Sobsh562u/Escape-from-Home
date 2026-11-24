@@ -176,6 +176,15 @@
 .lbacts button{flex:1;padding:9px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:15px;cursor:pointer}
 .lbacts button:first-child{background:#f0e6d2}
 .lbauthmsg{font-size:13px;color:#a0503c;min-height:18px;margin:8px 0 0}
+.shop{margin:10px 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper2)}
+.shophead{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b6455;margin-bottom:10px}
+.shopx{background:none;border:none;font-size:18px;line-height:1;cursor:pointer;color:#8b8375}
+.sitem{border-top:1px solid var(--line);padding:9px 0;display:flex;gap:10px;align-items:flex-start}
+.sitem:first-child{border-top:none}
+.sitem .sinfo{flex:1;font-size:13px;line-height:1.6}
+.sitem b{font-size:14px}
+.sitem button{flex:none;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13px;cursor:pointer}
+
 .lbrep{flex:none;margin-left:8px;padding:3px 8px;border:1px solid #ddd;background:#f7f3e8;border-radius:6px;font-size:12px;color:#7a6b4f;cursor:pointer}
 
 .lbrec{margin:14px 0 12px;padding:10px 12px;border:1px solid #e4ddc8;border-radius:10px;background:#fdfaf1}
@@ -240,6 +249,7 @@
       <div class="stat">第<b id="dayNum">0</b>天</div>
       <div class="stat" id="moneyWrap" hidden>钱<b id="moneyNum">0</b>块</div>
       <div class="stat" id="loopWrap" hidden>圈<b id="loopNum">1</b></div>
+      <div class="stat" id="coinWrap">金币<b id="coinNum">0</b></div>
     </div>
     <div id="log" aria-live="polite"></div>
 
@@ -248,8 +258,18 @@
       <button id="btnRun">逃跑</button>
       <button id="btnCall">报警</button>
       <button id="btnPaper" title="每局只能用一次：交上去直接补满血条，这一巴掌打不下来">100 分卷</button>
+      <button id="btnShop">道具店</button>
       <button id="btnAuthor" hidden>作者模式</button>
       <button id="btnInbox" hidden>投诉中心</button>
+    </div>
+
+    <div class="shop" id="shopPanel" hidden>
+      <div class="shophead">
+        <span>道具店 · 金币 <b id="shopCoins">0</b></span>
+        <button type="button" class="shopx" id="shopClose" aria-label="关闭">×</button>
+      </div>
+      <div id="shopList"></div>
+      <p class="lbauthmsg" id="shopMsg"></p>
     </div>
 
     <div class="acts" id="stationBar" hidden>
@@ -648,6 +668,7 @@
     lbPwd: document.getElementById("lbPwd"),
     lbReg: document.getElementById("lbReg"),
     lbLogin: document.getElementById("lbLogin"),
+    coinNum: document.getElementById("coinNum"),
     lbMe: document.getElementById("lbMe"),
     lbMsg: document.getElementById("lbMsg"),
     lbDel: document.getElementById("lbDel")
@@ -677,7 +698,8 @@
     try {
       localStorage.setItem(SAVE_PREFIX + state.mode, JSON.stringify({
         hp: state.hp, day: state.day, over: state.over, log: state.log,
-        money: state.money || 0, stage: state.stage || 0, paper: state.paperUsed ? 1 : 0, shield: state.shield ? 1 : 0
+        money: state.money || 0, stage: state.stage || 0, paper: state.paperUsed ? 1 : 0, shield: state.shield ? 1 : 0,
+        items: state.items || {}, lampUses: state.lampUses || 0, coinPaid: state.coinPaid ? 1 : 0
       }));
     } catch (e) {}
   }
@@ -699,6 +721,7 @@
   function updateStats() {
     els.hpNum.textContent = state.hp;
     els.dayNum.textContent = state.day;
+    if (els.coinNum) els.coinNum.textContent = coins();
     if (state.cfg.money) {
       els.moneyWrap.hidden = false;
       els.moneyNum.textContent = state.money || 0;
@@ -760,7 +783,8 @@
 
   function reset(mode, forceNew) {
     var cfg = MODES[mode];
-    state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1 };
+    state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1,
+              items: {}, lampUses: 0, coinPaid: false };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
@@ -775,6 +799,9 @@
       state.loop = saved.loop || 1;
       state.paperUsed = !!saved.paper;
       state.shield = !!saved.shield;
+      state.items = saved.items || {};
+      state.lampUses = saved.lampUses || 0;
+      state.coinPaid = !!saved.coinPaid;
       state.log = saved.log;
       state.log.forEach(function (it) { renderLine(it.t, it.c); });
       renderLine("（接着上一局继续 · 第 " + state.day + " 天 · 血条 " + state.hp + " / " + cfg.max + (cfg.money ? " · 钱 " + state.money + " 块" : "") + "）", "day");
@@ -996,12 +1023,114 @@
     }).catch(function () { msg("网络不通，举报没提交上。"); });
   }
 
+  // ===== 金币与道具 =====
+  var COIN_KEY = "ehq_coins";
+
+  var SHOP = [
+    { id: "lamp", name: "应急台灯", price: 6, once: false, max: 2,
+      desc: "买了立刻回 10 血，一局最多买 2 盏。" },
+    { id: "lucky", name: "幸运橡皮", price: 8, once: true,
+      desc: "本局考试分数不低于 65 分。反转版不适用（那里考高反而挨打）。" }
+  ];
+
+  function coins() { return parseInt(lsGet(COIN_KEY) || "0", 10) || 0; }
+  function addCoins(n) {
+    var v = coins() + (n || 0);
+    if (v < 0) v = 0;
+    lsSet(COIN_KEY, String(v));
+    updateStats();
+    return v;
+  }
+
+  function hasItem(id) { return !!(state && state.items && state.items[id]); }
+
+  function shopMsg(t) { var e = document.getElementById("shopMsg"); if (e) e.textContent = t; }
+
+  function renderShop() {
+    var list = document.getElementById("shopList");
+    var sc = document.getElementById("shopCoins");
+    if (sc) sc.textContent = coins();
+    if (!list) return;
+    list.innerHTML = "";
+    SHOP.forEach(function (it) {
+      var d = document.createElement("div");
+      d.className = "sitem";
+      var info = document.createElement("div");
+      info.className = "sinfo";
+      var b = document.createElement("b");
+      b.textContent = it.name + " · " + it.price + " 金币";
+      var p = document.createElement("div");
+      p.textContent = it.desc + (hasItem(it.id) ? "（本局已有）" : "");
+      info.appendChild(b); info.appendChild(p);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = hasItem(it.id) && it.once ? "已买" : "买";
+      btn.disabled = !!(hasItem(it.id) && it.once);
+      btn.addEventListener("click", function () { buyItem(it); });
+      d.appendChild(info); d.appendChild(btn);
+      list.appendChild(d);
+    });
+  }
+
+  function buyItem(it) {
+    if (!state || state.over) { shopMsg("这局已经结束了，道具下局用。"); return; }
+    if (it.id === "lucky" && state.mode === "revert") { shopMsg("反转版用不上橡皮，那儿的规矩反着来。"); return; }
+    if (it.id === "lamp" && (state.lampUses || 0) >= 2) { shopMsg("这局两盏都用过了。"); return; }
+    if (it.once && hasItem(it.id)) { shopMsg("这个本局已经买过了。"); return; }
+    if (coins() < it.price) { shopMsg("金币不够，还差 " + (it.price - coins()) + " 个。"); return; }
+    addCoins(-it.price);
+    if (it.id === "lamp") {
+      state.lampUses = (state.lampUses || 0) + 1;
+      state.hp = Math.min(state.cfg.max, state.hp + 10);
+      line("你把台灯打开，屋里亮了一点。回 10 血（现在 " + state.hp + " / " + state.cfg.max + "）。", "good");
+    } else {
+      state.items = state.items || {};
+      state.items[it.id] = 1;
+      line("你买下了「" + it.name + "」，本局生效。", "good");
+    }
+    updateStats();
+    saveState();
+    renderShop();
+    shopMsg("买好了，剩 " + coins() + " 金币。");
+  }
+
+  document.getElementById("btnShop").addEventListener("click", function () {
+    var p = document.getElementById("shopPanel");
+    p.hidden = !p.hidden;
+    if (!p.hidden) { renderShop(); shopMsg(""); }
+  });
+  document.getElementById("shopClose").addEventListener("click", function () {
+    document.getElementById("shopPanel").hidden = true;
+  });
+
+  /* 结算发金币：普通通关 1 个；跑路版按带出去的钱；无尽版按走完的圈 */
+  function awardCoins(endingId) {
+    if (!state || state.coinPaid) return;
+    state.coinPaid = true;
+    var got = 0;
+    if (state.mode === "run" && (endingId === "run_win" || endingId === "run_rich")) {
+      got = Math.min(Math.max(1, state.money || 0), 8);
+    } else if (state.mode === "endless") {
+      got = Math.min(Math.max(1, (state.loop || 1) - 1), 8);
+    } else if (endingId && /_win$/.test(endingId)) {
+      got = 1;
+    } else if (state.mode === "revert" && endingId && endingId.indexOf("revert") === 0 && endingId !== "revert_die") {
+      got = 1;
+    }
+    if (got > 0) {
+      var total = addCoins(got);
+      line("结算：这局拿到 " + got + " 金币，现在一共 " + total + " 个。攒着去道具店买。", "good");
+    }
+    saveState();
+  }
+
   function gameOver(reason, endingId) {
     state.over = true;
     setButtons(true);
     if (reason) line(reason, "end");
     line("这局结束了。点「重新开始本局」再玩一次。", "day");
     unlockEnding(endingId);
+    awardCoins(endingId);
     saveState();
     submitScore(endingId);
   }
@@ -1048,6 +1177,7 @@
   function doExam() {
     if (state.over) return;
     var score = rand(101);
+    if (hasItem("lucky") && state.mode !== "revert" && score < 65) score = 65;
     line("你考了 " + score + " 分。", "day");
     var r = state.cfg.exam(state, score);
     if (r.die) { line(r.text, r.tone || "bad"); gameOver("游戏结束。", "limit_die"); return; }
@@ -1417,7 +1547,10 @@
       savedAt: new Date().toLocaleString("zh-CN"),
       log: state.log,
       money: (state.cfg.money ? (state.money || 0) : undefined),
-      stage: (state.cfg.money ? (state.stage || 0) : undefined)
+      stage: (state.cfg.money ? (state.stage || 0) : undefined),
+      coins: coins(),
+      items: state.items || {},
+      lampUses: state.lampUses || 0
     };
   }
 
