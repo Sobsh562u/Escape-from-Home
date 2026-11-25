@@ -211,13 +211,43 @@
   .inboxrow input{width:100%;margin-top:8px;font:inherit;font-size:14px;padding:8px;border:1px solid #d8d2c4;border-radius:8px;background:#fff}
   .inboxrow button{margin-top:6px;font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer}
   .phonemask{position:fixed;inset:0;background:rgba(20,18,15,.62);display:flex;align-items:center;justify-content:center;padding:14px;z-index:70}
-  .phonecard{background:#f7f4ec;border-radius:18px;max-width:380px;width:100%;max-height:86vh;overflow:auto;padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);border:1px solid #ded5c2}
-  .phtop{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#8a7d64;margin-bottom:8px}
-  .phtop button{font:inherit;font-size:18px;background:none;border:0;color:#8a7d64;cursor:pointer;padding:0 4px}
-  .phscreen{background:#efe9db;border-radius:14px;padding:14px;min-height:180px}
-  .phapps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
-  .phapp{background:#fdfbf6;border:1px solid #ded5c2;border-radius:12px;padding:12px 6px;text-align:center;font-size:13px;color:#3f3729;cursor:pointer;font:inherit}
-  .phapp:disabled{opacity:.45;cursor:not-allowed}
+  .phonecard{position:relative;width:min(342px,92vw);height:min(724px,92vh);background:linear-gradient(145deg,#4a4e56,#14161a 38%,#2a2d33 72%,#0d0f12);border-radius:44px;padding:10px 8px 12px;box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 0 0 2px rgba(255,255,255,.16),inset 0 0 26px rgba(255,255,255,.07);display:flex;flex-direction:column}
+  .phonecard::before{content:"";position:absolute;inset:4px;border-radius:42px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 26%),linear-gradient(90deg,rgba(255,255,255,.13),transparent 32%,transparent 68%,rgba(255,255,255,.07));pointer-events:none;z-index:1}
+  .phonecard::after{content:"";position:absolute;top:0;right:0;width:55%;height:100%;border-radius:44px;background:linear-gradient(300deg,rgba(255,255,255,.12),transparent 42%);pointer-events:none;z-index:1}
+  .phnotch{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:104px;height:24px;background:#07080a;border-radius:13px;z-index:4;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 1px 3px rgba(0,0,0,.9)}
+  .phstatus{position:relative;z-index:2;display:flex;align-items:center;gap:8px;color:#d3d7de;font-size:11px;padding:3px 14px 9px;font-variant-numeric:tabular-nums}
+  .phclock{font-weight:600;letter-spacing:.4px}
+  .phtitle{flex:1;text-align:center;opacity:.45}
+  .phnet{opacity:.75}
+  .phclose{position:relative;z-index:5;border:0;background:rgba(255,255,255,.12);color:#d3d7de;font-size:15px;width:22px;height:22px;border-radius:50%;line-height:1;cursor:pointer;padding:0}
+  .phbody{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;overflow-y:auto;border-radius:32px;padding:16px 12px 22px;background:#2b3a55;-webkit-overflow-scrolling:touch;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),inset 0 0 34px rgba(0,0,0,.55)}
+  .phhome{height:100%;min-height:100%;box-sizing:border-box;display:flex;flex-direction:column}
+  .phgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px}
+  .phcell{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;cursor:pointer;font:inherit}
+  .phicon{width:58px;height:58px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -7px 14px rgba(0,0,0,.3),0 7px 16px rgba(0,0,0,.38);text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .phcell span{font-size:11px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);max-width:66px;text-align:center;line-height:1.25}
+  .phcell:disabled{cursor:not-allowed}
+  .phcell:disabled .phicon{filter:grayscale(.85);opacity:.5}
+  .phcell:disabled span{opacity:.65}
+  .phtip{font-size:11px;color:rgba(255,255,255,.78);margin:16px 0 0;text-align:center;line-height:1.5}
+  .phdock{margin:auto 0 0;display:flex;justify-content:center;gap:34px;padding:10px 12px 2px}
+  .phdockbtn{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;cursor:pointer;font:inherit}
+  .phdockbtn .phicon{width:54px;height:54px;border-radius:50%;background:linear-gradient(160deg,#ff7d6a,#a8170f);font-size:15px}
+  .phlock{min-height:100%;display:flex;flex-direction:column;align-items:center;padding-top:26px}
+  .phbigclock{font-size:46px;font-weight:200;color:#fff;letter-spacing:1px;text-shadow:0 3px 14px rgba(0,0,0,.45)}
+  .phlockdate{font-size:12px;color:rgba(255,255,255,.72);margin-top:2px;letter-spacing:.5px}
+  .phlockhint{font-size:12px;color:rgba(255,255,255,.8);margin:18px 0 14px}
+  .phlock input{width:100%;max-width:200px;font:inherit;font-size:14px;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.92);text-align:center}
+  .phlock .phemerg{max-width:220px}
+  .phsolid{background:rgba(247,244,236,.97);border-radius:24px;padding:14px;min-height:100%;box-sizing:border-box}
+  .stlist{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .stapp{display:flex;gap:10px;align-items:center;background:#fdfbf6;border:1px solid #e3dccd;border-radius:14px;padding:10px}
+  .sticon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -6px 10px rgba(0,0,0,.22);flex:0 0 auto}
+  .stinfo{flex:1;min-width:0}
+  .stinfo b{display:block;font-size:13px;color:#2c2620}
+  .stinfo .m{font-size:11px;color:#8a7d64;line-height:1.5}
+  .stbtn{font:inherit;font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer;flex:0 0 auto}
+  .stbtn:disabled{opacity:.5;cursor:not-allowed}
   .phbtn{font:inherit;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer;margin:4px 6px 4px 0}
   .phbtn.warn{border-color:#c88a7a;background:#f4e0da;color:#8c3222}
   .phemerg{width:100%;margin-top:10px;font:inherit;font-size:14px;padding:10px;border-radius:10px;border:1px solid #c88a7a;background:#f7e5df;color:#8c3222;cursor:pointer;font-weight:600}
@@ -229,7 +259,7 @@
   .phitem b{display:block;font-size:14px;margin-bottom:2px}
   .phitem .m{color:#8a7d64;font-size:12px}
   .phtime{font-size:12px;color:#8a7d64;margin-top:6px}
-  .phmsg{font-size:13px;color:#6c8a5b;margin:8px 2px 0;min-height:18px}
+  .phmsg{position:absolute;left:20px;right:20px;bottom:26px;z-index:6;margin:0;padding:9px 11px;border-radius:13px;background:rgba(10,12,16,.82);color:#eef2f8;font-size:12px;line-height:1.55;box-shadow:0 6px 18px rgba(0,0,0,.35);display:none;pointer-events:none}
   .authorbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#f3efe3;border:1px solid #ded5c2;border-radius:12px;padding:10px 12px;margin:10px 0}
   .authorbox .abtop{font-size:13px;color:#5b5346}
   .authorbox .abtop b{color:#3f3729}
@@ -300,8 +330,14 @@
 
     <div class="phonemask" id="phoneMask" hidden>
       <div class="phonecard">
-        <div class="phtop"><span id="phTitle">手机</span><button type="button" id="phClose" aria-label="关闭">×</button></div>
-        <div id="phBody"></div>
+        <div class="phnotch"></div>
+        <div class="phstatus">
+          <span class="phclock" id="phClock">21:40</span>
+          <span class="phtitle" id="phTitle">手机</span>
+          <span class="phnet">5G ▮▮ 78%</span>
+          <button type="button" class="phclose" id="phClose" aria-label="关闭">×</button>
+        </div>
+        <div class="phbody" id="phBody"></div>
         <p class="phmsg" id="phMsg"></p>
       </div>
     </div>
@@ -797,7 +833,8 @@
       localStorage.setItem(SAVE_PREFIX + state.mode, JSON.stringify({
         hp: state.hp, day: state.day, over: state.over, log: state.log,
         money: state.money || 0, stage: state.stage || 0, paper: state.paperUsed ? 1 : 0, shield: state.shield ? 1 : 0,
-        items: state.items || {}, lampUses: state.lampUses || 0, coinPaid: state.coinPaid ? 1 : 0
+        items: state.items || {}, lampUses: state.lampUses || 0, coinPaid: state.coinPaid ? 1 : 0,
+        pbankSec: state.pbankSec || 0
       }));
     } catch (e) {}
   }
@@ -882,7 +919,7 @@
   function reset(mode, forceNew) {
     var cfg = MODES[mode];
     state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1,
-              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false };
+              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false, pbankSec: 0 };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
@@ -899,6 +936,7 @@
       state.shield = !!saved.shield;
       state.items = saved.items || {};
       state.lampUses = saved.lampUses || 0;
+      state.pbankSec = saved.pbankSec || 0;
       state.coinPaid = !!saved.coinPaid;
       state.log = saved.log;
       state.log.forEach(function (it) { renderLine(it.t, it.c); });
@@ -1133,8 +1171,10 @@
       desc: "能装 APP 的手机：短视频、短信、通话全都有。永久拥有，换难度、重开本局都在。" },
     { id: "sim", name: "电话卡（永久）", price: 8, once: true, g: "sim",
       desc: "插上才能给别人打电话、发短信，收件人填名字或 6 位玩家 ID 都行。永久拥有。" },
-    { id: "powerbank", name: "充电宝", price: 5,
-      desc: "本局手机用机上限 +60 秒，熬夜被抓的线往后挪一点。" },
+    { id: "pbank_s", name: "小牌充电宝", price: 4, once: true,
+      desc: "本局手机用机上限 +30 秒，便宜管一点。一局只能买一个。" },
+    { id: "pbank_l", name: "大牌充电宝", price: 12, once: true,
+      desc: "本局手机用机上限 +1~5 分钟（随机，充多少看运气）。一局只能买一个。" },
     { id: "earbuds", name: "耳机", price: 7,
       desc: "手机音量开到 100 也不会被妈妈听见，本局有效。" },
     { id: "review", name: "复习资料", price: 6, once: true,
@@ -1197,7 +1237,13 @@
       shopMsg("买好了，剩 " + coins() + " 金币。");
       updateStats(); saveState(); renderShop(); return;
     }
-    if (it.id === "lamp") {
+    if (it.id === "pbank_s" || it.id === "pbank_l") {
+      state.items = state.items || {};
+      state.items[it.id] = 1;
+      var add = it.id === "pbank_s" ? 30 : Math.round((60 + Math.floor(Math.random() * 241)) / 10) * 10;
+      state.pbankSec = (state.pbankSec || 0) + add;
+      line("你买下了「" + it.name + "」，插上手机——今天能多玩 " + pbankText(add) + "（上限现在 " + phLimit() + " 秒）。", "good");
+    } else if (it.id === "lamp") {
       state.lampUses = (state.lampUses || 0) + 1;
       state.hp = Math.min(state.cfg.max, state.hp + 10);
       line("你把台灯打开，屋里亮了一点。回 10 血（现在 " + state.hp + " / " + state.cfg.max + "）。", "good");
@@ -1236,6 +1282,8 @@
       passHash: typeof d.passHash === "string" ? d.passHash : (d.pass ? sha256Hex(String(d.pass)) : ""),
       vol: typeof d.vol === "number" ? d.vol : 50,
       limit: typeof d.limit === "number" ? d.limit : 120,
+      wall: typeof d.wall === "string" && d.wall ? d.wall : "#2b3a55",
+      apps: Array.isArray(d.apps) ? d.apps : [],
       videos: Array.isArray(d.videos) ? d.videos : [],
       msgs: Array.isArray(d.msgs) ? d.msgs : []
     };
@@ -1247,10 +1295,55 @@
   var PH_SMS = { tab: "in", rows: [], used: 0, cap: 60, msg: "", loading: false, need: true,
                  attach: null, aname: "", atype: "" };
 
-  function phEl(id) { return document.getElementById(id); }
-  function phMsg(t) { var e = phEl("phMsg"); if (e) e.textContent = t || ""; }
+  // ===== 应用商城（假商店：装完真的出现在桌面） =====
+  var PH_APP_CAP = 4;
+  var STORE_APPS = [
+    { id: "sousuo", name: "小搜", glyph: "搜", color: "#3a6df0", size: "2.1 GB", act: "search",
+      desc: "搜东西用。前三条永远是广告。" },
+    { id: "shanshuo", name: "闪烁", glyph: "闪", color: "#ff5a5f", size: "2.4 GB", act: "video",
+      desc: "短视频。划一下一个新世界，划着划着天就亮了。" },
+    { id: "miliao", name: "密聊", glyph: "聊", color: "#07c160", size: "3.1 GB", act: "chat",
+      desc: "和同学说话用。发完能撤回，撤回之后对方更好奇。" },
+    { id: "shengqian", name: "省钱盒", glyph: "省", color: "#ff8a00", size: "2.2 GB", act: "shop",
+      desc: "东西都在里面，标价一个比一个便宜，结算时一个比一个贵。" },
+    { id: "shuati", name: "刷题器", glyph: "题", color: "#8b5cf6", size: "1.8 GB", act: "quiz",
+      desc: "无限刷题。做对加分，做错也只是再来一遍。" }
+  ];
+  var PH_APP = "";
 
-  function phLimit() { return phone.limit + (hasItem("powerbank") ? 60 : 0); }
+  function appInfo(id) {
+    for (var i = 0; i < STORE_APPS.length; i++) if (STORE_APPS[i].id === id) return STORE_APPS[i];
+    return null;
+  }
+  function hasApp(id) { return phone.apps.indexOf(id) >= 0; }
+
+  function installApp(id) {
+    var a = appInfo(id);
+    if (!a) return;
+    if (hasApp(id)) { phMsg("「" + a.name + "」已经装过了。"); return; }
+    if (phone.apps.length >= PH_APP_CAP) { phMsg("存储满了，先卸载一个再装。"); return; }
+    phone.apps.push(id);
+    savePhone(); renderPhone();
+    phMsg("「" + a.name + "」装好了，桌面多了一个图标。");
+  }
+
+  function uninstallApp(id) {
+    var a = appInfo(id);
+    phone.apps = phone.apps.filter(function (x) { return x !== id; });
+    savePhone(); phView = "home"; renderPhone();
+    phMsg("「" + (a ? a.name : "这个") + "」卸掉了，桌面清爽了一点。");
+  }
+
+  function phEl(id) { return document.getElementById(id); }
+  function phMsg(t) { var e = phEl("phMsg"); if (!e) return; e.textContent = t || ""; e.style.display = t ? "block" : "none"; }
+
+  function phLimit() { return phone.limit + (state && state.pbankSec ? state.pbankSec : 0) + (hasItem("powerbank") ? 60 : 0); }
+  function pbankText(sec) {
+    var m = Math.floor(sec / 60), s = sec % 60;
+    if (m && s) return m + " 分 " + s + " 秒";
+    if (m) return m + " 分钟";
+    return s + " 秒";
+  }
   function phUsedText() {
     var used = (state && state.phoneUse) || 0;
     var lim = phLimit();
@@ -1344,78 +1437,221 @@
     var title = phEl("phTitle");
     body.innerHTML = "";
     phMsg("");
+    body.style.background = "linear-gradient(170deg,rgba(255,255,255,.12),rgba(0,0,0,.8))," + (phone.wall || "#2b3a55");
     if (!state) { body.textContent = "先选个难度开始游戏。"; return; }
     if (phView === "lock") {
       title.textContent = "锁屏";
-      var sc = document.createElement("div"); sc.className = "phscreen";
-      var h = document.createElement("div");
-      h.textContent = "这台手机你设了密码。";
-      h.style.marginBottom = "10px";
-      sc.appendChild(h);
-      var row = document.createElement("div"); row.className = "phrow";
-      var inp = document.createElement("input");
-      inp.type = "password"; inp.placeholder = "输入密码"; inp.id = "phPass";
+      var lk = document.createElement("div"); lk.className = "phlock";
+      var clk = document.createElement("div"); clk.className = "phbigclock";
+      var now = new Date();
+      clk.textContent = (now.getHours() < 10 ? "0" : "") + now.getHours() + ":" + (now.getMinutes() < 10 ? "0" : "") + now.getMinutes();
+      lk.appendChild(clk);
+      var dd = document.createElement("div"); dd.className = "phlockdate";
+      var wk = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+      dd.textContent = (now.getMonth() + 1) + " 月 " + now.getDate() + " 日 · " + wk[now.getDay()];
+      lk.appendChild(dd);
+      var hh = document.createElement("div"); hh.className = "phlockhint"; hh.textContent = "这台手机你设了密码，输入解锁";
+      lk.appendChild(hh);
       var ok = document.createElement("button");
       ok.type = "button"; ok.className = "phbtn"; ok.textContent = "解锁";
+      var inp = document.createElement("input");
+      inp.type = "password"; inp.placeholder = "密码"; inp.id = "phPass"; inp.maxLength = 16;
+      inp.addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ok.click(); } });
       ok.addEventListener("click", function () {
         if (sha256Hex(inp.value) === phone.passHash) { phUnlocked = true; phView = "home"; renderPhone(); }
         else phMsg("密码不对。");
       });
-      row.appendChild(inp); row.appendChild(ok);
-      sc.appendChild(row);
+      lk.appendChild(inp); lk.appendChild(ok);
       var em = document.createElement("button");
       em.type = "button"; em.className = "phemerg"; em.textContent = "紧急拨号 · 110";
       em.addEventListener("click", function () { closePhone(); doCall(); });
-      sc.appendChild(em);
-      var tip = document.createElement("p"); tip.className = "phtime";
+      lk.appendChild(em);
+      var tip = document.createElement("p"); tip.className = "phtip";
       tip.textContent = "忘了密码也能紧急拨号。";
-      sc.appendChild(tip);
-      body.appendChild(sc);
+      lk.appendChild(tip);
+      body.appendChild(lk);
       return;
     }
 
     title.textContent = phone.full ? "完整版手机" : "学校发的老人机";
-    var scr = document.createElement("div"); scr.className = "phscreen";
+    var scr = document.createElement("div");
+    scr.className = (phView === "home") ? "phhome" : "phsolid";
 
     if (phView === "home") {
-      var st = document.createElement("div");
-      st.textContent = phone.full
-        ? "屏幕亮着，能装 APP 了。"
-        : "没有 APP，也下不了软件。想刷视频、发短信，得先去道具店换一台完整版手机。";
-      st.style.lineHeight = "1.7";
-      scr.appendChild(st);
-      if (!phone.sim) {
-        var s2 = document.createElement("p"); s2.className = "phtime";
-        s2.textContent = "卡槽是空的——没电话卡，打不了电话、发不了短信。";
-        scr.appendChild(s2);
-      }
-      var apps = document.createElement("div"); apps.className = "phapps";
       var list = [];
-      if (phone.full) list.push(["video", "短视频"]);
-      if (phone.sim) { list.push(["sms", "短信"]); list.push(["call", "通话"]); }
-      list.push(["settings", "设置"]);
-      var seen = {};
-      list.forEach(function (a) {
-        if (seen[a[0]]) return; seen[a[0]] = 1;
-        var b = document.createElement("button");
-        b.type = "button"; b.className = "phapp"; b.textContent = a[1];
-        b.addEventListener("click", function () { phView = a[0]; renderPhone(); });
-        apps.appendChild(b);
-      });
-      if (!phone.sim && phone.full) {
-        var b3 = document.createElement("button");
-        b3.type = "button"; b3.className = "phapp"; b3.textContent = "短信";
-        b3.disabled = true; b3.title = "需要电话卡";
-        apps.appendChild(b3);
+      if (phone.full) list.push(["store", "应用商城", "商", "#0f9ef0", false]);
+      if (phone.full) list.push(["video", "短视频", "▶", "#ff5a5f", false]);
+      if (phone.sim) {
+        list.push(["sms", "短信", "✉", "#3b93f7", false]);
+        list.push(["call", "通话", "☎", "#2fbf6b", false]);
       }
-      scr.appendChild(apps);
-      var em2 = document.createElement("button");
-      em2.type = "button"; em2.className = "phemerg"; em2.textContent = "紧急拨号 · 110";
-      em2.addEventListener("click", function () { closePhone(); doCall(); });
-      scr.appendChild(em2);
-      var tt = document.createElement("p"); tt.className = "phtime"; tt.id = "phTime";
+      if (phone.full && !phone.sim) list.push(["sms", "短信", "✉", "#3b93f7", true]);
+      phone.apps.forEach(function (id) {
+        var a = appInfo(id);
+        if (a) list.push(["app:" + id, a.name, a.glyph, a.color, false]);
+      });
+      list.push(["settings", "设置", "⚙", "#7b8697", false]);
+
+      var grid = document.createElement("div"); grid.className = "phgrid";
+      list.forEach(function (a) {
+        var cell = document.createElement("button");
+        cell.type = "button"; cell.className = "phcell";
+        if (a[4]) { cell.disabled = true; cell.title = "需要电话卡"; }
+        var ic = document.createElement("div"); ic.className = "phicon";
+        ic.style.background = "linear-gradient(160deg,rgba(255,255,255,.35),rgba(0,0,0,.28))," + a[3];
+        ic.textContent = a[2];
+        var nm = document.createElement("span"); nm.textContent = a[1];
+        cell.appendChild(ic); cell.appendChild(nm);
+        if (!a[4]) cell.addEventListener("click", function () {
+          if (String(a[0]).indexOf("app:") === 0) { PH_APP = String(a[0]).slice(4); phView = "app"; }
+          else { phView = a[0]; }
+          renderPhone();
+        });
+        grid.appendChild(cell);
+      });
+      scr.appendChild(grid);
+
+      var hint = document.createElement("p"); hint.className = "phtip";
+      hint.textContent = phone.full
+        ? (phone.sim ? "桌面上的 APP 点一下就能开。" : "卡槽是空的——没电话卡，短信和通话用不了。")
+        : "这台老人机没有 APP，也装不了。去道具店换一台完整版手机，才有短视频、短信、通话。";
+      scr.appendChild(hint);
+
+      var tt = document.createElement("p"); tt.className = "phtip"; tt.id = "phTime";
       tt.textContent = phUsedText();
       scr.appendChild(tt);
+
+      var dock = document.createElement("div"); dock.className = "phdock";
+      var em2 = document.createElement("button");
+      em2.type = "button"; em2.className = "phdockbtn";
+      var dic = document.createElement("div"); dic.className = "phicon"; dic.textContent = "110";
+      var dnm = document.createElement("span"); dnm.textContent = "紧急拨号";
+      em2.appendChild(dic); em2.appendChild(dnm);
+      em2.addEventListener("click", function () { closePhone(); doCall(); });
+      dock.appendChild(em2);
+      scr.appendChild(dock);
+    }
+
+    if (phView === "store") {
+      var hd = document.createElement("div");
+      hd.style.lineHeight = "1.7";
+      hd.textContent = phone.sim
+        ? "应用商城。有网，下载正常。"
+        : "应用商城。没插卡，只能蹭隔壁的信号，下载慢得像挤牙膏。";
+      scr.appendChild(hd);
+      var cap = document.createElement("p"); cap.className = "phtime";
+      cap.textContent = "已装 " + phone.apps.length + " / " + PH_APP_CAP + " 个应用";
+      scr.appendChild(cap);
+
+      var listBox = document.createElement("div"); listBox.className = "stlist";
+      STORE_APPS.forEach(function (a) {
+        var row = document.createElement("div"); row.className = "stapp";
+        var ic = document.createElement("div"); ic.className = "sticon";
+        ic.style.background = "linear-gradient(160deg,rgba(255,255,255,.35),rgba(0,0,0,.25))," + a.color;
+        ic.textContent = a.glyph;
+        var info = document.createElement("div"); info.className = "stinfo";
+        var nm = document.createElement("b"); nm.textContent = a.name + " · " + a.size;
+        var ds = document.createElement("div"); ds.className = "m"; ds.textContent = a.desc;
+        info.appendChild(nm); info.appendChild(ds);
+        var btn = document.createElement("button"); btn.type = "button"; btn.className = "stbtn";
+        var installed = hasApp(a.id);
+        btn.textContent = installed ? "已装" : "安装";
+        btn.disabled = installed;
+        btn.addEventListener("click", function () { installApp(a.id); });
+        row.appendChild(ic); row.appendChild(info); row.appendChild(btn);
+        listBox.appendChild(row);
+      });
+      scr.appendChild(listBox);
+      var st = document.createElement("p"); st.className = "phtime";
+      st.textContent = "装完回桌面，图标就摆在那儿，点一下能打开。装到 " + PH_APP_CAP + " 个就存满了。";
+      scr.appendChild(st);
+
+      var addApp = document.createElement("button"); addApp.type = "button"; addApp.className = "phbtn";
+      addApp.textContent = "＋ 添加应用";
+      addApp.addEventListener("click", function () {
+        phMsg("想加什么应用？去仓库提 Issue，或者到电报群「建议」话题留言：写清名字、图标用哪个字、干什么用。别用大牌名（那种 B 站、微信之类的），自己起名字，功能越简单越好。");
+      });
+      scr.appendChild(addApp);
+    }
+
+    if (phView === "app") {
+      var ap = appInfo(PH_APP);
+      if (!ap) {
+        scr.textContent = "这个应用已经不在手机里了。";
+      } else {
+        var ahead = document.createElement("div");
+        ahead.style.cssText = "display:flex;gap:10px;align-items:center;margin-bottom:10px";
+        var aic = document.createElement("div"); aic.className = "sticon";
+        aic.style.background = "linear-gradient(160deg,rgba(255,255,255,.35),rgba(0,0,0,.25))," + ap.color;
+        aic.textContent = ap.glyph;
+        var aht = document.createElement("div");
+        var at1 = document.createElement("b"); at1.textContent = ap.name; at1.style.fontSize = "15px";
+        var at2 = document.createElement("div"); at2.className = "m"; at2.textContent = ap.desc;
+        aht.appendChild(at1); aht.appendChild(at2);
+        ahead.appendChild(aic); ahead.appendChild(aht);
+        scr.appendChild(ahead);
+
+        if (ap.act === "search") {
+          var sr = document.createElement("div"); sr.className = "phrow";
+          var si = document.createElement("input"); si.type = "text"; si.placeholder = "搜点什么，比如：怎么熬过这个家";
+          var sb = document.createElement("button"); sb.type = "button"; sb.className = "phbtn"; sb.textContent = "搜索";
+          sb.addEventListener("click", function () {
+            var q = si.value.trim();
+            if (!q) { phMsg("先写要搜的词。"); return; }
+            phMsg("「" + q + "」有 2.3 亿条结果，前三条是广告，第四条是带货。翻到第八页也没找到你想要的。");
+          });
+          sr.appendChild(si); sr.appendChild(sb); scr.appendChild(sr);
+        }
+
+        if (ap.act === "chat") {
+          var cr = document.createElement("div"); cr.className = "phrow";
+          var ci = document.createElement("input"); ci.type = "text"; ci.placeholder = "发一句过去";
+          var cb = document.createElement("button"); cb.type = "button"; cb.className = "phbtn"; cb.textContent = "发送";
+          cb.addEventListener("click", function () {
+            var txt = ci.value.trim();
+            if (!txt) { phMsg("先写点东西。"); return; }
+            var back = ["在。", "你还没睡？", "明天还要上课呢。", "我也是。", "别想太多。"];
+            phMsg("你发：" + txt + " —— 对方回：" + back[Math.floor(Math.random() * back.length)]);
+          });
+          cr.appendChild(ci); cr.appendChild(cb); scr.appendChild(cr);
+        }
+
+        if (ap.act === "video") {
+          var vb = document.createElement("button"); vb.type = "button"; vb.className = "phbtn";
+          vb.textContent = "刷十分钟（+10 秒用机）";
+          vb.addEventListener("click", function () {
+            state.phoneUse = (state.phoneUse || 0) + 10;
+            phMsg("划走一个又来一个，抬头看表，十分钟没了。");
+          });
+          scr.appendChild(vb);
+        }
+
+        if (ap.act === "shop") {
+          var goods = ["9.9 包邮的台灯", "考试必备荧光笔", "能装下整个书包的双肩包"];
+          goods.forEach(function (g) {
+            var gb = document.createElement("button"); gb.type = "button"; gb.className = "phbtn";
+            gb.textContent = "买：「" + g + "」";
+            gb.addEventListener("click", function () {
+              phMsg("你点了「立即购买」，页面弹出一行小字：余额不足，请先充值。");
+            });
+            scr.appendChild(gb);
+          });
+        }
+
+        if (ap.act === "quiz") {
+          var qb = document.createElement("button"); qb.type = "button"; qb.className = "phbtn";
+          qb.textContent = "做一道题";
+          qb.addEventListener("click", function () {
+            var right = Math.random() < 0.7;
+            phMsg(right ? "这题做对了。你开始觉得自己没那么差。" : "这题错了。解析很长，你看了一半就划走了。");
+          });
+          scr.appendChild(qb);
+        }
+
+        var un = document.createElement("button"); un.type = "button"; un.className = "phbtn warn"; un.textContent = "卸载这个应用";
+        un.addEventListener("click", function () { uninstallApp(ap.id); });
+        scr.appendChild(un);
+      }
     }
 
     if (phView === "video") {
@@ -1627,6 +1863,25 @@
     }
 
     if (phView === "settings") {
+      var wallRow = document.createElement("div"); wallRow.className = "phrow";
+      var wl = document.createElement("span"); wl.textContent = "屏幕颜色：";
+      wallRow.appendChild(wl);
+      ["#2b3a55", "#1b2430", "#3a2430", "#1f3a2f", "#3b2f52", "#4a3a24", "#17181b", "#7a2f2f"].forEach(function (col) {
+        var chip = document.createElement("button");
+        chip.type = "button";
+        chip.style.cssText = "width:26px;height:26px;border-radius:50%;padding:0;cursor:pointer;background:" + col +
+          ";border:" + (phone.wall === col ? "2px solid #3f3729" : "1px solid #cfc6b4");
+        chip.title = col;
+        chip.addEventListener("click", function () { phone.wall = col; savePhone(); renderPhone(); phMsg("屏幕颜色换好了。"); });
+        wallRow.appendChild(chip);
+      });
+      var cp = document.createElement("input"); cp.type = "color"; cp.value = phone.wall;
+      cp.style.cssText = "width:38px;height:28px;padding:0;border:1px solid #cfc6b4;background:#fff;cursor:pointer";
+      cp.title = "自己挑颜色";
+      cp.addEventListener("change", function () { phone.wall = cp.value; savePhone(); renderPhone(); phMsg("屏幕颜色换好了。"); });
+      wallRow.appendChild(cp);
+      scr.appendChild(wallRow);
+
       var volRow = document.createElement("div"); volRow.className = "phrow";
       var lab = document.createElement("span"); lab.textContent = "音量 " + phone.vol;
       var rg = document.createElement("input"); rg.type = "range"; rg.min = "0"; rg.max = "100"; rg.value = String(phone.vol);
@@ -1654,10 +1909,6 @@
         phUnlocked = true; savePhone(); phMsg(pv ? "密码设好了，下次开手机要输。" : "密码取消了。");
       });
       pRow.appendChild(pi); pRow.appendChild(pbtn); scr.appendChild(pRow);
-
-      var back = document.createElement("button"); back.type = "button"; back.className = "phbtn"; back.textContent = "回桌面";
-      back.addEventListener("click", function () { phView = "home"; renderPhone(); });
-      scr.appendChild(back);
     }
 
     if (phView !== "home") {
@@ -2132,7 +2383,8 @@
       stage: (state.cfg.money ? (state.stage || 0) : undefined),
       coins: coins(),
       items: state.items || {},
-      lampUses: state.lampUses || 0
+      lampUses: state.lampUses || 0,
+      pbankSec: state.pbankSec || 0
     };
   }
 
