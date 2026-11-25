@@ -1707,73 +1707,129 @@
         }
 
         if (ap.act === "quiz") {
-          var qtotal = 1 + rand(5), qpage = 1;
+          var qlvl = 0, qname = "幼儿园";
+          if (state.mode === "endless") {
+            qlvl = Math.min(3, Math.max(0, (state.loop || 1) - 1));
+            qname = ["幼儿园", "小学", "初中", "高中"][qlvl];
+          } else {
+            var qd = state.day || 0;
+            if (qd < 365) { qlvl = 0; qname = "幼儿园"; }
+            else if (qd < 2190) { qlvl = 1; qname = "小学"; }
+            else if (qd < 4380) { qlvl = 2; qname = "初中"; }
+            else { qlvl = 3; qname = "高中"; }
+          }
+
+          var qgen = function (lv) {
+            var a, b, op, ans, q, div, p, r1, r2;
+            if (lv === 0) {
+              a = 1 + rand(9); b = 1 + rand(9);
+              if (rand(2)) { ans = a + b; q = a + " + " + b + " = ?"; }
+              else { if (a < b) { var t0 = a; a = b; b = t0; } ans = a - b; q = a + " - " + b + " = ?"; }
+              return { q: q, a: String(ans) };
+            }
+            if (lv === 1) {
+              var kind = rand(4);
+              if (kind === 0) { a = 10 + rand(90); b = 10 + rand(90); ans = a + b; q = a + " + " + b + " = ?"; }
+              else if (kind === 1) { a = 10 + rand(90); b = 1 + rand(60); if (a < b) { var t1 = a; a = b; b = t1; } ans = a - b; q = a + " - " + b + " = ?"; }
+              else if (kind === 2) { a = 2 + rand(8); b = 2 + rand(8); ans = a * b; q = a + " × " + b + " = ?"; }
+              else { b = 2 + rand(8); ans = 2 + rand(9); a = b * ans; q = a + " ÷ " + b + " = ?"; }
+              return { q: q, a: String(ans) };
+            }
+            if (lv === 2) {
+              var k2 = rand(3);
+              if (k2 === 0) { a = -(1 + rand(9)); b = 5 + rand(15); ans = a + b; q = "(" + a + ") + " + b + " = ?"; }
+              else if (k2 === 1) { a = 2 + rand(8); b = 2 + rand(9); var c = 1 + rand(9); ans = a * b - c; q = a + " × " + b + " - " + c + " = ?"; }
+              else { a = 1 + rand(9); b = 10 + rand(20); ans = b - a; q = "x + " + a + " = " + b + "，x = ?"; }
+              return { q: q, a: String(ans) };
+            }
+            var k3 = rand(4);
+            if (k3 === 0) { a = 2 + rand(9); ans = a * a; q = "√" + ans + " = ?"; }
+            else if (k3 === 1) { a = 2 + rand(4); b = 2 + rand(3); ans = Math.pow(a, b); q = a + " 的 " + b + " 次方 = ?"; }
+            else if (k3 === 2) {
+              p = [2, 3, 4, 6][rand(4)]; r1 = 1; r2 = 1;
+              var den1 = p, num1 = 1, den2 = 2 * p, num2 = 1;
+              ans = "3/" + (2 * p); q = "1/" + den1 + " + 1/" + den2 + " = ?（写成分数）";
+              ans = "3/" + (2 * p);
+            } else {
+              a = 2 + rand(8); b = 3 + rand(12); ans = b + 1; q = a + "x + " + b + " = " + (a * (b + 1) + b) + "，x = ?";
+              ans = b + 1;
+              q = a + "x - " + b + " = " + (a * (b + 1) - b) + "，x = ?";
+            }
+            return { q: q, a: String(ans) };
+          };
+
+          var qn = 1 + rand(5), qsel = [], qi;
+          for (qi = 0; qi < qn; qi++) qsel.push(qgen(qlvl));          var qpage = 0, qdone = 0, qover = false;
+
           var qh = document.createElement("div");
           qh.style.fontWeight = "700"; qh.style.margin = "0 0 4px";
-          qh.textContent = "写卷子（这本共 " + qtotal + " 页）";
+          qh.textContent = "写卷子 · " + qname + "（这本共 " + qn + " 页）";
           scr.appendChild(qh);
 
           var qst = document.createElement("div"); qst.className = "phtime";
-          qst.textContent = "第 1 / " + qtotal + " 页 · 把笔停在绿区，保持 5 秒算写完一页";
           scr.appendChild(qst);
 
-          var track = document.createElement("div");
-          track.style.cssText = "position:relative;height:18px;border-radius:9px;background:#16202f;margin:10px 0;overflow:hidden";
-          var zone = document.createElement("div");
-          zone.style.cssText = "position:absolute;left:30%;width:40%;top:0;bottom:0;background:rgba(72,200,120,.5)";
-          var mark = document.createElement("div");
-          mark.style.cssText = "position:absolute;top:-2px;width:4px;height:22px;background:#fff;border-radius:2px;box-shadow:0 0 6px rgba(255,255,255,.85)";
-          track.appendChild(zone); track.appendChild(mark);
-          scr.appendChild(track);
+          var qbox = document.createElement("div");
+          qbox.style.cssText = "background:#16202f;color:#eef2f8;border-radius:10px;padding:10px;line-height:1.6;margin:6px 0;min-height:40px";
+          scr.appendChild(qbox);
 
-          var qtip = document.createElement("div"); qtip.className = "phtime";
-          qtip.textContent = "中间保持 0.0 / 5 秒";
-          scr.appendChild(qtip);
+          var qrow = document.createElement("div"); qrow.className = "phrow";
+          var qin = document.createElement("input"); qin.type = "text"; qin.maxLength = 40;
+          qin.placeholder = "自己写答案（老师不会给你抄）";
+          qrow.appendChild(qin); scr.appendChild(qrow);
 
-          var qb = document.createElement("button"); qb.type = "button"; qb.className = "phbtn";
-          qb.textContent = "停笔（停在绿区里数够 5 秒）";
-          scr.appendChild(qb);
+          var qsub = document.createElement("button"); qsub.type = "button"; qsub.className = "phbtn";
+          qsub.textContent = "交这一页";
+          scr.appendChild(qsub);
 
-          var qpos = 0, qdir = 1, qhold = false, qsec = 0, qover = false;
-          var qdraw = function () {
-            mark.style.left = "calc(" + qpos + "% - 2px)";
-            qtip.textContent = qhold ? ("中间保持 " + qsec.toFixed(1) + " / 5 秒") : "中间保持 0.0 / 5 秒";
+          var qnote = document.createElement("p"); qnote.className = "phtime";
+          scr.appendChild(qnote);
+
+          var qnorm = function (t) {
+            return String(t == null ? "" : t).replace(/\s+/g, "").replace(/[，。！？、（）【】"']/g, "").toLowerCase();
           };
-          qdraw();
-          if (phQuizT) clearInterval(phQuizT);
-          phQuizT = setInterval(function () {
-            if (qover) return;
-            if (!qhold) {
-              qpos += qdir * 1;
-              if (qpos >= 100) { qpos = 100; qdir = -1; }
-              if (qpos <= 0) { qpos = 0; qdir = 1; }
-            } else {
-              qsec = (qpos >= 30 && qpos <= 70) ? qsec + 0.05 : 0;
-            }
-            qdraw();
-            if (qsec >= 4.999) {
-              if (qpage >= qtotal) {
-                qover = true; clearInterval(phQuizT); phQuizT = null;
-                line("这本卷子 " + qtotal + " 页，你全写完了，手指头压出一道印。", "good");
-                state.hp = Math.min(state.cfg.max, state.hp + 5);
-                updateStats(); saveState();
-                qst.textContent = "写完了，共 " + qtotal + " 页。血条 +5。";
-                qtip.textContent = "收笔。";
-                phMsg("卷子写完了，" + qtotal + " 页。老师翻了一眼说：字丑，但写满了。");
-              } else {
-                qpage += 1; qsec = 0; qhold = false;
-                qst.textContent = "第 " + qpage + " / " + qtotal + " 页 · 把笔停在绿区，保持 5 秒算写完一页";
-                phMsg("写完一页，翻到第 " + qpage + " 页。");
-              }
-            }
-          }, 50);
+          var qright = function (v, a) {
+            var nv = qnorm(v), na = qnorm(a);
+            if (!nv) return false;
+            if (!isNaN(parseFloat(na)) && !isNaN(parseFloat(nv))) return parseFloat(nv) === parseFloat(na);
+            return nv === na || nv.indexOf(na) >= 0 || na.indexOf(nv) >= 0;
+          };
 
-          qb.addEventListener("click", function () {
+          var qshow = function () {
             if (qover) return;
-            qhold = !qhold;
-            if (!qhold) qsec = 0;
-            qb.textContent = qhold ? "继续写（笔提起来了）" : "停笔（停在绿区里数够 5 秒）";
-            qdraw();
+            var it = qsel[qpage];
+            qst.textContent = "第 " + (qpage + 1) + " / " + qn + " 页 · 这本卷子有固定答案，你得自己写";
+            qbox.textContent = "题：" + it.q;
+            qin.value = "";
+            qin.disabled = false;
+            qsub.disabled = false;
+            qnote.textContent = "写不出来就瞎写也行，但答案只有一个。";
+          };
+          qshow();
+
+          qsub.addEventListener("click", function () {
+            if (qover) return;
+            var it = qsel[qpage], v = qin.value.trim();
+            if (!v) { qnote.textContent = "空着交上去，老师会记住你的。"; return; }
+            if (!qright(v, it.a)) {
+              qnote.textContent = "不对。你写的「" + v + "」跟标准答案不一样，再想想。";
+              return;
+            }
+            qdone += 1; qpage += 1;
+            if (qpage >= qn) {
+              qover = true;
+              qst.textContent = "写完了，" + qn + " 页全对。";
+              qbox.textContent = "最后一题：答对。";
+              qin.disabled = true; qsub.disabled = true;
+              qnote.textContent = "血条 +5，收笔。";
+              line("这本卷子 " + qn + " 页，你自己写的答案全对上了，手指头压出一道印。", "good");
+              state.hp = Math.min(state.cfg.max, state.hp + 5);
+              updateStats(); saveState();
+              phMsg("卷子写完了，" + qn + " 页全对。老师翻了一眼说：字丑，但对了。");
+            } else {
+              phMsg("第 " + qpage + " 页对了，翻下一页。");
+              qshow();
+            }
           });
         }
 
