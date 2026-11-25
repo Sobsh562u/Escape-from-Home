@@ -5,21 +5,21 @@
 <meta name="msvalidate.01" content="B396F8EC6112CD551A4FE7886D63E316" />
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>逃家游戏 · Escape from Home</title>
-<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，九个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
+<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，十个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
 <meta name="keywords" content="逃家游戏,文字游戏,中文文字游戏,网页小游戏,免下载游戏,文字冒险,独立游戏,开源游戏,Python小游戏,HTML游戏,考试题材">
 <meta name="author" content="Sobsh562u">
 <link rel="canonical" href="https://sobsh562u.github.io/Escape-from-Home/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="逃家游戏（Escape from Home）">
 <meta property="og:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
-<meta property="og:description" content="中文文字游戏，九个难度，网页版免下载，带在线总榜。">
+<meta property="og:description" content="中文文字游戏，十个难度，网页版免下载，带在线总榜。">
 <meta property="og:url" content="https://sobsh562u.github.io/Escape-from-Home/">
 <meta property="og:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
-<meta name="twitter:description" content="中文文字游戏，九个难度，网页版免下载，带在线总榜。">
+<meta name="twitter:description" content="中文文字游戏，十个难度，网页版免下载，带在线总榜。">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。九个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。十个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2b2b'/%3E%3Cpath d='M8 20 L20 8 M14 8 h6 v6' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   :root{
@@ -290,7 +290,7 @@
     <div>
       <h1>逃家游戏</h1>
       <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
-      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。九个难度、三十个结局，网页版打开即玩、不用下载。</div>
+      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。十个难度、三十二个结局，网页版打开即玩、不用下载。</div>
     </div>
     <div class="hdlinks">
       <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases" target="_blank" rel="noopener"
@@ -316,6 +316,7 @@
     <button class="tab" data-mode="school" aria-pressed="false">校园版</button>
     <button class="tab" data-mode="phone" aria-pressed="false">手机版</button>
     <button class="tab" data-mode="storm" aria-pressed="false">停电版</button>
+    <button class="tab" data-mode="summer" aria-pressed="false">暑假版</button>
   </div>
 
   <section class="panel">
@@ -495,6 +496,7 @@
         <button type="button" data-m="school">校园</button>
         <button type="button" data-m="phone">手机</button>
         <button type="button" data-m="storm">停电</button>
+        <button type="button" data-m="summer">暑假</button>
       </div>
       <div class="lblist" id="lbList">正在拉榜单…</div>
     </div>
@@ -503,11 +505,11 @@
   <section style="margin:22px 0 0;padding:14px 16px;border:1px solid #ddd6c6;border-radius:10px;background:#faf7f1;color:#4a4438;font-size:13px;line-height:1.75">
     <h2 style="margin:0 0 8px;font-size:15px;color:#3a3428">关于《逃家游戏》</h2>
     <p style="margin:0 0 6px">《逃家游戏》（Escape from Home）是一款中文文字游戏。玩家从幼儿园开始，经历小学、初中、高中，每天在考试、打工、攒钱之间做选择，撑到 18 岁、名下有套房，才能逃出这个家。</p>
-    <p style="margin:0 0 6px">游戏有九个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电，三十个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
+    <p style="margin:0 0 6px">游戏有十个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电、暑假，三十二个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
-    网页版 v1.23.0 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.24.0 · 十难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
     <a href="../about.html">游戏说明</a> · <a href="../新手入门.html">入门</a> · <a href="../玩法与难度.html">规则</a> · <a href="../结局图鉴.html">结局图鉴</a> · <a href="../存档与账号.html">存档</a> · <a href="../常见问题.html">常见问题</a> · <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -790,6 +792,40 @@
     win: "7 个雨夜熬过去了。天亮时雨停了，电也来了，冰箱嗡嗡一响，你才发现自己一晚上没睡。结局达成：停电版通关。"
   };
 
+  MODES.summer = {
+    label: "暑假版",
+    noScore: true,
+    hp: 100, max: 100, goal: 15,
+    intro: "【暑假版】没有考试，只有 15 天暑假。撑到开学就是通关。",
+    note: "暑假版：点「考试」= 过完一天暑假，每天随机：在家写作业（不扣血）、公园玩（+5 血）、被逼去补习班（-12 血）、帮邻居搬东西（+8 血）、同学约游泳（+10 血）。逃跑=溜出去玩被抓，扣 15 血。110 打过去，警察说暑假警情多，让你自己回家。",
+    run: function (s) {
+      return { hp: -15, tone: "bad",
+        text: "你趁中午溜出门，妈妈骑着电动车在小区门口蹲着，把你拎回来。" };
+    },
+    call: function () {
+      return { end: true, ending: "summer_call", lines: [
+        "你拨通 110，说不想在家过暑假。",
+        "警察：小朋友，暑假警情多，你这种情况我们真排不上队。",
+        "警察：自己回家，把作业写了。",
+        "结局达成：暑假报警，被劝回家。"
+      ]};
+    },
+    exam: function (s, score) {
+      var r = Math.random();
+      if (r < 0.30) return { hp: 0, tone: "day",
+        text: "你在家写了一天暑假作业，笔芯写秃两根，妈妈没挑出毛病。" };
+      if (r < 0.52) return { hp: 5, tone: "good",
+        text: "你去了公园，坐在树底下看别人钓鱼，没人管你。" };
+      if (r < 0.72) return { hp: -12, tone: "bad",
+        text: "妈妈给你报了补习班，空调坏了，你听了一整天函数。" };
+      if (r < 0.90) return { hp: 8, tone: "good",
+        text: "你帮楼下邻居搬了一下午纸箱，他塞给你一瓶冰汽水。" };
+      return { hp: 10, tone: "good",
+        text: "同学约你去游泳，你在水里泡到手指发皱。" };
+    },
+    win: "15 天暑假过完了。开学前一天晚上，你把没写的作业摊在桌上，居然有点想念上课。结局达成：暑假版通关。"
+  };
+
   MODES.endless = {
     label: "无尽版",
     hp: 100, max: 100, goal: Infinity, money: true,
@@ -823,6 +859,8 @@
     storm_win:     { name: "雨停了", desc: "停电版 · 撑过 7 个雨夜" },
     storm_call:    { name: "线路占线", desc: "停电版 · 暴雨夜报警没人来" },
     satellite:     { name: "Satellite Assistance", desc: "停电版 · 停电夜卫星求助获救" },
+    summer_win:    { name: "暑假过完了", desc: "暑假版 · 撑过 15 天" },
+    summer_call:   { name: "被劝回家", desc: "暑假版 · 报警说不想在家过暑假" },
     hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
     limit_win:     { name: "极限模式通关", desc: "极限版 · 撑过 5 天" },
     limit_call:    { name: "报警被爸爸逮住", desc: "极限版 · 报警，接电话的是爸爸" },
@@ -2623,7 +2661,7 @@
     var score = rand(101);
     if (hasItem("review") && state.mode !== "revert") score = Math.min(100, score + 10);
     if (hasItem("lucky") && state.mode !== "revert" && score < 65) score = 65;
-    line("你考了 " + score + " 分。", "day");
+    if (!state.cfg.noScore) line("你考了 " + score + " 分。", "day");
     if (state.fireActive) {
       line("家里还冒着烟，妈妈一边泼水一边骂插座，根本没问分数。", "day");
       if (maybeEvent()) return;
