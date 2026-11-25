@@ -268,6 +268,20 @@
   .authorbox .abtop b{color:#3f3729}
   .authorbox input{font:inherit;font-size:14px;padding:7px;border:1px solid #d8d2c4;border-radius:8px;background:#fff;width:130px}
   .authorbox button{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer}
+  .schoolbox{background:#fbf7ec;border:1px solid #ded5c2;border-radius:14px;padding:14px;margin:14px 0}
+  .sbhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .sbhead b{font-size:16px}
+  .sbinfo{font-size:13px;color:#6b6455}
+  .sbbtn{font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #c9b98a;background:#efe6d0;color:#3f3729;cursor:pointer;margin-left:auto}
+  .sblocs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:10px}
+  .sbloc{font:inherit;font-size:14px;padding:9px 6px;border-radius:10px;border:1px solid #d8d2c4;background:#fffdf6;color:#3f3729;cursor:pointer}
+  .sbloc.on{background:#e8dfc6;border-color:#b9a877}
+  .sblog{background:#fffdf6;border:1px solid #e3dccb;border-radius:10px;padding:10px;height:190px;overflow-y:auto;font-size:14px;line-height:1.7}
+  .sblog .sl{display:block}
+  .sblog .sl.good{color:#1f6b3a}
+  .sblog .sl.bad{color:#a83231}
+  .sbitems{font-size:13px;color:#5b5346;margin-top:10px}
+  .sbfoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -284,6 +298,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16"/></svg>
         装离线版
       </a>
+      <button class="dl ghost" id="openSchool" type="button" style="font:inherit;cursor:pointer">学校地图</button>
       <a class="dl ghost" href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.3-.4-4.2 1.6a10.4 10.4 0 0 0-5.4 0C5.6 2.3 4.3 2.7 4.3 2.7a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 3 9.2c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
         仓库
@@ -346,7 +361,21 @@
       </div>
     </div>
 
-    <div class="acts" id="stationBar" hidden>
+    <div class="schoolbox" id="schoolBox" hidden>
+    <div class="sbhead">
+      <b>学校地图 · 教学楼</b>
+      <span class="sbinfo" id="sbInfo">第 1 天 · 体力 100</span>
+      <button class="sbbtn" id="sbClose" type="button">关闭</button>
+    </div>
+    <div class="sblocs" id="sbLocs"></div>
+    <div class="sblog" id="sbLog"></div>
+    <div class="sbfoot">
+      <button class="sbbtn" id="sbClass" type="button" style="margin-left:0">坐下上课（30 秒 = 一天）</button>
+      <span class="sbitems" id="sbItems">身上没东西</span>
+    </div>
+  </div>
+
+  <div class="acts" id="stationBar" hidden>
       <button class="primary" id="btnWait">等车</button>
       <button id="btnTaxi">打车（10 块）</button>
     </div>
@@ -3278,6 +3307,167 @@
       })
     }).catch(function () {});
   } catch (e) {}
+
+  // ===== 学校地图 / 周边地图（文字版，可逛，有被抓风险） =====
+  var SCH_KEY = "ehq_school_v1";
+  function schLoad() {
+    var d = {};
+    try { d = JSON.parse(localStorage.getItem(SCH_KEY) || "{}") || {}; } catch (e) { d = {}; }
+    return {
+      day: d.day || 1, hp: typeof d.hp === "number" ? d.hp : 100, at: d.at || "home",
+      items: Array.isArray(d.items) ? d.items : [], log: Array.isArray(d.log) ? d.log : []
+    };
+  }
+  var SCH = schLoad();
+  function schSave() { try { localStorage.setItem(SCH_KEY, JSON.stringify(SCH)); } catch (e) {} }
+
+  var PLACES = [
+    { id: "home", name: "家", risk: 0 },
+    { id: "yard", name: "小区楼下", risk: 0.08 },
+    { id: "gate", name: "学校门口", risk: 0 },
+    { id: "class", name: "教室", risk: 0, isClass: true },
+    { id: "stairs", name: "楼道楼梯", risk: 0.06 },
+    { id: "office", name: "老师办公室", risk: 0.4, danger: true },
+    { id: "toilet", name: "厕所", risk: 0 },
+    { id: "roof", name: "天台", risk: 0.35, danger: true },
+    { id: "park", name: "公园", risk: 0.2, danger: true },
+    { id: "lake", name: "公园湖边", risk: 0.28, danger: true },
+    { id: "shop", name: "小卖部", risk: 0.18, danger: true },
+    { id: "street", name: "街边", risk: 0.3, danger: true },
+    { id: "netbar", name: "网吧", risk: 0.6, danger: true }
+  ];
+  var SCH_EV = {
+    yard: [["邻居阿姨在晾被子，瞥了你一眼没说话。", 0], ["你在花坛边上捡到一块钱。", "coin"]],
+    gate: [["保安在门口坐着刷视频，没拦你。", 0], ["值周生拿着本子记迟到的名字，你绕开了。", 0]],
+    class: [["黑板上还留着上节课的公式，粉笔灰落了一桌。", 0], ["你从抽屉缝里摸到半块橡皮。", "item:半块橡皮"]],
+    stairs: [["楼梯间的感应灯坏了，你摸黑上了三层。", 0], ["有人在楼梯拐角背书，声音很小。", 0]],
+    office: [["办公室里三个老师围着成绩单，你贴着墙溜过去。", 0], ["桌上摊着一沓卷子，你没敢动。", 0]],
+    toilet: [["厕所里有人抽烟，看见你就掐了。", 0], ["你在洗手台上捡到一个校园卡。", "item:校园卡"]],
+    roof: [["天台上风很大，你趴在栏杆上看下面的操场。", "calm"], ["天台上有个同学在抽烟，看见你递了一根，你摆手。", 0], ["你在天台角落捡到一本学生证。", "item:学生证"]],
+    park: [["公园里老头在下棋，你站着看了一盘。", "calm"], ["长椅上有人落下一瓶没开的水。", "item:矿泉水"]],
+    lake: [["湖边的风把书页吹翻，你干脆不看了。", "calm"], ["有人在钓鱼，你蹲着看了半小时。", "calm"]],
+    shop: [["小卖部老板在看电视，冰柜嗡嗡响。", 0], ["你买了根冰棍，找回来的钱多了一块。", "coin"]],
+    street: [["街上车很多，你贴着墙根走。", 0], ["路边有人发传单，你顺手接了。", "item:传单"]],
+    netbar: [["网吧里烟味很重，老板问你要身份证，你说忘带了。", 0], ["你蹭了别人的机子玩了十分钟，被赶出来。", 0]]
+  };
+  var schTimer = null, schClassLeft = 0;
+
+  function schLine(t, tone) {
+    SCH.log.push({ t: t, c: tone || "" });
+    if (SCH.log.length > 40) SCH.log = SCH.log.slice(-40);
+    schSave(); schRender();
+  }
+  function schHas(it) { return SCH.items.indexOf(it) >= 0; }
+  function schGive(it) { if (!schHas(it)) { SCH.items.push(it); } }
+
+  function schTravel(id) {
+    var p = null;
+    PLACES.forEach(function (x) { if (x.id === id) p = x; });
+    if (!p) return;
+    if (SCH.at === id) { schLine("你已经在" + p.name + "了。", ""); return; }
+    var wasClass = SCH.at === "class";
+    SCH.at = id;
+    if (wasClass && schClassLeft > 0) {
+      schClassLeft = 0;
+      schLine("你从教室后门溜出去了——这节课算旷了。", "bad");
+    }
+    schLine("你走到了" + p.name + "。", "");
+    // 被抓判定
+    if (p.danger && Math.random() < p.risk) {
+      SCH.hp = Math.max(0, SCH.hp - 10);
+      SCH.at = "home"; schClassLeft = 0;
+      schLine("妈妈不知道从哪冒出来，一把拽住你胳膊：「你不在学校跑这来干嘛？」把你拎回家。体力 -10。", "bad");
+    } else {
+      var evs = SCH_EV[id] || [];
+      if (evs.length && Math.random() < 0.75) {
+        var ev = evs[rand(evs.length)];
+        schLine(ev[0], ev[1] === "calm" ? "good" : "");
+        if (ev[1] === "coin") { schGive("零钱"); schLine("（零钱进了口袋）", "good"); }
+        if (typeof ev[1] === "string" && ev[1].indexOf("item:") === 0) {
+          var it = ev[1].slice(5); schGive(it);
+          schLine("（捡到：" + it + "）", "good");
+          if (it === "学生证") schLine("学生证上写着：林小雨 · 高二(3)班 · 态度：一般 · 电话 138****6621。", "good");
+          if (it === "校园卡") schLine("校园卡背面贴着一张便利贴：「谁捡到还我，请喝奶茶」。", "good");
+        }
+      }
+    }
+    if (SCH.hp <= 0) { SCH.hp = 60; schLine("你被折腾到没力气，回家躺了一天，体力回到 60。", "bad"); }
+    schSave(); schRender();
+  }
+
+  function schClassStart() {
+    if (SCH.at !== "class") { schLine("先走到教室再上课。", ""); return; }
+    if (schClassLeft > 0) { schLine("这节课还在上。", ""); return; }
+    schClassLeft = 30;
+    schLine("你在教室坐下，老师开始讲课。这一节要 30 秒（等于一天）。", "");
+    if (schTimer) clearInterval(schTimer);
+    schTimer = setInterval(function () {
+      schClassLeft -= 1;
+      if (schClassLeft > 0) { schRender(); return; }
+      clearInterval(schTimer); schTimer = null;
+      schClassEnd();
+    }, 1000);
+    schRender();
+  }
+
+  function schClassEnd() {
+    SCH.day += 1;
+    var got = Math.random();
+    schLine("下课了。第 " + SCH.day + " 天开始。", "");
+    if (got < 0.3) { schGive("学生证"); schLine("前排同学走得急，学生证落在你桌上。上面写着：陈一诺 · 高一(1)班 · 态度：善良 · 电话 137****9034。", "good"); }
+    else if (got < 0.55) { schGive("笔记"); schLine("你把黑板上的重点抄进本子，多了一份笔记。", "good"); }
+    else if (got < 0.75) { SCH.hp = Math.min(100, SCH.hp + 5); schLine("这节课没被点名，居然还有点轻松。体力 +5。", "good"); }
+    else { schLine("老师拖堂，你饿着肚子等到放学。", ""); }
+    schSave(); schRender();
+  }
+
+  function schRender() {
+    var box = document.getElementById("schoolBox");
+    if (!box || box.hidden) return;
+    var pname = "家";
+    PLACES.forEach(function (x) { if (x.id === SCH.at) pname = x.name; });
+    var info = document.getElementById("sbInfo");
+    info.textContent = "第 " + SCH.day + " 天 · 体力 " + SCH.hp + " · 现在在：" + pname +
+      (schClassLeft > 0 ? " · 上课中 " + schClassLeft + " 秒" : "");
+    var locs = document.getElementById("sbLocs");
+    locs.innerHTML = "";
+    PLACES.forEach(function (p) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "sbloc" + (p.id === SCH.at ? " on" : "");
+      b.textContent = p.name;
+      b.addEventListener("click", function () { schTravel(p.id); });
+      locs.appendChild(b);
+    });
+    var log = document.getElementById("sbLog");
+    log.innerHTML = "";
+    SCH.log.forEach(function (l) {
+      var d = document.createElement("span");
+      d.className = "sl " + (l.c || "");
+      d.textContent = l.t;
+      log.appendChild(d);
+    });
+    log.scrollTop = log.scrollHeight;
+    document.getElementById("sbItems").textContent = SCH.items.length ? ("身上：" + SCH.items.join("、")) : "身上没东西";
+    var cb = document.getElementById("sbClass");
+    cb.textContent = schClassLeft > 0 ? ("上课中… 还剩 " + schClassLeft + " 秒") : "坐下上课（30 秒 = 一天）";
+  }
+
+  document.getElementById("openSchool").addEventListener("click", function () {
+    var box = document.getElementById("schoolBox");
+    box.hidden = false;
+    if (!SCH.log.length) {
+      schLine("你家住在老小区 5 号楼。楼下是小区院子，出门左拐两百米就是学校，右拐是公园。", "");
+      schLine("想去哪就点哪；去的地方越偏，被妈妈抓到的概率越大。", "");
+    }
+    schRender();
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  document.getElementById("sbClose").addEventListener("click", function () {
+    document.getElementById("schoolBox").hidden = true;
+    if (schTimer) { clearInterval(schTimer); schTimer = null; schClassLeft = 0; }
+  });
+  document.getElementById("sbClass").addEventListener("click", schClassStart);
+
 })();
 </script>
 </body>
