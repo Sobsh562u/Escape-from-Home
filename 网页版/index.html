@@ -290,7 +290,7 @@
     <div>
       <h1>逃家游戏</h1>
       <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
-      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。九个难度、二十九个结局，网页版打开即玩、不用下载。</div>
+      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。九个难度、三十个结局，网页版打开即玩、不用下载。</div>
     </div>
     <div class="hdlinks">
       <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases" target="_blank" rel="noopener"
@@ -503,7 +503,7 @@
   <section style="margin:22px 0 0;padding:14px 16px;border:1px solid #ddd6c6;border-radius:10px;background:#faf7f1;color:#4a4438;font-size:13px;line-height:1.75">
     <h2 style="margin:0 0 8px;font-size:15px;color:#3a3428">关于《逃家游戏》</h2>
     <p style="margin:0 0 6px">《逃家游戏》（Escape from Home）是一款中文文字游戏。玩家从幼儿园开始，经历小学、初中、高中，每天在考试、打工、攒钱之间做选择，撑到 18 岁、名下有套房，才能逃出这个家。</p>
-    <p style="margin:0 0 6px">游戏有九个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电，二十九个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
+    <p style="margin:0 0 6px">游戏有九个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电，三十个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
@@ -775,7 +775,12 @@
       var out = Math.random() < 0.6;
       var flood = Math.random() < 0.1;
       var hp = 0, parts = [];
-      if (out) { score = Math.min(score, 50); hp -= 10; parts.push("停电了，你点着蜡烛写，卷子湿了一角，分数只算 " + score + " 分。"); }
+      if (out) {
+        score = Math.min(score, 50); hp -= 10; s.stormOut = true;
+        phone.bat = 30; state.torch = false; savePhone();
+        parts.push("停电了，你点着蜡烛写，卷子湿了一角，分数只算 " + score + " 分。手机也黑了，只剩两成备用电。");
+      }
+      if (!out) { s.stormOut = false; phone.bat = 100; state.torch = false; savePhone(); }
       if (flood) { hp -= 20; parts.push("半夜一楼进水，你抱着卷子站到桌子上。"); }
       if (!out && !flood) parts.push("灯还亮着，雨敲窗户，你写完卷子，居然安静了一会儿。");
       var tone = hp < 0 ? "bad" : "good";
@@ -817,6 +822,7 @@
     phone_call:    { name: "没人当真", desc: "手机版 · 报警时还在刷手机" },
     storm_win:     { name: "雨停了", desc: "停电版 · 撑过 7 个雨夜" },
     storm_call:    { name: "线路占线", desc: "停电版 · 暴雨夜报警没人来" },
+    satellite:     { name: "Satellite Assistance", desc: "停电版 · 停电夜卫星求助获救" },
     hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
     limit_win:     { name: "极限模式通关", desc: "极限版 · 撑过 5 天" },
     limit_call:    { name: "报警被爸爸逮住", desc: "极限版 · 报警，接电话的是爸爸" },
@@ -1075,7 +1081,8 @@
   function reset(mode, forceNew) {
     var cfg = MODES[mode];
     state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1,
-              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false, pbankSec: 0, fireActive: false, fireDay: 0 };
+              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false, pbankSec: 0, fireActive: false, fireDay: 0,
+              stormOut: false, torch: false, satTry: 0 };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
@@ -1446,7 +1453,9 @@
       videos: Array.isArray(d.videos) ? d.videos : [],
       msgs: Array.isArray(d.msgs) ? d.msgs : [],
       friend: !!d.friend,
-      examAns: !!d.examAns
+      examAns: !!d.examAns,
+      bat: typeof d.bat === "number" ? d.bat : 100,
+      satUsed: !!d.satUsed
     };
   }
   function savePhone() { try { localStorage.setItem(PHONE_KEY, JSON.stringify(phone)); } catch (e) {} }
@@ -1543,6 +1552,15 @@
   function phoneTick() {
     if (!state || state.over) { closePhone(); return; }
     if (phView === "lock") { return; }
+    if (state.torch) {
+      phone.bat = Math.max(0, phone.bat - 0.5);
+      if (phone.bat <= 0) {
+        phone.bat = 0; state.torch = false; savePhone();
+        line("手电筒闪了两下就灭了，屏幕彻底黑掉。等来电再说吧。", "bad");
+        renderPhone(); return;
+      }
+      if (Math.round(phone.bat * 2) % 8 === 0) savePhone();
+    }
     if (state.phoneBurned) { return; }
     state.phoneUse = (state.phoneUse || 0) + 1;
     // 音量开太大，妈妈听得见
@@ -1677,6 +1695,27 @@
       tip.textContent = "忘了密码也能紧急拨号。";
       lk.appendChild(tip);
       body.appendChild(lk);
+      return;
+    }
+
+    if (state.stormOut && !state.torch) {
+      title.textContent = "黑屏";
+      var bk0 = document.createElement("div"); bk0.className = "phlock";
+      var bb = document.createElement("div"); bb.className = "phbigclock"; bb.textContent = "— — : — —";
+      var bh = document.createElement("div"); bh.className = "phlockhint";
+      bh.textContent = phone.bat <= 0
+        ? "手机一点电都没有了，屏幕怎么按都不亮。等来电吧。"
+        : "停电了，手机也黑着。屋里只剩雨声。（设置 → 手电筒）";
+      var bt = document.createElement("button");
+      bt.type = "button"; bt.className = "phbtn"; bt.textContent = "摸黑打开手电筒";
+      bt.addEventListener("click", function () {
+        if (phone.bat <= 0) { phMsg("没电，开不了。"); return; }
+        state.torch = true; savePhone();
+        line("你摸黑划开设置，打开手电筒，屏幕亮起一小块。电量在掉。", "day");
+        renderPhone();
+      });
+      bk0.appendChild(bb); bk0.appendChild(bh); bk0.appendChild(bt);
+      body.appendChild(bk0);
       return;
     }
 
@@ -2369,6 +2408,42 @@
         phUnlocked = true; savePhone(); phMsg(pv ? "密码设好了，下次开手机要输。" : "密码取消了。");
       });
       pRow.appendChild(pi); pRow.appendChild(pbtn); scr.appendChild(pRow);
+
+      var tRow = document.createElement("div"); tRow.className = "phrow";
+      var tl = document.createElement("span");
+      tl.textContent = "手电筒：" + (state.torch ? "开着（电量 " + Math.round(phone.bat) + "%）" : "关着");
+      var tb = document.createElement("button"); tb.type = "button"; tb.className = "phbtn";
+      tb.textContent = state.torch ? "关掉" : "打开";
+      tb.addEventListener("click", function () {
+        if (!state.stormOut) { phMsg("现在有电，手电筒用不上。"); return; }
+        if (!state.torch && phone.bat <= 0) { phMsg("手机没电了，开不了手电筒。"); return; }
+        state.torch = !state.torch; savePhone();
+        phMsg(state.torch ? "手电筒开了，屏幕亮起来，电量一秒一点往下掉。" : "手电筒关了，屏幕又黑回去。");
+        renderPhone();
+      });
+      tRow.appendChild(tl); tRow.appendChild(tb); scr.appendChild(tRow);
+
+      var sRow = document.createElement("div"); sRow.className = "phrow";
+      var sl = document.createElement("span"); sl.textContent = "卫星求助：";
+      var sb = document.createElement("button"); sb.type = "button"; sb.className = "phbtn";
+      sb.textContent = phone.satUsed ? "已经用过" : "发送求助";
+      var sn = document.createElement("span"); sn.className = "phtip";
+      sn.textContent = "停电夜没信号时能发一条，云太厚就可能没人收到。";
+      sb.addEventListener("click", function () {
+        if (phone.satUsed) { phMsg("这一局已经发过了。"); return; }
+        if (!state.stormOut) { phMsg("有信号的时候用不着，等停电了再发。"); return; }
+        if (phone.bat <= 0) { phMsg("手机没电了，卫星消息发不出去。"); return; }
+        phone.satUsed = true; savePhone();
+        if (Math.random() < 0.6) {
+          closePhone();
+          gameOver("你把手机举到窗边，一条卫星消息挤过雨云，两小时后楼下手电筒一晃一晃。有人来敲门了。结局达成：卫星求助。", "satellite");
+        } else {
+          state.hp = Math.max(1, state.hp - 10);
+          line("消息发出去了，转了半天只有一个「发送失败」。云太厚了，扣 10 血。", "bad");
+          updateStats(); saveState(); renderPhone();
+        }
+      });
+      sRow.appendChild(sl); sRow.appendChild(sb); sRow.appendChild(sn); scr.appendChild(sRow);
     }
 
     if (phView !== "home") {
