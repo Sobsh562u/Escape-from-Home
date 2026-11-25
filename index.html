@@ -507,7 +507,7 @@
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
-    网页版 v1.21.1 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.22.0 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
     <a href="about.html">游戏说明</a> · <a href="新手入门.html">入门</a> · <a href="玩法与难度.html">规则</a> · <a href="结局图鉴.html">结局图鉴</a> · <a href="存档与账号.html">存档</a> · <a href="常见问题.html">常见问题</a> · <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -1335,6 +1335,8 @@
       desc: "本局考试分数不低于 65 分。反转版不适用（那里考高反而挨打）。" },
     { id: "phone", name: "完整版手机（永久）", price: 25, once: true, g: "full",
       desc: "老款完整手机：短视频、短信、通话、应用商城都有。永久拥有，换难度、重开本局都在。不支持 NFC。" },
+    { id: "phone_mid", name: "中款完整手机（永久）", price: 45, once: true, g: "mid",
+      desc: "普普通通一台完整手机：跟 25 金币那台功能一模一样，短视频、短信、通话、应用商城都有，不支持 NFC。永久拥有。" },
     { id: "phone_new", name: "最新款完整手机（永久）", price: 50, once: true, g: "fullnew",
       desc: "今年的新机：除了老款那些功能，还支持 NFC 刷门禁卡（每天能安全出门透气一次）、手电筒更省电、卫星求助更容易被收到。永久拥有。" },
     { id: "sim", name: "电话卡（永久）", price: 8, once: true, g: "sim",
@@ -1400,6 +1402,7 @@
       phone[it.g] = true;
       savePhone();
       line(it.g === "fullnew" ? "你把这台最新款完整手机拆了封，背面 NFC 标志在灯下反光。"
+        : it.g === "mid" ? "你买了一台中款完整手机，普普通通，开机、装 APP、打电话都行。"
         : it.g === "full" ? "你从二手市场拎回来一台完整手机，屏幕上能装 APP 了。"
         : "你买了一张电话卡，插进手机，信号格亮了。", "good");
       shopMsg("买好了，剩 " + coins() + " 金币。");
@@ -1444,7 +1447,7 @@
   function loadPhone() {
     var d = {};
     try { d = JSON.parse(localStorage.getItem(PHONE_KEY) || "{}") || {}; } catch (e) { d = {}; }
-    return {
+    var o = {
       full: !!d.full,
       sim: !!d.sim,
       passHash: typeof d.passHash === "string" ? d.passHash : (d.pass ? sha256Hex(String(d.pass)) : ""),
@@ -1458,11 +1461,23 @@
       examAns: !!d.examAns,
       bat: typeof d.bat === "number" ? d.bat : 100,
       satUsed: !!d.satUsed,
-      fullnew: !!d.fullnew
+      fullnew: !!d.fullnew,
+      mid: !!d.mid,
+      schoolPin: typeof d.schoolPin === "string" ? d.schoolPin : "",
+      schoolPinKnown: !!d.schoolPinKnown
     };
+    if (!o.full && !o.fullnew && !o.mid) {
+      if (!o.schoolPin) o.schoolPin = String(100000 + Math.floor(Math.random() * 900000));
+      if (!o.passHash) o.passHash = sha256Hex(o.schoolPin);
+    }
+    return o;
   }
   function savePhone() { try { localStorage.setItem(PHONE_KEY, JSON.stringify(phone)); } catch (e) {} }
   var phone = loadPhone();
+  try {
+    var _old = JSON.parse(localStorage.getItem(PHONE_KEY) || "{}") || {};
+    if (!_old.schoolPin && !phone.full && !phone.fullnew && !phone.mid) savePhone();
+  } catch (e) {}
 
   var phTimer = null, phUnlocked = false, phView = "home", phQuizT = null;
   var PH_SMS = { tab: "in", rows: [], used: 0, cap: 60, msg: "", loading: false, need: true,
@@ -1489,6 +1504,7 @@
     return null;
   }
   function hasApp(id) { return phone.apps.indexOf(id) >= 0; }
+  function isSchoolPhone() { return !phone.full && !phone.fullnew && !phone.mid; }
 
   function installApp(id) {
     var a = appInfo(id);
@@ -1678,7 +1694,10 @@
       var wk = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
       dd.textContent = (now.getMonth() + 1) + " 月 " + now.getDate() + " 日 · " + wk[now.getDay()];
       lk.appendChild(dd);
-      var hh = document.createElement("div"); hh.className = "phlockhint"; hh.textContent = "这台手机你设了密码，输入解锁";
+      var hh = document.createElement("div"); hh.className = "phlockhint";
+      hh.textContent = isSchoolPhone()
+        ? (phone.schoolPinKnown ? "学校发的机 · 出厂密码老师给过你了" : "学校发的机，出厂就带密码——回学校问老师要")
+        : "这台手机你设了密码，输入解锁";
       lk.appendChild(hh);
       var ok = document.createElement("button");
       ok.type = "button"; ok.className = "phbtn"; ok.textContent = "解锁";
@@ -1722,20 +1741,20 @@
       return;
     }
 
-    title.textContent = phone.fullnew ? "最新款完整手机" : phone.full ? "完整版手机" : "学校发的老人机";
+    title.textContent = phone.fullnew ? "最新款完整手机" : phone.full ? "完整版手机" : phone.mid ? "中款完整手机" : "学校发的老人机";
     var scr = document.createElement("div");
     scr.className = (phView === "home") ? "phhome" : "phsolid";
 
     if (phView === "home") {
       var list = [];
-      if (phone.full || phone.fullnew) list.push(["store", "应用商城", "商", "#0f9ef0", false]);
-      if (phone.full || phone.fullnew) list.push(["video", "短视频", "▶", "#ff5a5f", false]);
+      if (!isSchoolPhone()) list.push(["store", "应用商城", "商", "#0f9ef0", false]);
+      if (!isSchoolPhone()) list.push(["video", "短视频", "▶", "#ff5a5f", false]);
       if (phone.fullnew) list.push(["nfc", "NFC·门禁", "N", "#2fbf6b", false]);
       if (phone.sim) {
         list.push(["sms", "短信", "✉", "#3b93f7", false]);
         list.push(["call", "通话", "☎", "#2fbf6b", false]);
       }
-      if ((phone.full || phone.fullnew) && !phone.sim) list.push(["sms", "短信", "✉", "#3b93f7", true]);
+      if (!isSchoolPhone() && !phone.sim) list.push(["sms", "短信", "✉", "#3b93f7", true]);
       phone.apps.forEach(function (id) {
         var a = appInfo(id);
         if (a) list.push(["app:" + id, a.name, a.glyph, a.color, false]);
@@ -1762,7 +1781,7 @@
       scr.appendChild(grid);
 
       var hint = document.createElement("p"); hint.className = "phtip";
-      hint.textContent = (phone.full || phone.fullnew)
+      hint.textContent = !isSchoolPhone()
         ? (phone.sim ? "桌面上的 APP 点一下就能开。" : "卡槽是空的——没电话卡，短信和通话用不了。")
         : "这台老人机没有 APP，也装不了。去道具店换一台完整版手机，才有短视频、短信、通话。";
       scr.appendChild(hint);
@@ -2438,6 +2457,13 @@
         phUnlocked = true; savePhone(); phMsg(pv ? "密码设好了，下次开手机要输。" : "密码取消了。");
       });
       pRow.appendChild(pi); pRow.appendChild(pbtn); scr.appendChild(pRow);
+
+      if (isSchoolPhone()) {
+        var spRow = document.createElement("div"); spRow.className = "phrow";
+        var sp = document.createElement("span");
+        sp.textContent = "学校机密码：" + (phone.schoolPinKnown ? phone.schoolPin + "（老师给的）" : "不知道，去学校找老师问");
+        spRow.appendChild(sp); scr.appendChild(spRow);
+      }
 
       var tRow = document.createElement("div"); tRow.className = "phrow";
       var tl = document.createElement("span");
@@ -3578,6 +3604,10 @@
       schLine("你从教室后门溜出去了——这节课算旷了。", "bad");
     }
     schLine("你走到了" + p.name + "。", "");
+    if (id === "office" && isSchoolPhone() && !phone.schoolPinKnown) {
+      phone.schoolPinKnown = true; savePhone();
+      schLine("你问老师学校发的手机密码，老师翻出登记本：「" + phone.schoolPin + "」，记一下吧，别再忘了。", "good");
+    }
     // 被抓判定
     if (p.danger && Math.random() < p.risk) {
       SCH.hp = Math.max(0, SCH.hp - 10);
