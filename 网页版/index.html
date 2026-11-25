@@ -1407,6 +1407,7 @@
     phEl("phoneMask").hidden = true;
     if (phTimer) { clearInterval(phTimer); phTimer = null; }
     if (phQuizT) { clearInterval(phQuizT); phQuizT = null; }
+    if (grpTimer) { clearInterval(grpTimer); grpTimer = null; }
   }
 
   function phoneTick() {
@@ -1433,6 +1434,37 @@
   }
 
   function smsReady() { return !!(state && phone.sim && isReg()); }
+
+  // ===== 学校群联机（REST 轮询，免费额度足够） =====
+  var GRP_URL = SB_URL.replace("/scores", "/ehq_group_msgs");
+  var grpTimer = null, grpLast = 0;
+  function grpPid() {
+    var pid = myPid();
+    if (pid) return pid;
+    var g = lsGet("ehq_guest");
+    if (!g) { g = "g" + String(10000000 + rand(90000000)); lsSet("ehq_guest", g); }
+    return g;
+  }
+  function grpName() {
+    var n = myName();
+    if (n) return n;
+    return "路人" + grpPid().slice(-3);
+  }
+  function grpList(cb) {
+    fetch(GRP_URL + "?select=id,pid,name,body&room=eq.school&order=id.desc&limit=30", {
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+    }).then(function (r) { return r.json(); }).then(function (rows) {
+      cb(Array.isArray(rows) ? rows.reverse() : []);
+    }).catch(function () { cb(null); });
+  }
+  function grpSend(body, cb) {
+    fetch(GRP_URL, {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY,
+                 "Content-Type": "application/json", "Prefer": "return=representation" },
+      body: JSON.stringify({ room: "school", pid: grpPid(), name: grpName(), body: body })
+    }).then(function (r) { return r.ok; }).then(cb).catch(function () { cb(false); });
+  }
 
   function smsRpc(fn, body) {
     return fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
@@ -1859,6 +1891,66 @@
             });
             scr.appendChild(ab);
           }
+
+          var gsep = document.createElement("div");
+          gsep.className = "phtime"; gsep.style.marginTop = "10px"; gsep.textContent = "—— 群里正真的活人 ——";
+          scr.appendChild(gsep);
+
+          var glist = document.createElement("div");
+          glist.style.cssText = "min-height:40px;display:flex;flex-direction:column;gap:4px;margin:6px 0";
+          scr.appendChild(glist);
+
+          var gstat = document.createElement("div"); gstat.className = "phtime";
+          gstat.textContent = "正在连接群…";
+          scr.appendChild(gstat);
+
+          var gfill = function (rows) {
+            glist.innerHTML = "";
+            if (!rows || !rows.length) {
+              var e = document.createElement("div"); e.className = "phtime";
+              e.textContent = "还没有真人发言。你先说一句，别人打开游戏就能看见。";
+              glist.appendChild(e);
+              gstat.textContent = "在线真人：0（现在没匹配到，全是老同学在演）";
+              return;
+            }
+            var me = grpPid(), names = {};
+            rows.forEach(function (r) {
+              var d = document.createElement("div"); d.className = "phtime";
+              d.style.lineHeight = "1.55";
+              d.textContent = (r.pid === me ? "你" : r.name) + "：" + r.body;
+              if (r.pid === me) d.style.color = "#5c4a1f";
+              glist.appendChild(d);
+              names[r.pid] = 1;
+            });
+            gstat.textContent = "在线真人：" + Object.keys(names).length + "　（每 3 秒自动刷一次）";
+            if (rows.length) grpLast = rows[rows.length - 1].id;
+          };
+
+          var grefresh = function () { grpList(function (rows) { gfill(rows); }); };
+          grefresh();
+          if (grpTimer) clearInterval(grpTimer);
+          grpTimer = setInterval(function () { if (phView === "sms" && PH_SMS.tab === "school") grefresh(); }, 3000);
+
+          var grow = document.createElement("div"); grow.className = "phrow";
+          var gin = document.createElement("input"); gin.type = "text"; gin.maxLength = 200;
+          gin.placeholder = "在群里说一句（最多 200 字）";
+          grow.appendChild(gin); scr.appendChild(grow);
+          var gsend = document.createElement("button"); gsend.type = "button"; gsend.className = "phbtn";
+          gsend.textContent = "发送到群里";
+          var gcool = 0;
+          gsend.addEventListener("click", function () {
+            var t = gin.value.trim();
+            if (!t) { phMsg("先写点什么。"); return; }
+            if (Date.now() - gcool < 3000) { phMsg("慢点，3 秒才能发一条。"); return; }
+            gsend.disabled = true;
+            grpSend(t, function (ok) {
+              gsend.disabled = false;
+              if (!ok) { phMsg("发不出去，检查网络或者字数（最多 200）。"); return; }
+              gcool = Date.now();
+              gin.value = ""; phMsg("发出去了，等别人 3 秒内刷出来。"); grefresh();
+            });
+          });
+          scr.appendChild(gsend);
 
           var gtip = document.createElement("p"); gtip.className = "phtime";
           gtip.textContent = "群公告：考试当天不许在群里对答案，抓到就没收手机。";
