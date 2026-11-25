@@ -507,7 +507,7 @@
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
-    网页版 v1.22.0 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.23.0 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
     <a href="../about.html">游戏说明</a> · <a href="../新手入门.html">入门</a> · <a href="../玩法与难度.html">规则</a> · <a href="../结局图鉴.html">结局图鉴</a> · <a href="../存档与账号.html">存档</a> · <a href="../常见问题.html">常见问题</a> · <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -777,7 +777,7 @@
       var hp = 0, parts = [];
       if (out) {
         score = Math.min(score, 50); hp -= 10; s.stormOut = true;
-        phone.bat = phone.fullnew ? 45 : 30; state.torch = false; savePhone();
+        phone.bat = phone.fullnew ? 45 : (hasItem("battery") ? 40 : 30); state.torch = false; savePhone();
         parts.push("停电了，你点着蜡烛写，卷子湿了一角，分数只算 " + score + " 分。手机也黑了，只剩两成备用电。");
       }
       if (!out) { s.stormOut = false; phone.bat = 100; state.torch = false; savePhone(); }
@@ -1341,6 +1341,8 @@
       desc: "今年的新机：除了老款那些功能，还支持 NFC 刷门禁卡（每天能安全出门透气一次）、手电筒更省电、卫星求助更容易被收到。永久拥有。" },
     { id: "sim", name: "电话卡（永久）", price: 8, once: true, g: "sim",
       desc: "插上才能给别人打电话、发短信，收件人填名字或 6 位玩家 ID 都行。永久拥有。" },
+    { id: "battery", name: "备用电池", price: 6, once: true,
+      desc: "本局手机用机上限 +90 秒，停电时备用电也多一成。老款、中款能换电池，最新款电池封死。" },
     { id: "pbank_s", name: "小牌充电宝", price: 4, once: true,
       desc: "本局手机用机上限 +30 秒，便宜管一点。一局只能买一个。" },
     { id: "pbank_l", name: "大牌充电宝", price: 12, once: true,
@@ -1395,6 +1397,8 @@
     if (!state || state.over) { shopMsg("这局已经结束了，道具下局用。"); return; }
     if ((it.id === "lucky" || it.id === "review") && state.mode === "revert") { shopMsg("反转版用不上这个，那儿的规矩反着来。"); return; }
     if (it.id === "lamp" && (state.lampUses || 0) >= 2) { shopMsg("这局两盏都用过了。"); return; }
+    if (it.id === "battery" && phone.fullnew && !phone.mid) { shopMsg("最新款的电池是封死的，拆不了——它只能用充电宝。"); return; }
+    if ((it.id === "pbank_s" || it.id === "pbank_l") && isOldPhone()) { shopMsg("老手机插口不认充电宝，换个备用电池吧。"); return; }
     if (it.once && (it.g ? phone[it.g] : hasItem(it.id))) { shopMsg("这个已经买过了。"); return; }
     if (coins() < it.price) { shopMsg("金币不够，还差 " + (it.price - coins()) + " 个。"); return; }
     addCoins(-it.price);
@@ -1414,6 +1418,10 @@
       var add = it.id === "pbank_s" ? 30 : Math.round((60 + Math.floor(Math.random() * 241)) / 10) * 10;
       state.pbankSec = (state.pbankSec || 0) + add;
       line("你买下了「" + it.name + "」，插上手机——今天能多玩 " + pbankText(add) + "（上限现在 " + phLimit() + " 秒）。", "good");
+    } else if (it.id === "battery") {
+      state.items = state.items || {};
+      state.items[it.id] = 1;
+      line("你拆开后盖换上新电池，电量条看着就踏实——今天能多玩 1 分 30 秒。", "good");
     } else if (it.id === "lamp") {
       state.lampUses = (state.lampUses || 0) + 1;
       state.hp = Math.min(state.cfg.max, state.hp + 10);
@@ -1505,6 +1513,7 @@
   }
   function hasApp(id) { return phone.apps.indexOf(id) >= 0; }
   function isSchoolPhone() { return !phone.full && !phone.fullnew && !phone.mid; }
+  function isOldPhone() { return !phone.mid && !phone.fullnew; }
 
   function installApp(id) {
     var a = appInfo(id);
@@ -1539,7 +1548,10 @@
 
   function phMsg(t) { var e = phEl("phMsg"); if (!e) return; e.textContent = t || ""; e.style.display = t ? "block" : "none"; }
 
-  function phLimit() { return phone.limit + (state && state.pbankSec ? state.pbankSec : 0) + (hasItem("powerbank") ? 60 : 0); }
+  function phLimit() {
+    return phone.limit + (state && state.pbankSec ? state.pbankSec : 0)
+      + (hasItem("powerbank") ? 60 : 0) + (hasItem("battery") ? 90 : 0);
+  }
   function pbankText(sec) {
     var m = Math.floor(sec / 60), s = sec % 60;
     if (m && s) return m + " 分 " + s + " 秒";
