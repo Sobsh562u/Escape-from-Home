@@ -5,21 +5,21 @@
 <meta name="msvalidate.01" content="B396F8EC6112CD551A4FE7886D63E316" />
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>逃家游戏 · Escape from Home</title>
-<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，六个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
+<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，八个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
 <meta name="keywords" content="逃家游戏,文字游戏,中文文字游戏,网页小游戏,免下载游戏,文字冒险,独立游戏,开源游戏,Python小游戏,HTML游戏,考试题材">
 <meta name="author" content="Sobsh562u">
 <link rel="canonical" href="https://sobsh562u.github.io/Escape-from-Home/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="逃家游戏（Escape from Home）">
 <meta property="og:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
-<meta property="og:description" content="中文文字游戏，六个难度，网页版免下载，带在线总榜。">
+<meta property="og:description" content="中文文字游戏，八个难度，网页版免下载，带在线总榜。">
 <meta property="og:url" content="https://sobsh562u.github.io/Escape-from-Home/">
 <meta property="og:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
-<meta name="twitter:description" content="中文文字游戏，六个难度，网页版免下载，带在线总榜。">
+<meta name="twitter:description" content="中文文字游戏，八个难度，网页版免下载，带在线总榜。">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。六个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。八个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2b2b'/%3E%3Cpath d='M8 20 L20 8 M14 8 h6 v6' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   :root{
@@ -290,7 +290,7 @@
     <div>
       <h1>逃家游戏</h1>
       <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
-      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。六个难度、二十三个结局，网页版打开即玩、不用下载。</div>
+      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。八个难度、二十七个结局，网页版打开即玩、不用下载。</div>
     </div>
     <div class="hdlinks">
       <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases" target="_blank" rel="noopener"
@@ -313,6 +313,8 @@
     <button class="tab" data-mode="limit" aria-pressed="false">极限版</button>
     <button class="tab" data-mode="run" aria-pressed="false">跑路版</button>
     <button class="tab" data-mode="endless" aria-pressed="false">无尽版</button>
+    <button class="tab" data-mode="school" aria-pressed="false">校园版</button>
+    <button class="tab" data-mode="phone" aria-pressed="false">手机版</button>
   </div>
 
   <section class="panel">
@@ -489,6 +491,8 @@
         <button type="button" data-m="limit">极限</button>
         <button type="button" data-m="run">跑路</button>
         <button type="button" data-m="endless">无尽</button>
+        <button type="button" data-m="school">校园</button>
+        <button type="button" data-m="phone">手机</button>
       </div>
       <div class="lblist" id="lbList">正在拉榜单…</div>
     </div>
@@ -497,7 +501,7 @@
   <section style="margin:22px 0 0;padding:14px 16px;border:1px solid #ddd6c6;border-radius:10px;background:#faf7f1;color:#4a4438;font-size:13px;line-height:1.75">
     <h2 style="margin:0 0 8px;font-size:15px;color:#3a3428">关于《逃家游戏》</h2>
     <p style="margin:0 0 6px">《逃家游戏》（Escape from Home）是一款中文文字游戏。玩家从幼儿园开始，经历小学、初中、高中，每天在考试、打工、攒钱之间做选择，撑到 18 岁、名下有套房，才能逃出这个家。</p>
-    <p style="margin:0 0 6px">游戏有六个难度：原始、反转、困难、极限、跑路、无尽，二十三个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
+    <p style="margin:0 0 6px">游戏有八个难度：原始、反转、困难、极限、跑路、无尽、校园、手机，二十七个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
@@ -690,6 +694,64 @@
     }
   };
 
+  MODES.school = {
+    label: "校园版",
+    hp: 100, max: 100, goal: 10,
+    intro: "【校园版】一天一节课，撑过 10 节就毕业。",
+    note: "校园版：点「考试」= 上一节课（一天）。点名答对加血，答错罚站扣血；点「逃跑」= 逃课，被教导主任在天台逮住扣 20 血。上课玩手机超过 60 秒，班长会记你名字，手机被收走。",
+    run: function (s) {
+      return { hp: -20, tone: "bad",
+        text: "你翻墙逃课，刚爬到半截就被教导主任在天台逮住，记大过一次。扣 20 血。" };
+    },
+    call: function () {
+      return { end: true, ending: "school_call", lines: [
+        "你拨通 110，接电话的却是班主任。",
+        "班主任：你家长的电话我这儿都有，别打了，回来把卷子订正了。",
+        "结局达成：报警被转接给班主任。"
+      ]};
+    },
+    exam: function (s, score) {
+      if ((s.phoneUse || 0) > 60) {
+        s.phoneBurned = true;
+        return { hp: -12, tone: "bad", text: "班长记了你名字，班主任当着全班把你手机收走，放学才还。" };
+      }
+      if (score === 0) return { hp: -30, tone: "bad", text: "老师点名：这题你都不会？站到后面听。" };
+      if (score < 60) return { hp: -15, tone: "bad", text: "老师点名：又错？这道题抄十遍。" };
+      if (score < 90) return { hp: 5, tone: "good", text: "老师：这次还行，坐下。" };
+      return { hp: 10, tone: "good", text: "老师：不错，给你记个表扬。" };
+    },
+    win: "10 节课上完，你顺利毕业，走出校门那天书包都轻了。结局达成：校园版通关。"
+  };
+
+  MODES.phone = {
+    label: "手机版",
+    hp: 80, max: 80, goal: 6,
+    intro: "【手机版】手机就是命，玩得越久，家里越炸。",
+    note: "手机版：血条只有 80，撑 6 天。每局用机超过 90 秒，妈妈就会翻你的手机：考试时额外扣血、手机没收。考 60 分以下照旧扣 20 血。",
+    run: function (s) {
+      return { hp: -12, tone: "bad",
+        text: "你想趁妈妈洗碗溜出去，被她从厨房一眼看见：「手机还我！」拽回屋里，扣 12 血。" };
+    },
+    call: function () {
+      return { end: true, ending: "phone_call", lines: [
+        "你拨通 110，一边打一边还在刷短视频。",
+        "警察：你这背景音是什么？先把手机放下。",
+        "结局达成：报警时还在玩手机，没人当真。"
+      ]};
+    },
+    exam: function (s, score) {
+      var over = (s.phoneUse || 0) > 90;
+      if (over) s.phoneBurned = true;
+      if (score < 60) {
+        if (over) return { hp: -35, tone: "bad", text: "妈妈：手机玩这么久，就考这点分？手机没收，饭也别吃了。" };
+        return { hp: -20, tone: "bad", text: "妈妈：又不及格！手机拿来我看看。" };
+      }
+      if (over) return { hp: -5, tone: "bad", text: "妈妈：分数还行，但你眼睛都不抬一下。手机没收。" };
+      return { hp: 6, tone: "good", text: "妈妈：今天还行，手机先给你放着。" };
+    },
+    win: "6 天撑完了。你把手机调成静音，第一次觉得屏幕也没那么香。结局达成：手机版通关。"
+  };
+
   MODES.endless = {
     label: "无尽版",
     hp: 100, max: 100, goal: Infinity, money: true,
@@ -716,6 +778,10 @@
     revert_college:{ name: "成绩一般反而自由", desc: "反转版 · 高考 200–399" },
     revert_free:   { name: "考砸反而没人管", desc: "反转版 · 高考 200 以下" },
     hard_win:      { name: "困难模式通关", desc: "困难版 · 撑过 10 天" },
+    school_win:    { name: "顺利毕业", desc: "校园版 · 上完 10 节课" },
+    school_call:   { name: "报警被转接", desc: "校园版 · 110 打给了班主任" },
+    phone_win:     { name: "手机放下", desc: "手机版 · 撑过 6 天" },
+    phone_call:    { name: "没人当真", desc: "手机版 · 报警时还在刷手机" },
     hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
     limit_win:     { name: "极限模式通关", desc: "极限版 · 撑过 5 天" },
     limit_call:    { name: "报警被爸爸逮住", desc: "极限版 · 报警，接电话的是爸爸" },
