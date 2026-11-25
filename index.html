@@ -259,7 +259,10 @@
   .phitem b{display:block;font-size:14px;margin-bottom:2px}
   .phitem .m{color:#8a7d64;font-size:12px}
   .phtime{font-size:12px;color:#8a7d64;margin-top:6px}
-  .phmsg{position:absolute;left:20px;right:20px;bottom:26px;z-index:6;margin:0;padding:9px 11px;border-radius:13px;background:rgba(10,12,16,.82);color:#eef2f8;font-size:12px;line-height:1.55;box-shadow:0 6px 18px rgba(0,0,0,.35);display:none;pointer-events:none}
+  .phsos{position:absolute;left:16px;right:16px;top:34px;z-index:9;display:none;align-items:center;gap:7px;padding:7px 11px;border-radius:12px;background:rgba(200,30,36,.95);color:#fff;font-size:12px;font-weight:700;line-height:1.4;box-shadow:0 8px 20px rgba(0,0,0,.4);letter-spacing:.3px}
+.phsos.show{display:flex}
+.phsos b{background:#fff;color:#c81e24;border-radius:6px;padding:1px 5px;font-size:11px;letter-spacing:1px}
+.phmsg{position:absolute;left:20px;right:20px;bottom:26px;z-index:6;margin:0;padding:9px 11px;border-radius:13px;background:rgba(10,12,16,.82);color:#eef2f8;font-size:12px;line-height:1.55;box-shadow:0 6px 18px rgba(0,0,0,.35);display:none;pointer-events:none}
   .authorbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#f3efe3;border:1px solid #ded5c2;border-radius:12px;padding:10px 12px;margin:10px 0}
   .authorbox .abtop{font-size:13px;color:#5b5346}
   .authorbox .abtop b{color:#3f3729}
@@ -337,6 +340,7 @@
           <span class="phnet">5G ▮▮ 78%</span>
           <button type="button" class="phclose" id="phClose" aria-label="关闭">×</button>
         </div>
+        <div class="phsos" id="phSos"></div>
         <div class="phbody" id="phBody"></div>
         <p class="phmsg" id="phMsg"></p>
       </div>
@@ -353,6 +357,18 @@
       <button type="button" id="authorCoinSet">设为</button>
       <button type="button" id="authorCoinAdd">+50</button>
       <button type="button" id="authorCoinZero">清零</button>
+      <button type="button" id="dbgUnlock" style="flex-basis:100%;margin-top:6px">开发者调试（需要密码）</button>
+      <div id="dbgWrap" hidden style="display:flex;gap:8px;flex-wrap:wrap;flex-basis:100%;align-items:center">
+        <div class="abtop" style="flex-basis:100%">开发者调试 · 血量 <b id="dbgHp">0</b> / <b id="dbgMax">0</b></div>
+        <button type="button" id="dbgHpAdd">+50 血</button>
+        <button type="button" id="dbgHpSub">-50 血</button>
+        <button type="button" id="dbgHpFull">回满</button>
+        <button type="button" id="dbgHpOne">1 血</button>
+        <button type="button" id="dbgFire">触发着火</button>
+        <button type="button" id="dbgFireOff">灭火</button>
+        <button type="button" id="dbgEvt">随机事件</button>
+        <button type="button" id="dbgItem">全道具</button>
+      </div>
     </div>
 
     <div class="jumpbox" id="jumpBox">
@@ -834,7 +850,7 @@
         hp: state.hp, day: state.day, over: state.over, log: state.log,
         money: state.money || 0, stage: state.stage || 0, paper: state.paperUsed ? 1 : 0, shield: state.shield ? 1 : 0,
         items: state.items || {}, lampUses: state.lampUses || 0, coinPaid: state.coinPaid ? 1 : 0,
-        pbankSec: state.pbankSec || 0
+        pbankSec: state.pbankSec || 0, fireActive: state.fireActive ? 1 : 0, fireDay: state.fireDay || 0, fireDays: state.fireDays || 0
       }));
     } catch (e) {}
   }
@@ -855,6 +871,7 @@
 
   function updateStats() {
     els.hpNum.textContent = state.hp;
+    if (document.getElementById("dbgHp")) dbgSync();
     els.dayNum.textContent = state.day;
     if (els.coinNum) els.coinNum.textContent = coins();
     if (state.cfg.money) {
@@ -905,6 +922,15 @@
   ];
 
   function maybeEvent() {
+    if (!state.fireActive && state.day > 2 && Math.random() < 0.06) {
+      state.fireActive = true;
+      state.fireDay = state.day;
+      state.fireDays = 1;
+      line("厨房着火了！插座先冒白烟，然后抽油烟机轰一下烧起来。妈妈尖叫着抓抹布，越拍越大。", "bad");
+      line("这几天你考多少分都没人骂——家里顾不上成绩了。想灭，用手机拨 119。", "day");
+      saveState();
+      return false;
+    }
     if (Math.random() > 0.45) return false;
     var ev = EVENTS[rand(EVENTS.length)];
     line(ev.text, ev.hp > 0 ? "good" : (ev.hp < 0 ? "bad" : "day"));
@@ -919,7 +945,7 @@
   function reset(mode, forceNew) {
     var cfg = MODES[mode];
     state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1,
-              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false, pbankSec: 0 };
+              items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false, pbankSec: 0, fireActive: false, fireDay: 0 };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
@@ -937,6 +963,9 @@
       state.items = saved.items || {};
       state.lampUses = saved.lampUses || 0;
       state.pbankSec = saved.pbankSec || 0;
+      state.fireActive = !!saved.fireActive;
+      state.fireDays = saved.fireDays || 0;
+      state.fireDay = saved.fireDay || 0;
       state.coinPaid = !!saved.coinPaid;
       state.log = saved.log;
       state.log.forEach(function (it) { renderLine(it.t, it.c); });
@@ -1335,6 +1364,19 @@
   }
 
   function phEl(id) { return document.getElementById(id); }
+  var HOME_ADDR = "梧州市万秀区兴安路 88 号 幸福里 3 栋 2 单元 504";
+  var SOS_T = null;
+  function showSos() {
+    var e = phEl("phSos"); if (!e) return;
+    e.innerHTML = "";
+    var b = document.createElement("b"); b.textContent = "SOS";
+    var t = document.createElement("span"); t.textContent = "位置：" + HOME_ADDR;
+    e.appendChild(b); e.appendChild(t);
+    e.classList.add("show");
+    clearTimeout(SOS_T);
+    SOS_T = setTimeout(function () { e.classList.remove("show"); }, 12000);
+  }
+
   function phMsg(t) { var e = phEl("phMsg"); if (!e) return; e.textContent = t || ""; e.style.display = t ? "block" : "none"; }
 
   function phLimit() { return phone.limit + (state && state.pbankSec ? state.pbankSec : 0) + (hasItem("powerbank") ? 60 : 0); }
@@ -1521,15 +1563,6 @@
       tt.textContent = phUsedText();
       scr.appendChild(tt);
 
-      var dock = document.createElement("div"); dock.className = "phdock";
-      var em2 = document.createElement("button");
-      em2.type = "button"; em2.className = "phdockbtn";
-      var dic = document.createElement("div"); dic.className = "phicon"; dic.textContent = "110";
-      var dnm = document.createElement("span"); dnm.textContent = "紧急拨号";
-      em2.appendChild(dic); em2.appendChild(dnm);
-      em2.addEventListener("click", function () { closePhone(); doCall(); });
-      dock.appendChild(em2);
-      scr.appendChild(dock);
     }
 
     if (phView === "store") {
@@ -1847,6 +1880,44 @@
           var who = ci.value.trim();
           if (!/^[0-9]{3,11}$/.test(who)) { phMsg("填个号码，3–11 位数字。"); return; }
           if (who === myPid()) { phMsg("你拨的是自己的号，桌上的手机震了一下。"); return; }
+
+          if (who === "110" || who === "119" || who === "120") showSos();
+
+          if (who === "110") {
+            closePhone();
+            if (typeof state.cfg.call !== "function") { msg("110 那头说：小孩子别乱打电话。"); return; }
+            doCall();
+            return;
+          }
+
+          if (who === "119") {
+            if (!state.fireActive) { phMsg("接线员：你家着了吗？没着火别占线。"); return; }
+            var sec = 10 + rand(21);
+            phMsg("接通 119：登记了地址，接线员说「" + sec + " 秒内到」。");
+            setTimeout(function () {
+              if (!state || !state.fireActive) return;
+              state.fireActive = false;
+              saveState();
+              line("消防车鸣着笛到了，水柱压下去，厨房的火灭了。这一晚没人提考试。", "good");
+              phMsg("火灭了。消防员临走前说：打 119，你做得对。");
+            }, Math.min(sec, 8) * 1000);
+            return;
+          }
+
+          if (who === "120") {
+            var mx = state.cfg.max, half = Math.floor(mx / 2);
+            if (state.hp >= half) {
+              phMsg("接线员：你血条还有 " + state.hp + " / " + mx + "，不算急救，先自己扛着。");
+              return;
+            }
+            var pct = 50 + rand(51);
+            state.hp = Math.round(mx * pct / 100);
+            updateStats(); saveState();
+            line("救护车来了，护士给你挂上水。血条回到 " + state.hp + " / " + mx + "。", "good");
+            phMsg("120 接通：输完液，你缓过来一点（" + pct + "%）。");
+            return;
+          }
+
           var lines = [
             "响了两声就通了，对面「喂」了一声，背景里是电视声。",
             "接通了，对方说「这么晚还打过来」，然后就沉默了。",
@@ -1857,7 +1928,7 @@
         });
         crow.appendChild(ci); crow.appendChild(cb); scr.appendChild(crow);
         var note = document.createElement("p"); note.className = "phtime";
-        note.textContent = "紧急拨号 110 在锁屏和桌面，不用进拨号盘。";
+        note.textContent = "110 报警、119 火警、120 急救，直接拨号就行。锁屏上只留一个 110 快捷拨号。";
         scr.appendChild(note);
       }
     }
@@ -1997,6 +2068,15 @@
     state.day += 1;
     state.phoneUse = 0;
     state.phoneBurned = false;
+    if (state.fireActive) {
+      state.fireDays = (state.fireDays || 1) + 1;
+      if (state.fireDays > 3) {
+        state.fireActive = false;
+        line("墙烧黑了一大片，妈妈总算端盆水把火泼灭了。她累得没力气问分数。", "day");
+      } else {
+        line("屋里烟还没散，但妈妈只顾着泼水，没空管成绩。想早点灭就打 119。", "day");
+      }
+    }
     updateStats();
     if (state.day >= state.cfg.goal && state.mode !== "revert") {
       recordBest(state.mode, state.day, state.hp);
@@ -2012,6 +2092,12 @@
     if (hasItem("review") && state.mode !== "revert") score = Math.min(100, score + 10);
     if (hasItem("lucky") && state.mode !== "revert" && score < 65) score = 65;
     line("你考了 " + score + " 分。", "day");
+    if (state.fireActive) {
+      line("家里还冒着烟，妈妈一边泼水一边骂插座，根本没问分数。", "day");
+      if (maybeEvent()) return;
+      nextDay();
+      return;
+    }
     var r = state.cfg.exam(state, score);
     if (r.die) { line(r.text, r.tone || "bad"); gameOver("游戏结束。", "limit_die"); return; }
     if (r.money) { state.money = (state.money || 0) + r.money; }
@@ -2384,7 +2470,8 @@
       coins: coins(),
       items: state.items || {},
       lampUses: state.lampUses || 0,
-      pbankSec: state.pbankSec || 0
+      pbankSec: state.pbankSec || 0,
+      fire: state.fireActive ? 1 : 0
     };
   }
 
@@ -2782,6 +2869,78 @@
     authorCoinSync();
     line("作者模式：金币清零。", "day");
   });
+
+  var DEV_HASH = "46ac6d6328e18d9cd6e882f1ff088229e0e277475410ba2020d9bb34a8159883";
+  var devOk = false;
+  document.getElementById("dbgUnlock").addEventListener("click", function () {
+    var k = window.prompt("开发者密码：");
+    if (!k) return;
+    if (sha256Hex(k.trim()) !== DEV_HASH) { line("开发者调试：密码不对。", "bad"); return; }
+    devOk = true;
+    document.getElementById("dbgWrap").hidden = false;
+    document.getElementById("dbgUnlock").hidden = true;
+    dbgSync();
+    line("开发者调试已解锁。用它调过数据的局不上榜。", "day");
+    state.cheat = true;
+  });
+  function dbgNeed() {
+    if (!devOk) { line("开发者调试没解锁。", "bad"); return true; }
+    if (!state || state.over) return true;
+    return false;
+  }
+  function dbgSync() {
+    var h = document.getElementById("dbgHp"), m = document.getElementById("dbgMax");
+    if (h) h.textContent = state ? state.hp : 0;
+    if (m) m.textContent = state ? state.cfg.max : 0;
+  }
+  function dbgLine(t, c) { line("【调试】" + t, c || "day"); }
+  document.getElementById("dbgHpAdd").addEventListener("click", function () {
+    if (dbgNeed()) return;
+    state.hp = Math.min(state.cfg.max, state.hp + 50); updateStats(); saveState(); dbgSync();
+    dbgLine("血条 +50，现在 " + state.hp + " / " + state.cfg.max, "good");
+  });
+  document.getElementById("dbgHpSub").addEventListener("click", function () {
+    if (dbgNeed()) return;
+    if (applyHp(-50)) { dbgSync(); return; }
+    updateStats(); saveState(); dbgSync();
+    dbgLine("血条 -50，现在 " + state.hp + " / " + state.cfg.max, "bad");
+  });
+  document.getElementById("dbgHpFull").addEventListener("click", function () {
+    if (dbgNeed()) return;
+    state.hp = state.cfg.max; updateStats(); saveState(); dbgSync();
+    dbgLine("血条回满 " + state.cfg.max, "good");
+  });
+  document.getElementById("dbgHpOne").addEventListener("click", function () {
+    if (dbgNeed()) return;
+    state.hp = 1; updateStats(); saveState(); dbgSync();
+    dbgLine("血条压到 1，方便测残血。", "bad");
+  });
+  document.getElementById("dbgFire").addEventListener("click", function () {
+    if (dbgNeed()) return;
+    state.fireActive = true; state.fireDay = state.day; state.fireDays = 1; saveState();
+    line("厨房着火了！插座先冒白烟，抽油烟机跟着烧起来。这几天考多少分都没人骂——想灭就用手机拨 119。", "bad");
+  });
+  document.getElementById("dbgFireOff").addEventListener("click", function () {
+    if (!devOk || !state) return;
+    state.fireActive = false; saveState();
+    dbgLine("火灭了（静默灭火，不记日志）。");
+  });
+  document.getElementById("dbgEvt").addEventListener("click", function () {
+    if (dbgNeed()) return;
+    var ev = EVENTS[rand(EVENTS.length)];
+    line(ev.text, ev.hp > 0 ? "good" : (ev.hp < 0 ? "bad" : "day"));
+    if (ev.hp) { if (applyHp(ev.hp)) { dbgSync(); return; } updateStats(); saveState(); }
+    dbgSync();
+  });
+  document.getElementById("dbgItem").addEventListener("click", function () {
+    if (!state) return;
+    state.items = state.items || {};
+    ["lamp", "lucky", "earbuds", "review"].forEach(function (k) { state.items[k] = (state.items[k] || 0) + 1; });
+    saveState();
+    dbgLine("台灯/橡皮/耳机/复习资料 各 +1。", "good");
+  });
+  els.btnAuthor.addEventListener("click", dbgSync);
+  els.btnExam.addEventListener("click", dbgSync);
 
   document.getElementById("jumpGo").addEventListener("click", function () {
     var v = parseInt(els.jumpInput.value, 10);
