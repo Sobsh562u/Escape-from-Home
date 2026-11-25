@@ -507,7 +507,7 @@
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
-    网页版 v1.20.0 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.21.0 · 九难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
     <a href="about.html">游戏说明</a> · <a href="新手入门.html">入门</a> · <a href="玩法与难度.html">规则</a> · <a href="结局图鉴.html">结局图鉴</a> · <a href="存档与账号.html">存档</a> · <a href="常见问题.html">常见问题</a> · <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -777,7 +777,7 @@
       var hp = 0, parts = [];
       if (out) {
         score = Math.min(score, 50); hp -= 10; s.stormOut = true;
-        phone.bat = 30; state.torch = false; savePhone();
+        phone.bat = phone.fullnew ? 45 : 30; state.torch = false; savePhone();
         parts.push("停电了，你点着蜡烛写，卷子湿了一角，分数只算 " + score + " 分。手机也黑了，只剩两成备用电。");
       }
       if (!out) { s.stormOut = false; phone.bat = 100; state.torch = false; savePhone(); }
@@ -1082,7 +1082,7 @@
     var cfg = MODES[mode];
     state = { mode: mode, cfg: cfg, hp: cfg.hp, day: 0, over: false, log: [], money: 0, stage: 0, loop: 1,
               items: {}, lampUses: 0, coinPaid: false, phoneUse: 0, phoneBurned: false, pbankSec: 0, fireActive: false, fireDay: 0,
-              stormOut: false, torch: false, satTry: 0 };
+              stormOut: false, torch: false, satTry: 0, nfcDay: -1 };
     els.log.innerHTML = "";
     els.jump.classList.remove("show");
     els.note.textContent = cfg.note;
@@ -1334,7 +1334,9 @@
     { id: "lucky", name: "幸运橡皮", price: 8, once: true,
       desc: "本局考试分数不低于 65 分。反转版不适用（那里考高反而挨打）。" },
     { id: "phone", name: "完整版手机（永久）", price: 30, once: true, g: "full",
-      desc: "能装 APP 的手机：短视频、短信、通话全都有。永久拥有，换难度、重开本局都在。" },
+      desc: "老款完整手机：短视频、短信、通话、应用商城都有。永久拥有，换难度、重开本局都在。不支持 NFC。" },
+    { id: "phone_new", name: "最新款完整手机（永久）", price: 50, once: true, g: "fullnew",
+      desc: "今年的新机：除了老款那些功能，还支持 NFC 刷门禁卡（每天能安全出门透气一次）、手电筒更省电、卫星求助更容易被收到。永久拥有。" },
     { id: "sim", name: "电话卡（永久）", price: 8, once: true, g: "sim",
       desc: "插上才能给别人打电话、发短信，收件人填名字或 6 位玩家 ID 都行。永久拥有。" },
     { id: "pbank_s", name: "小牌充电宝", price: 4, once: true,
@@ -1397,8 +1399,8 @@
     if (it.g) {
       phone[it.g] = true;
       savePhone();
-      line(it.g === "full"
-        ? "你从二手市场拎回来一台完整版手机，屏幕上能装 APP 了。"
+      line(it.g === "fullnew" ? "你把这台最新款完整手机拆了封，背面 NFC 标志在灯下反光。"
+        : it.g === "full" ? "你从二手市场拎回来一台完整手机，屏幕上能装 APP 了。"
         : "你买了一张电话卡，插进手机，信号格亮了。", "good");
       shopMsg("买好了，剩 " + coins() + " 金币。");
       updateStats(); saveState(); renderShop(); return;
@@ -1455,7 +1457,8 @@
       friend: !!d.friend,
       examAns: !!d.examAns,
       bat: typeof d.bat === "number" ? d.bat : 100,
-      satUsed: !!d.satUsed
+      satUsed: !!d.satUsed,
+      fullnew: !!d.fullnew
     };
   }
   function savePhone() { try { localStorage.setItem(PHONE_KEY, JSON.stringify(phone)); } catch (e) {} }
@@ -1553,7 +1556,7 @@
     if (!state || state.over) { closePhone(); return; }
     if (phView === "lock") { return; }
     if (state.torch) {
-      phone.bat = Math.max(0, phone.bat - 0.5);
+      phone.bat = Math.max(0, phone.bat - (phone.fullnew ? 0.25 : 0.5));
       if (phone.bat <= 0) {
         phone.bat = 0; state.torch = false; savePhone();
         line("手电筒闪了两下就灭了，屏幕彻底黑掉。等来电再说吧。", "bad");
@@ -1719,19 +1722,20 @@
       return;
     }
 
-    title.textContent = phone.full ? "完整版手机" : "学校发的老人机";
+    title.textContent = phone.fullnew ? "最新款完整手机" : phone.full ? "完整版手机" : "学校发的老人机";
     var scr = document.createElement("div");
     scr.className = (phView === "home") ? "phhome" : "phsolid";
 
     if (phView === "home") {
       var list = [];
-      if (phone.full) list.push(["store", "应用商城", "商", "#0f9ef0", false]);
-      if (phone.full) list.push(["video", "短视频", "▶", "#ff5a5f", false]);
+      if (phone.full || phone.fullnew) list.push(["store", "应用商城", "商", "#0f9ef0", false]);
+      if (phone.full || phone.fullnew) list.push(["video", "短视频", "▶", "#ff5a5f", false]);
+      if (phone.fullnew) list.push(["nfc", "NFC·门禁", "N", "#2fbf6b", false]);
       if (phone.sim) {
         list.push(["sms", "短信", "✉", "#3b93f7", false]);
         list.push(["call", "通话", "☎", "#2fbf6b", false]);
       }
-      if (phone.full && !phone.sim) list.push(["sms", "短信", "✉", "#3b93f7", true]);
+      if ((phone.full || phone.fullnew) && !phone.sim) list.push(["sms", "短信", "✉", "#3b93f7", true]);
       phone.apps.forEach(function (id) {
         var a = appInfo(id);
         if (a) list.push(["app:" + id, a.name, a.glyph, a.color, false]);
@@ -1758,7 +1762,7 @@
       scr.appendChild(grid);
 
       var hint = document.createElement("p"); hint.className = "phtip";
-      hint.textContent = phone.full
+      hint.textContent = (phone.full || phone.fullnew)
         ? (phone.sim ? "桌面上的 APP 点一下就能开。" : "卡槽是空的——没电话卡，短信和通话用不了。")
         : "这台老人机没有 APP，也装不了。去道具店换一台完整版手机，才有短视频、短信、通话。";
       scr.appendChild(hint);
@@ -2361,6 +2365,32 @@
       }
     }
 
+    if (phView === "nfc") {
+      var nf = document.createElement("div"); nf.className = "phsolid";
+      nf.style.cssText = "background:#f5f1e6;border-radius:14px;padding:16px 12px;color:#3f3729;";
+      var nb = document.createElement("div"); nb.className = "phbigclock"; nb.textContent = "NFC"; nb.style.color = "#2fbf6b";
+      var nt = document.createElement("div"); nt.className = "phlockhint";
+      nt.textContent = "已录入门禁卡：幸福里 3 栋 2 单元 大门";
+      nt.style.color = "#3f3729";
+      var nBtn = document.createElement("button"); nBtn.type = "button"; nBtn.className = "phbtn";
+      nBtn.textContent = "刷一下，下楼透气";
+      var nLog = document.createElement("p"); nLog.className = "phtip";
+      var usedToday = state.nfcDay === state.day;
+      nLog.textContent = usedToday ? "今天刷过了，保安都认得你了。" : "每天只能刷一次，扣 5 血（比翻墙挨打强）。";
+      nLog.style.color = "#6b6455";
+      nBtn.disabled = usedToday;
+      nBtn.addEventListener("click", function () {
+        if (!phone.fullnew) { nLog.textContent = "这台手机不支持 NFC。"; return; }
+        if (usedToday) return;
+        state.nfcDay = state.day;
+        state.hp = Math.max(1, state.hp - 5);
+        line("你拿手机贴上门禁，「滴」一声，门开了。你在楼下站了十分钟，只扣 5 血。", "good");
+        updateStats(); saveState(); renderPhone();
+      });
+      nf.appendChild(nb); nf.appendChild(nt); nf.appendChild(nBtn); nf.appendChild(nLog);
+      scr.appendChild(nf);
+    }
+
     if (phView === "settings") {
       var wallRow = document.createElement("div"); wallRow.className = "phrow";
       var wl = document.createElement("span"); wl.textContent = "屏幕颜色：";
@@ -2434,7 +2464,7 @@
         if (!state.stormOut) { phMsg("有信号的时候用不着，等停电了再发。"); return; }
         if (phone.bat <= 0) { phMsg("手机没电了，卫星消息发不出去。"); return; }
         phone.satUsed = true; savePhone();
-        if (Math.random() < 0.6) {
+        if (Math.random() < (phone.fullnew ? 0.8 : 0.6)) {
           closePhone();
           gameOver("你把手机举到窗边，一条卫星消息挤过雨云，两小时后楼下手电筒一晃一晃。有人来敲门了。结局达成：卫星求助。", "satellite");
         } else {
