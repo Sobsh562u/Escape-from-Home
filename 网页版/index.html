@@ -1314,13 +1314,15 @@
       wall: typeof d.wall === "string" && d.wall ? d.wall : "#2b3a55",
       apps: Array.isArray(d.apps) ? d.apps : [],
       videos: Array.isArray(d.videos) ? d.videos : [],
-      msgs: Array.isArray(d.msgs) ? d.msgs : []
+      msgs: Array.isArray(d.msgs) ? d.msgs : [],
+      friend: !!d.friend,
+      examAns: !!d.examAns
     };
   }
   function savePhone() { try { localStorage.setItem(PHONE_KEY, JSON.stringify(phone)); } catch (e) {} }
   var phone = loadPhone();
 
-  var phTimer = null, phUnlocked = false, phView = "home";
+  var phTimer = null, phUnlocked = false, phView = "home", phQuizT = null;
   var PH_SMS = { tab: "in", rows: [], used: 0, cap: 60, msg: "", loading: false, need: true,
                  attach: null, aname: "", atype: "" };
 
@@ -1404,6 +1406,7 @@
   function closePhone() {
     phEl("phoneMask").hidden = true;
     if (phTimer) { clearInterval(phTimer); phTimer = null; }
+    if (phQuizT) { clearInterval(phQuizT); phQuizT = null; }
   }
 
   function phoneTick() {
@@ -1672,13 +1675,74 @@
         }
 
         if (ap.act === "quiz") {
+          var qtotal = 1 + rand(5), qpage = 1;
+          var qh = document.createElement("div");
+          qh.style.fontWeight = "700"; qh.style.margin = "0 0 4px";
+          qh.textContent = "写卷子（这本共 " + qtotal + " 页）";
+          scr.appendChild(qh);
+
+          var qst = document.createElement("div"); qst.className = "phtime";
+          qst.textContent = "第 1 / " + qtotal + " 页 · 把笔停在绿区，保持 5 秒算写完一页";
+          scr.appendChild(qst);
+
+          var track = document.createElement("div");
+          track.style.cssText = "position:relative;height:18px;border-radius:9px;background:#16202f;margin:10px 0;overflow:hidden";
+          var zone = document.createElement("div");
+          zone.style.cssText = "position:absolute;left:30%;width:40%;top:0;bottom:0;background:rgba(72,200,120,.5)";
+          var mark = document.createElement("div");
+          mark.style.cssText = "position:absolute;top:-2px;width:4px;height:22px;background:#fff;border-radius:2px;box-shadow:0 0 6px rgba(255,255,255,.85)";
+          track.appendChild(zone); track.appendChild(mark);
+          scr.appendChild(track);
+
+          var qtip = document.createElement("div"); qtip.className = "phtime";
+          qtip.textContent = "中间保持 0.0 / 5 秒";
+          scr.appendChild(qtip);
+
           var qb = document.createElement("button"); qb.type = "button"; qb.className = "phbtn";
-          qb.textContent = "做一道题";
-          qb.addEventListener("click", function () {
-            var right = Math.random() < 0.7;
-            phMsg(right ? "这题做对了。你开始觉得自己没那么差。" : "这题错了。解析很长，你看了一半就划走了。");
-          });
+          qb.textContent = "停笔（停在绿区里数够 5 秒）";
           scr.appendChild(qb);
+
+          var qpos = 0, qdir = 1, qhold = false, qsec = 0, qover = false;
+          var qdraw = function () {
+            mark.style.left = "calc(" + qpos + "% - 2px)";
+            qtip.textContent = qhold ? ("中间保持 " + qsec.toFixed(1) + " / 5 秒") : "中间保持 0.0 / 5 秒";
+          };
+          qdraw();
+          if (phQuizT) clearInterval(phQuizT);
+          phQuizT = setInterval(function () {
+            if (qover) return;
+            if (!qhold) {
+              qpos += qdir * 1;
+              if (qpos >= 100) { qpos = 100; qdir = -1; }
+              if (qpos <= 0) { qpos = 0; qdir = 1; }
+            } else {
+              qsec = (qpos >= 30 && qpos <= 70) ? qsec + 0.05 : 0;
+            }
+            qdraw();
+            if (qsec >= 4.999) {
+              if (qpage >= qtotal) {
+                qover = true; clearInterval(phQuizT); phQuizT = null;
+                line("这本卷子 " + qtotal + " 页，你全写完了，手指头压出一道印。", "good");
+                state.hp = Math.min(state.cfg.max, state.hp + 5);
+                updateStats(); saveState();
+                qst.textContent = "写完了，共 " + qtotal + " 页。血条 +5。";
+                qtip.textContent = "收笔。";
+                phMsg("卷子写完了，" + qtotal + " 页。老师翻了一眼说：字丑，但写满了。");
+              } else {
+                qpage += 1; qsec = 0; qhold = false;
+                qst.textContent = "第 " + qpage + " / " + qtotal + " 页 · 把笔停在绿区，保持 5 秒算写完一页";
+                phMsg("写完一页，翻到第 " + qpage + " 页。");
+              }
+            }
+          }, 50);
+
+          qb.addEventListener("click", function () {
+            if (qover) return;
+            qhold = !qhold;
+            if (!qhold) qsec = 0;
+            qb.textContent = qhold ? "继续写（笔提起来了）" : "停笔（停在绿区里数够 5 秒）";
+            qdraw();
+          });
         }
 
         var un = document.createElement("button"); un.type = "button"; un.className = "phbtn warn"; un.textContent = "卸载这个应用";
@@ -1730,14 +1794,17 @@
       }
       if (!phone.sim) {
         scr.textContent = "没电话卡，短信发不出去。先去道具店买一张。";
-      } else if (!isReg()) {
-        var need = document.createElement("div");
-        need.textContent = "发短信要账号。先在排行榜弹窗里注册，拿到 6 位玩家 ID 再回来。";
-        need.style.lineHeight = "1.7";
-        scr.appendChild(need);
       } else {
+        if (!isReg()) {
+          var need = document.createElement("div");
+          need.textContent = "发短信要账号（学校群不用账号）。先在排行榜弹窗里注册，拿到 6 位玩家 ID 再回来。";
+          need.style.lineHeight = "1.7";
+          scr.appendChild(need);
+        }
         var tabs = document.createElement("div"); tabs.className = "phrow";
-        [["in", "收件箱"], ["out", "发件箱"], ["new", "写短信"]].forEach(function (t) {
+        var tabsList = [["in", "收件箱"], ["out", "发件箱"], ["school", "学校群"]];
+        if (isReg()) tabsList.push(["new", "写短信"]);
+        tabsList.forEach(function (t) {
           var b = document.createElement("button");
           b.type = "button"; b.className = "phbtn";
           b.textContent = t[1];
@@ -1753,6 +1820,50 @@
         q.textContent = "容量 " + PH_SMS.used + " / " + PH_SMS.cap + " 条" +
           (PH_SMS.used >= PH_SMS.cap - 5 ? "，快满了，删几条旧的" : "");
         scr.appendChild(q);
+
+        if (PH_SMS.tab === "school") {
+          var gt = document.createElement("div");
+          gt.textContent = "学校群（12 人）";
+          gt.style.fontWeight = "700"; gt.style.margin = "2px 0 6px";
+          scr.appendChild(gt);
+
+          var chat = [
+            ["密瑶", "明天数学考，卷子我看过了，大题两道。"],
+            ["王浩", "老班说这次要写满，最少一页最多五页。"],
+            ["李婷", "密瑶你答案发群里呗。"],
+            ["密瑶", "群里不敢发，加我好友，我单独给你。"]
+          ];
+          chat.forEach(function (c) {
+            var row = document.createElement("div");
+            row.className = "phtime";
+            row.style.lineHeight = "1.6";
+            row.textContent = c[0] + "：" + c[1];
+            scr.appendChild(row);
+          });
+
+          if (!phone.friend) {
+            var fb = document.createElement("button"); fb.type = "button"; fb.className = "phbtn";
+            fb.textContent = "加「密瑶」为好友";
+            fb.addEventListener("click", function () {
+              phone.friend = true; savePhone(); renderPhone();
+              phMsg("密瑶通过了好友申请：「考试前十分钟问我，我给你标好的。」");
+            });
+            scr.appendChild(fb);
+          } else {
+            var ab = document.createElement("button"); ab.type = "button"; ab.className = "phbtn";
+            ab.textContent = phone.examAns ? "答案已经拿到了（下次考试保底 65）" : "问密瑶要答案";
+            ab.addEventListener("click", function () {
+              if (phone.examAns) { phMsg("答案还在手机里，下次考试自动生效。"); return; }
+              phone.examAns = true; savePhone(); renderPhone();
+              phMsg("密瑶发来一张手写答案照片：下次考试保底 65 分。");
+            });
+            scr.appendChild(ab);
+          }
+
+          var gtip = document.createElement("p"); gtip.className = "phtime";
+          gtip.textContent = "群公告：考试当天不许在群里对答案，抓到就没收手机。";
+          scr.appendChild(gtip);
+        }
 
         if (PH_SMS.tab === "new") {
           var r1 = document.createElement("div"); r1.className = "phrow";
@@ -2097,6 +2208,11 @@
       if (maybeEvent()) return;
       nextDay();
       return;
+    }
+    if (phone.examAns) {
+      phone.examAns = false; savePhone();
+      if (score < 65) { score = 65; line("密瑶发来的答案对上了，硬是把分数顶到 65。", "good"); }
+      else line("密瑶的答案跟你自己写的对了一遍，稳了。", "day");
     }
     var r = state.cfg.exam(state, score);
     if (r.die) { line(r.text, r.tone || "bad"); gameOver("游戏结束。", "limit_die"); return; }
