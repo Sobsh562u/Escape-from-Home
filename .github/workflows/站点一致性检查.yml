@@ -1,0 +1,25 @@
+name: 站点一致性检查
+
+on:
+  push:
+    branches: [main, test]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 校验根页面与网页版 / 内链 / 安装包
+        run: python3 tools/check_site.py
+
+      - name: 网页版页面能正常解析出标题
+        run: |
+          grep -q '<title>' index.html
+          grep -q '<title>' 网页版/index.html
+          echo "两个页面都有 title"
