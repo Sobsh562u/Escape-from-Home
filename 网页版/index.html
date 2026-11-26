@@ -520,6 +520,143 @@
     <p style="margin:0 0 6px">游戏有十一个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电、暑假、过年，三十四个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
+  <section id="actSec" style="margin:22px 0 0;padding:16px 18px;border:1px solid #ddd6c6;border-radius:10px;background:#faf7f1;color:#4a4438;font-size:13px;line-height:1.75">
+    <h2 style="margin:0 0 8px;font-size:15px;color:#3a3428">激活码</h2>
+    <p style="margin:0 0 10px">拿到激活码的人，可以在这里换离线安装包：Windows、Linux、安卓三端一次下发。</p>
+    <button id="actOpen" type="button" style="font:inherit;cursor:pointer;padding:8px 16px;border:1px solid #cbbfa6;border-radius:8px;background:#fff;color:#3a3428">激活码</button>
+    <div id="actField" hidden style="margin-top:12px">
+      <label for="actCode" style="display:block;margin-bottom:6px;color:#6b6455">请输入激活码</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="actCode" type="text" autocomplete="off" spellcheck="false" placeholder="请输入激活码" style="flex:1 1 200px;min-width:0;padding:10px 12px;border:1px solid #cbbfa6;border-radius:8px;font:inherit;letter-spacing:1px">
+        <button id="actGo" type="button" style="font:inherit;cursor:pointer;padding:10px 16px;border:1px solid #cbbfa6;border-radius:8px;background:#fff;color:#3a3428">校验并下载</button>
+      </div>
+      <div id="actMsg" style="margin-top:8px;min-height:20px"></div>
+    </div>
+    <div id="actDone" hidden style="margin-top:10px">
+      <div style="color:#3f7d4a">校验通过，三个包已开始下载。</div>
+      <div id="actLinks" style="margin-top:8px;display:grid;gap:6px"></div>
+    </div>
+  </section>
+  <script>
+  (function () {
+    "use strict";
+    /* 页面里只存激活码的 SHA-256，不留明文 */
+    var CODE_HASH = "ab7f837d220b80001e821fd68e11d92d03a01fac23097ccd6dd78a120ad7872a";
+    var BASE = ((function () { try { return decodeURIComponent(location.pathname).indexOf("/网页版/") >= 0; } catch (e) { return false; } })() ? "../" : "./") + "包/";
+    var FILES = [
+      ["Windows", "逃家游戏_Windows.exe", "239 KB"],
+      ["Linux", "逃家游戏_Linux", "1.1 MB"],
+      ["Android", "逃家游戏_Android.apk", "101 KB"]
+    ];
+
+    function sha256Hex(str) {
+      function utf8(s) {
+        var out = [], i, c;
+        for (i = 0; i < s.length; i++) {
+          c = s.charCodeAt(i);
+          if (c < 0x80) out.push(c);
+          else if (c < 0x800) { out.push(0xc0 | (c >> 6), 0x80 | (c & 63)); }
+          else { out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+        }
+        return out;
+      }
+      var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+      var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+      var bytes = utf8(str), l = bytes.length, i;
+      bytes.push(0x80);
+      while ((bytes.length % 64) !== 56) bytes.push(0);
+      var bl = l * 8;
+      bytes.push(0, 0, 0, 0, (bl >>> 24) & 255, (bl >>> 16) & 255, (bl >>> 8) & 255, bl & 255);
+      function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+      for (i = 0; i < bytes.length; i += 64) {
+        var w = new Array(64), j;
+        for (j = 0; j < 16; j++) w[j] = (bytes[i+j*4] << 24) | (bytes[i+j*4+1] << 16) | (bytes[i+j*4+2] << 8) | bytes[i+j*4+3];
+        for (j = 16; j < 64; j++) {
+          var s0 = rotr(w[j-15],7) ^ rotr(w[j-15],18) ^ (w[j-15] >>> 3);
+          var s1 = rotr(w[j-2],17) ^ rotr(w[j-2],19) ^ (w[j-2] >>> 10);
+          w[j] = (w[j-16] + s0 + w[j-7] + s1) | 0;
+        }
+        var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+        for (j = 0; j < 64; j++) {
+          var S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+          var ch = (e & f) ^ (~e & g);
+          var t1 = (h + S1 + ch + K[j] + w[j]) | 0;
+          var S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+          var maj = (a & b) ^ (a & c) ^ (b & c);
+          var t2 = (S0 + maj) | 0;
+          h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0;
+        }
+        H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+c)|0; H[3]=(H[3]+d)|0;
+        H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
+      }
+      return H.map(function (x) { return ("00000000" + (x >>> 0).toString(16)).slice(-8); }).join("");
+    }
+
+    function norm(s) { return (s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+
+    var box = document.getElementById("actField");
+    var input = document.getElementById("actCode");
+    var msg = document.getElementById("actMsg");
+    var done = document.getElementById("actDone");
+    var links = document.getElementById("actLinks");
+    var go = document.getElementById("actGo");
+    var tries = 0;
+
+    document.getElementById("actOpen").addEventListener("click", function () {
+      box.hidden = false;
+      msg.style.color = "#6b6455";
+      msg.textContent = "请输入激活码";
+      input.focus();
+    });
+
+    function save(i) {
+      var a = document.createElement("a");
+      a.href = BASE + encodeURIComponent(FILES[i][1]);
+      a.download = FILES[i][1];
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    go.addEventListener("click", function () {
+      var v = norm(input.value);
+      if (!v) { msg.style.color = "#a4443c"; msg.textContent = "请输入激活码"; input.focus(); return; }
+      if (sha256Hex(v) !== CODE_HASH) {
+        tries++;
+        msg.style.color = "#a4443c";
+        msg.textContent = tries >= 3 ? "激活码不对。找给你页面的人要一个。" : "激活码不对，再试一次。";
+        return;
+      }
+      msg.style.color = "#3f7d4a";
+      msg.textContent = "校验通过。";
+      done.hidden = false;
+      go.disabled = true; input.disabled = true;
+      links.innerHTML = "";
+      FILES.forEach(function (f, i) {
+        var row = document.createElement("div");
+        row.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border:1px solid #ddd6c6;border-radius:8px;background:#fff";
+        var t = document.createElement("span");
+        t.textContent = f[0] + " · " + f[1] + "（" + f[2] + "）";
+        var a = document.createElement("a");
+        a.href = BASE + encodeURIComponent(f[1]);
+        a.download = f[1];
+        a.textContent = "下载";
+        a.style.cssText = "color:#3f7d4a;text-decoration:none";
+        row.appendChild(t); row.appendChild(a);
+        links.appendChild(row);
+        setTimeout(function () { save(i); }, 700 * i + 200);
+      });
+    });
+  })();
+  </script>
+
   <footer>
     网页版 v1.25.0 · 十一难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假 / 过年），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
