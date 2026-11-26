@@ -5,21 +5,21 @@
 <meta name="msvalidate.01" content="B396F8EC6112CD551A4FE7886D63E316" />
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>逃家游戏 · Escape from Home</title>
-<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，十个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
+<meta name="description" content="逃家游戏（Escape from Home）网页版：中文文字游戏，十一个难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假 / 过年），撑到 18 岁逃出这个家。免下载、手机可玩、带在线总榜。">
 <meta name="keywords" content="逃家游戏,文字游戏,中文文字游戏,网页小游戏,免下载游戏,文字冒险,独立游戏,开源游戏,Python小游戏,HTML游戏,考试题材">
 <meta name="author" content="Sobsh562u">
 <link rel="canonical" href="https://sobsh562u.github.io/Escape-from-Home/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="逃家游戏（Escape from Home）">
 <meta property="og:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
-<meta property="og:description" content="中文文字游戏，十个难度，网页版免下载，带在线总榜。">
+<meta property="og:description" content="中文文字游戏，十一个难度，网页版免下载，带在线总榜。">
 <meta property="og:url" content="https://sobsh562u.github.io/Escape-from-Home/">
 <meta property="og:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="逃家游戏 —— 撑到 18 岁，逃出这个家">
-<meta name="twitter:description" content="中文文字游戏，十个难度，网页版免下载，带在线总榜。">
+<meta name="twitter:description" content="中文文字游戏，十一个难度，网页版免下载，带在线总榜。">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/Sobsh562u/Escape-from-Home/main/assets/social-preview.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。十个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"逃家游戏","alternateName":"Escape from Home","inLanguage":"zh-CN","genre":["文字冒险","独立游戏"],"gamePlatform":["Web","Windows","Linux"],"applicationCategory":"Game","operatingSystem":"Web, Windows, Linux","url":"https://sobsh562u.github.io/Escape-from-Home/","description":"中文文字游戏：你被关在家里天天考试，撑到 18 岁才能逃出这个家。十一个难度，网页版免下载。","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT"}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b2b2b'/%3E%3Cpath d='M8 20 L20 8 M14 8 h6 v6' stroke='%23ffd166' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   :root{
@@ -290,7 +290,7 @@
     <div>
       <h1>逃家游戏</h1>
       <div class="sub">撑到 18 岁，名下有套房，就能逃出去。</div>
-      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。十个难度、三十二个结局，网页版打开即玩、不用下载。</div>
+      <div class="seo-lead" style="margin:8px 0 0;color:#6b6455;font-size:13px;line-height:1.6;max-width:620px">中文文字游戏：从幼儿园一路撑到 18 岁，考试、打工、攒钱，攒够一套房就逃出去。十一个难度、三十四个结局，网页版打开即玩、不用下载。</div>
     </div>
     <div class="hdlinks">
       <a class="dl" href="https://github.com/Sobsh562u/Escape-from-Home/releases" target="_blank" rel="noopener"
@@ -317,6 +317,7 @@
     <button class="tab" data-mode="phone" aria-pressed="false">手机版</button>
     <button class="tab" data-mode="storm" aria-pressed="false">停电版</button>
     <button class="tab" data-mode="summer" aria-pressed="false">暑假版</button>
+    <button class="tab" data-mode="newyear" aria-pressed="false">过年版</button>
   </div>
 
   <section class="panel">
@@ -335,6 +336,7 @@
       <button id="btnRun">逃跑</button>
       <button id="btnCall" hidden>报警</button>
       <button id="btnPhone">手机</button>
+      <button id="btnPc" hidden>电脑</button>
       <button id="btnPaper" title="每局只能用一次：交上去直接补满血条，这一巴掌打不下来">100 分卷</button>
       <button id="btnShop">道具店</button>
       <button id="btnAuthor" hidden>作者模式</button>
@@ -348,6 +350,15 @@
       </div>
       <div id="shopList"></div>
       <p class="lbauthmsg" id="shopMsg"></p>
+    </div>
+
+    <div class="shop" id="pcPanel" hidden>
+      <div class="shophead">
+        <span>安卓电脑 · 拟物版</span>
+        <button type="button" class="shopx" id="pcClose" aria-label="关闭">×</button>
+      </div>
+      <div id="pcBody"></div>
+      <p class="lbauthmsg" id="pcMsg"></p>
     </div>
 
     <div class="phonemask" id="phoneMask" hidden>
@@ -497,6 +508,7 @@
         <button type="button" data-m="phone">手机</button>
         <button type="button" data-m="storm">停电</button>
         <button type="button" data-m="summer">暑假</button>
+        <button type="button" data-m="newyear">过年</button>
       </div>
       <div class="lblist" id="lbList">正在拉榜单…</div>
     </div>
@@ -505,11 +517,11 @@
   <section style="margin:22px 0 0;padding:14px 16px;border:1px solid #ddd6c6;border-radius:10px;background:#faf7f1;color:#4a4438;font-size:13px;line-height:1.75">
     <h2 style="margin:0 0 8px;font-size:15px;color:#3a3428">关于《逃家游戏》</h2>
     <p style="margin:0 0 6px">《逃家游戏》（Escape from Home）是一款中文文字游戏。玩家从幼儿园开始，经历小学、初中、高中，每天在考试、打工、攒钱之间做选择，撑到 18 岁、名下有套房，才能逃出这个家。</p>
-    <p style="margin:0 0 6px">游戏有十个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电、暑假，三十二个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
+    <p style="margin:0 0 6px">游戏有十一个难度：原始、反转、困难、极限、跑路、无尽、校园、手机、停电、暑假、过年，三十四个结局，多周目可以刷不同路线。网页版打开即玩、不用下载，手机也能操作；电脑端另有 Windows 与 Linux 单文件版本，安卓有安装包。</p>
     <p style="margin:0">存档保存在本地浏览器，不传服务器；只有使用在线排行榜时，才会把名字和成绩上传。开源（MIT License），源码在 <a href="https://github.com/Sobsh562u/Escape-from-Home">GitHub</a>。</p>
   </section>
   <footer>
-    网页版 v1.24.0 · 十难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
+    网页版 v1.25.0 · 十一难度（原始 / 反转 / 困难 / 极限 / 跑路 / 无尽 / 校园 / 手机 / 停电 / 暑假 / 过年），带在线总榜、账号（名字+密码+6 位玩家ID）· 由 <a href="https://github.com/Sobsh562u/Escape-from-Home" target="_blank" rel="noopener">Escape-from-Home</a> 提供 ·
     MIT License · Copyright (c) 2026 Sobsh562u<br>
     你现在玩的就是网页版，存档在浏览器里。想离线玩，点右上角「装离线版」，拿手机/电脑安装包。<br>
     <a href="../about.html">游戏说明</a> · <a href="../新手入门.html">入门</a> · <a href="../玩法与难度.html">规则</a> · <a href="../结局图鉴.html">结局图鉴</a> · <a href="../存档与账号.html">存档</a> · <a href="../常见问题.html">常见问题</a> · <button id="btnFeedback" class="fbtn">反馈 / 建议</button>
@@ -826,6 +838,43 @@
     win: "15 天暑假过完了。开学前一天晚上，你把没写的作业摊在桌上，居然有点想念上课。结局达成：暑假版通关。"
   };
 
+  var RELATIVES = ["大姨", "二姨", "三姨", "大舅", "二舅", "三舅", "姑姑", "姑父", "小叔",
+    "表姐", "表妹", "表哥", "堂哥", "堂姐", "堂弟", "姥姥", "姥爷", "爷爷", "奶奶",
+    "姨夫", "舅妈", "婶婶", "大伯", "大伯母", "表舅", "远房表哥", "隔壁王阿姨"];
+
+  MODES.newyear = {
+    label: "过年版",
+    hp: 100, max: 100, goal: 7,
+    intro: "【过年版】过年七天，一屋子亲戚盯着你。撑到初七就算过关。",
+    note: "过年版：撑 7 天。考砸了有 45% 概率被亲戚拦下——“小孩嘛，别为难他”，这一下不扣血；没人拦就照常扣 18 血。逃跑是从亲戚堆里挤出去，被三个人拦回来扣 18 血。110 大过年的，警察让你自己调解。手机里的浏览器打开 192.168.1.1，能看见家里连了多少人。",
+    run: function (s) {
+      return { hp: -18, tone: "bad",
+        text: "你想从亲戚堆里挤出去，被大舅、二姨和表姐三个人拦回来：「大过年的去哪？」" };
+    },
+    call: function () {
+      return { end: true, ending: "newyear_call", lines: [
+        "你躲进厕所拨 110，说家里亲戚太多。",
+        "警察：大过年的，家庭矛盾自己调解，我们过去也是劝。",
+        "挂了电话，门外三姨还在敲门：出来吃饺子。",
+        "结局达成：过年报警，被亲戚围着教育。"
+      ]};
+    },
+    exam: function (s, score) {
+      if (score < 60) {
+        if (Math.random() < 0.45) {
+          var who = RELATIVES[rand(RELATIVES.length)];
+          return { hp: 0, tone: "good",
+            text: who + "把你往身后一拦：「小孩嘛，孩子嘛，别为难他。」妈妈的手停在半空。" };
+        }
+        return { hp: -18, tone: "bad",
+          text: "一屋子人都看着你，妈妈把卷子拍在桌上：「你看看你考的。」没人吭声。" };
+      }
+      return { hp: 5, tone: "good",
+        text: "亲戚们传着看你的卷子：「这孩子还行啊。」妈妈脸上有点光。" };
+    },
+    win: "初七早上，亲戚们拎着行李一个个走了。门一关，屋里安静得能听见冰箱响。结局达成：年过完了。"
+  };
+
   MODES.endless = {
     label: "无尽版",
     hp: 100, max: 100, goal: Infinity, money: true,
@@ -861,6 +910,8 @@
     satellite:     { name: "Satellite Assistance", desc: "停电版 · 停电夜卫星求助获救" },
     summer_win:    { name: "暑假过完了", desc: "暑假版 · 撑过 15 天" },
     summer_call:   { name: "被劝回家", desc: "暑假版 · 报警说不想在家过暑假" },
+    newyear_win:   { name: "年过完了", desc: "过年版 · 撑过 7 天" },
+    newyear_call:  { name: "被围着教育", desc: "过年版 · 大过年报警" },
     hard_call:     { name: "被当恶作剧", desc: "困难版 · 报警没人来救" },
     limit_win:     { name: "极限模式通关", desc: "极限版 · 撑过 5 天" },
     limit_call:    { name: "报警被爸爸逮住", desc: "极限版 · 报警，接电话的是爸爸" },
@@ -1385,6 +1436,8 @@
       desc: "本局手机用机上限 +30 秒，便宜管一点。一局只能买一个。" },
     { id: "pbank_l", name: "大牌充电宝", price: 12, once: true,
       desc: "本局手机用机上限 +1~5 分钟（随机，充多少看运气）。一局只能买一个。" },
+    { id: "pc", name: "安卓电脑（永久）", price: 60, once: true,
+      desc: "拟物风安卓电脑：安卓应用商店、Windows 程序商店都有（对，安卓电脑能下 Windows 程序）。想用 NFC 得先在设置里跟手机配对。永久拥有。" },
     { id: "earbuds", name: "耳机", price: 7,
       desc: "手机音量开到 100 也不会被妈妈听见，本局有效。" },
     { id: "review", name: "复习资料", price: 6, once: true,
@@ -1401,6 +1454,81 @@
   }
 
   function hasItem(id) { return !!(state && state.items && state.items[id]); }
+
+  var PC_KEY = "ehq_pc_v1";
+  var pc = (function () {
+    var d = {};
+    try { d = JSON.parse(localStorage.getItem(PC_KEY) || "{}") || {}; } catch (e) { d = {}; }
+    return { owned: !!d.owned, nfc: !!d.nfc, nfcDay: typeof d.nfcDay === "number" ? d.nfcDay : -1,
+             shop: Array.isArray(d.shop) ? d.shop : [] };
+  })();
+  function pcSave() { try { localStorage.setItem(PC_KEY, JSON.stringify(pc)); } catch (e) {} }
+  function phoneNfcCapable() { return !!(phone.full || phone.mid || phone.fullnew); }
+  function pcMsg(t) { var e = document.getElementById("pcMsg"); if (e) e.textContent = t || ""; }
+  function pcBtn(label, fn) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "phbtn"; b.textContent = label;
+    b.style.marginRight = "6px";
+    b.addEventListener("click", fn);
+    return b;
+  }
+  function renderPc() {
+    var body = document.getElementById("pcBody");
+    if (!body) return;
+    body.innerHTML = "";
+    if (!pc.owned) { body.textContent = "还没买电脑。去道具店看看。"; return; }
+    var h = document.createElement("div");
+    h.style.cssText = "font-size:13px;color:#6b6455;line-height:1.7;margin-bottom:8px";
+    h.textContent = "Android 15 · 15.6 寸 · 电量 100% · 已连家里 WiFi";
+    body.appendChild(h);
+
+    var sec1 = document.createElement("div");
+    var t1 = document.createElement("b"); t1.textContent = "应用商店";
+    sec1.appendChild(t1);
+    sec1.appendChild(pcBtn("下载安卓软件", function () {
+      pc.shop.push("扫雷（安卓版）"); pcSave(); pcMsg("装好了「扫雷（安卓版）」，图标是一颗地雷。"); renderPc();
+    }));
+    sec1.appendChild(pcBtn("下载 Windows 程序", function () {
+      pc.shop.push("记事本.exe"); pcSave(); pcMsg("这台安卓电脑真的下了一个 .exe，双击打开是一屏乱码。"); renderPc();
+    }));
+    body.appendChild(sec1);
+    if (pc.shop.length) {
+      var lst = document.createElement("p"); lst.className = "lbauthmsg";
+      lst.textContent = "已装：" + pc.shop.join("、");
+      body.appendChild(lst);
+    }
+
+    var sec2 = document.createElement("div");
+    sec2.style.marginTop = "10px";
+    var t2 = document.createElement("b"); t2.textContent = "设置 → 连接";
+    sec2.appendChild(t2);
+    sec2.appendChild(pcBtn(pc.nfc ? "已配对" : "连接（NFC 配对）", function () {
+      if (!phoneNfcCapable()) { pcMsg("没找到能配对的手机。老人机没有 NFC，先换一台完整手机。"); return; }
+      pc.nfc = true; pcSave();
+      pcMsg("连接成功。这台电脑的 NFC 可以用了。");
+      renderPc();
+    }));
+    body.appendChild(sec2);
+    var st = document.createElement("p"); st.className = "lbauthmsg";
+    st.textContent = pc.nfc ? "NFC：已和手机配对，可用。" : "NFC：未配对，先去设置里点连接。";
+    body.appendChild(st);
+
+    if (pc.nfc) {
+      body.appendChild(pcBtn("用电脑刷门禁卡", function () {
+        if (pc.nfcDay === (state ? state.day : 0)) { pcMsg("今天刷过了。"); return; }
+        pc.nfcDay = (state ? state.day : 0); pcSave();
+        if (state && !state.over) { state.hp = Math.max(1, state.hp - 5); updateStats(); saveState(); }
+        pcMsg("你把整台电脑贴到门禁上，「滴」一声门开了。保安盯着这玩意儿看了半天。");
+      }));
+    }
+  }
+  document.getElementById("pcClose").addEventListener("click", function () {
+    document.getElementById("pcPanel").hidden = true;
+  });
+  document.getElementById("btnPc").addEventListener("click", function () {
+    var p = document.getElementById("pcPanel");
+    p.hidden = !p.hidden;
+    if (!p.hidden) { pcMsg(""); renderPc(); }
+  });
 
   function shopMsg(t) { var e = document.getElementById("shopMsg"); if (e) e.textContent = t; }
 
@@ -1422,7 +1550,7 @@
       info.appendChild(b); info.appendChild(p);
       var btn = document.createElement("button");
       btn.type = "button";
-      var owned = it.g ? !!phone[it.g] : hasItem(it.id);
+      var owned = it.id === "pc" ? pc.owned : (it.g ? !!phone[it.g] : hasItem(it.id));
       btn.textContent = owned && it.once ? "已买" : "买";
       btn.disabled = !!(owned && it.once);
       btn.addEventListener("click", function () { buyItem(it); });
@@ -1437,9 +1565,16 @@
     if (it.id === "lamp" && (state.lampUses || 0) >= 2) { shopMsg("这局两盏都用过了。"); return; }
     if (it.id === "battery" && phone.fullnew && !phone.mid) { shopMsg("最新款的电池是封死的，拆不了——它只能用充电宝。"); return; }
     if ((it.id === "pbank_s" || it.id === "pbank_l") && isOldPhone()) { shopMsg("老手机插口不认充电宝，换个备用电池吧。"); return; }
-    if (it.once && (it.g ? phone[it.g] : hasItem(it.id))) { shopMsg("这个已经买过了。"); return; }
+    if (it.once && (it.id === "pc" ? pc.owned : (it.g ? phone[it.g] : hasItem(it.id)))) { shopMsg("这个已经买过了。"); return; }
     if (coins() < it.price) { shopMsg("金币不够，还差 " + (it.price - coins()) + " 个。"); return; }
     addCoins(-it.price);
+    if (it.id === "pc") {
+      pc.owned = true; pcSave();
+      document.getElementById("btnPc").hidden = false;
+      line("快递送来一台安卓电脑，屏幕亮起来是拟物的安卓桌面。设置里能跟手机配对开 NFC。", "good");
+      shopMsg("买好了，剩 " + coins() + " 金币。");
+      updateStats(); saveState(); renderShop(); return;
+    }
     if (it.g) {
       phone[it.g] = true;
       savePhone();
@@ -1475,6 +1610,7 @@
     shopMsg("买好了，剩 " + coins() + " 金币。");
   }
 
+  if (pc.owned) document.getElementById("btnPc").hidden = false;
   document.getElementById("btnPhone").addEventListener("click", openPhone);
   document.getElementById("phClose").addEventListener("click", closePhone);
 
@@ -1510,7 +1646,8 @@
       fullnew: !!d.fullnew,
       mid: !!d.mid,
       schoolPin: typeof d.schoolPin === "string" ? d.schoolPin : "",
-      schoolPinKnown: !!d.schoolPinKnown
+      schoolPinKnown: !!d.schoolPinKnown,
+      browserUrl: typeof d.browserUrl === "string" && d.browserUrl ? d.browserUrl : "http://192.168.1.1"
     };
     if (!o.full && !o.fullnew && !o.mid) {
       if (!o.schoolPin) o.schoolPin = String(100000 + Math.floor(Math.random() * 900000));
@@ -1541,7 +1678,9 @@
     { id: "shengqian", name: "省钱盒", glyph: "省", color: "#ff8a00", size: "2.2 GB", act: "shop",
       desc: "东西都在里面，标价一个比一个便宜，结算时一个比一个贵。" },
     { id: "shuati", name: "刷题器", glyph: "题", color: "#8b5cf6", size: "1.8 GB", act: "quiz",
-      desc: "无限刷题。做对加分，做错也只是再来一遍。" }
+      desc: "无限刷题。做对加分，做错也只是再来一遍。" },
+    { id: "liulanqi", name: "浏览器", glyph: "览", color: "#5b8def", size: "3.6 GB", act: "browser",
+      desc: "能输网址的浏览器。默认打开 192.168.1.1，那是家里的路由器后台。" }
   ];
   var PH_APP = "";
 
@@ -1946,6 +2085,49 @@
             });
             scr.appendChild(gb);
           });
+        }
+
+        if (ap.act === "browser") {
+          var buRow = document.createElement("div"); buRow.className = "phrow";
+          var buIn = document.createElement("input"); buIn.type = "text"; buIn.id = "phUrl";
+          buIn.value = phone.browserUrl || "http://192.168.1.1";
+          var buGo = document.createElement("button"); buGo.type = "button"; buGo.className = "phbtn"; buGo.textContent = "打开";
+          var buOut = document.createElement("div");
+          buOut.style.cssText = "background:#f5f1e6;border-radius:12px;padding:12px;color:#3f3729;font-size:13px;line-height:1.7;max-height:330px;overflow:auto";
+          var buRender = function (u) {
+            phone.browserUrl = u; savePhone();
+            buOut.innerHTML = "";
+            if (u.indexOf("192.168.1.1") >= 0) {
+              var h = document.createElement("b"); h.textContent = "家庭路由器 · 设备管理";
+              var sub = document.createElement("div"); sub.style.cssText = "color:#6b6455;margin:4px 0 8px";
+              sub.textContent = "已连接设备 " + RELATIVES.length + " 台 · 全部在线";
+              buOut.appendChild(h); buOut.appendChild(sub);
+              RELATIVES.forEach(function (n, i) {
+                var row = document.createElement("div");
+                row.style.cssText = "display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #ddd5c6";
+                var l = document.createElement("span"); l.textContent = n + " 的手机";
+                var r = document.createElement("span"); r.style.color = "#2fbf6b"; r.textContent = "在线";
+                row.appendChild(l); row.appendChild(r); buOut.appendChild(row);
+              });
+              var tip = document.createElement("p"); tip.style.cssText = "color:#6b6455;margin-top:8px";
+              tip.textContent = state.mode === "newyear"
+                ? "过年嘛，一屋子人，谁都在这个 WiFi 上。"
+                : "平时家里没这么多人，过年才会这样。";
+              buOut.appendChild(tip);
+            } else {
+              var err = document.createElement("div");
+              err.textContent = "无法访问 " + u + "\n这个浏览器只会连家里的网。";
+              buOut.appendChild(err);
+            }
+          };
+          buGo.addEventListener("click", function () {
+            var u = buIn.value.trim();
+            if (!u) { phMsg("先输个网址。"); return; }
+            buRender(u);
+          });
+          buRow.appendChild(buIn); buRow.appendChild(buGo); scr.appendChild(buRow);
+          buRender(buIn.value);
+          scr.appendChild(buOut);
         }
 
         if (ap.act === "quiz") {
