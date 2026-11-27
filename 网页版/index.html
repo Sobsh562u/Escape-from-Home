@@ -692,9 +692,12 @@
     }
 
     go.addEventListener("click", function () {
+      var raw = (input.value || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
       var v = norm(input.value);
       if (!v) { msg.style.color = "#a4443c"; msg.textContent = "请输入激活码"; input.focus(); return; }
-      if (CODE_HASHES.indexOf(sha256Hex(v)) < 0) {
+      // 两种都算通过：白名单里的码，或格式正确的 EFH-XXXX-XXXX-XXXX（机器人随机发的走这条）
+      var fmtOk = /^EFH-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(raw);
+      if (CODE_HASHES.indexOf(sha256Hex(v)) < 0 && !fmtOk) {
         tries++;
         msg.style.color = "#a4443c";
         msg.textContent = tries >= 3 ? "激活码不对。找给你页面的人要一个。" : "激活码不对，再试一次。";
