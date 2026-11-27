@@ -56,6 +56,19 @@
         <tbody id="rows"><tr><td colspan="5" class="kv">还没加载</td></tr></tbody>
       </table>
     </div>
+
+    <div class="card">
+      <b>密码重置申请</b> <span class="pill" id="pwCount">0 条</span>
+      <div style="margin:10px 0 0">
+        <button id="pwReload">刷新</button>
+        <span class="msg" id="pwMsg"></span>
+      </div>
+      <table>
+        <thead><tr><th>名字</th><th>说明</th><th>申请时间</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="pwRows"><tr><td colspan="5" class="kv">还没加载</td></tr></tbody>
+      </table>
+      <p class="kv">点「同意重置」会立刻把对方密码换成本人申请时填的新密码，他直接用新密码登录；驳回则旧密码不动。</p>
+    </div>
   </div>
 </div>
 
@@ -113,7 +126,7 @@ el("gateBtn").addEventListener("click", async () => {
   el("gateMsg").textContent = "校验中…";
   const ok = await rpc("ehq_admin_ok", {p_key: p}).catch(() => null);
   if(ok === true){
-    PWD = p; el("gate").hidden = true; el("main").hidden = false; load();
+    PWD = p; el("gate").hidden = true; el("main").hidden = false; load(); loadPw();
   } else {
     el("gateMsg").textContent = "口令不对，或者数据库函数还没建（见 数据库/举报中心.sql）";
   }
@@ -148,6 +161,51 @@ async function load(){
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 el("reload").addEventListener("click", load);
+
+// ===== 密码重置申请 =====
+el("pwReload").addEventListener("click", loadPw);
+function pwMsg(t, cls){ const m = el("pwMsg"); m.className = "msg " + (cls||""); m.textContent = t; }
+
+async function loadPw(){
+  el("pwRows").innerHTML = "加载中…";
+  const r = await rpc("ehq_admin_pw_list", {p_key: PWD}).catch(() => null);
+  if(!r || !r.ok){ el("pwRows").innerHTML = (r && r.msg) || "连不上数据库"; return; }
+  const rows = r.rows || [];
+  const pending = rows.filter(x => x.status === "pending").length;
+  el("pwCount").textContent = pending + " 条待处理";
+  if(!rows.length){ el("pwRows").innerHTML = "暂时没人申请重置密码"; return; }
+  el("pwRows").innerHTML = "";
+  rows.forEach(p0 => {
+    const st = p0.status === "pending" ? "待处理" : p0.status === "approved" ? "已重置" : "已驳回";
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><b>' + esc(p0.name) + '</b></td><td>' + esc(p0.note || "（没写）") +
+      '</td><td class="kv">' + esc(String(p0.created_at || "").replace("T"," ").slice(0,16)) +
+      '</td><td class="' + (p0.status === "pending" ? "red" : "green") + '">' + st + '</td>' +
+      '<td class="row-ops">' + (p0.status === "pending"
+        ? '<button class="primary">同意重置</button> <button class="danger">驳回</button>'
+        : "—") + '</td>';
+    if(p0.status === "pending"){
+      tr.children[4].children[0].addEventListener("click", () => pwApprove(p0));
+      tr.children[4].children[1].addEventListener("click", () => pwReject(p0));
+    }
+    el("pwRows").appendChild(tr);
+  });
+}
+
+async function pwApprove(p0){
+  if(!confirm("确认把「" + p0.name + "」的密码改成他申请时填的新密码？改完他就用新密码登录。")) return;
+  pwMsg("重置中…");
+  const r = await rpc("ehq_admin_pw_approve", {p_key: PWD, p_id: p0.id}).catch(() => null);
+  if(r && r.ok){ pwMsg("已重置 " + (r.name || p0.name) + " 的密码", "green"); loadPw(); }
+  else { pwMsg((r && r.msg) || "重置失败", "red"); }
+}
+
+async function pwReject(p0){
+  if(!confirm("驳回「" + p0.name + "」的重置申请？旧密码保持不变。")) return;
+  const r = await rpc("ehq_admin_pw_reject", {p_key: PWD, p_id: p0.id}).catch(() => null);
+  if(r && r.ok){ pwMsg("已驳回", "green"); loadPw(); }
+  else { pwMsg((r && r.msg) || "驳回失败", "red"); }
+}
 
 el("checkBan").addEventListener("click", async () => {
   const n = prompt("输入要查的名字（显示名或玩家ID都可以填一个）：");
