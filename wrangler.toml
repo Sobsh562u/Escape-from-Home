@@ -1,0 +1,6 @@
+name = "efh-bot"
+main = "worker/index.js"
+compatibility_date = "2026-11-27"
+
+[observability]
+enabled = true
