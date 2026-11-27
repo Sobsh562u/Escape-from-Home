@@ -10,9 +10,9 @@ create table if not exists admin_keys (
   pw_hash text not null
 );
 
--- 2) 写入新口令的哈希（明文 EHQ-562u-4mQ9，区分大小写）
+-- 2) 写入新口令的哈希（把 <你的口令> 换成你自己的口令后执行，区分大小写；明文别提交进仓库）
 insert into admin_keys (name, pw_hash)
-values ('inbox', encode(extensions.digest('EHQ-562u-4mQ9', 'sha256'), 'hex'))
+values ('inbox', encode(extensions.digest('<你的口令>', 'sha256'), 'hex'))
 on conflict (name) do update set pw_hash = excluded.pw_hash;
 
 -- 3) 把所有旧名字的函数连同重载一起删掉，旧口令再也调不动
@@ -110,3 +110,21 @@ revoke all on function ehq_fb_clear(text, bigint) from public;
 grant execute on function ehq_fb_list(text) to anon, authenticated;
 grant execute on function ehq_fb_reply(text, bigint, text) to anon, authenticated;
 grant execute on function ehq_fb_clear(text, bigint) to anon, authenticated;
+
+
+-- 7) 管理员口令（举报中心用）也走同一张表，不再在函数里写死明文
+insert into admin_keys (name, pw_hash)
+values ('admin', encode(extensions.digest('<你的口令>', 'sha256'), 'hex'))
+on conflict (name) do update set pw_hash = excluded.pw_hash;
+
+create or replace function ehq_admin_ok(p_key text)
+returns boolean
+language sql stable security definer
+set search_path = public, extensions
+as $$
+  select exists (
+    select 1 from admin_keys
+     where name = 'admin'
+       and pw_hash = encode(digest(coalesce(p_key, ''), 'sha256'), 'hex')
+  );
+$$;
