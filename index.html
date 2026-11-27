@@ -485,6 +485,7 @@
       <div class="lbacts">
         <button id="lbReg">注册</button>
         <button id="lbLogin">登录</button>
+        <button id="lbPwdReset">重置密码</button>
       </div>
       <p class="lbauthmsg" id="lbMsg"></p>
       <div class="lbrec" id="lbRec">
@@ -1307,6 +1308,7 @@
     lbPwd: document.getElementById("lbPwd"),
     lbReg: document.getElementById("lbReg"),
     lbLogin: document.getElementById("lbLogin"),
+    lbPwdReset: document.getElementById("lbPwdReset"),
     coinNum: document.getElementById("coinNum"),
     lbMe: document.getElementById("lbMe"),
     lbMsg: document.getElementById("lbMsg"),
@@ -3409,6 +3411,23 @@
     if (!n || !pw) { msg("名字和密码都要填。"); return; }
     msg("登录中…");
     doLogin(n, pw).catch(function () { msg("网络不通，稍后再试。"); });
+  });
+
+  // ===== 重置密码：提交申请，等作者在密码中心批准 =====
+  els.lbPwdReset.addEventListener("click", function () {
+    var n = (els.lbName.value || "").trim().slice(0, 4);
+    var np = (els.lbPwd.value || "");
+    if (!n) { msg("先在上面填名字。"); return; }
+    if (np.length < 4) { msg("在密码框里填你想要的【新】密码（4–16 位），再点重置密码。"); return; }
+    if (!window.confirm("把「" + n + "」的密码重置成这个新密码？提交后要等作者批准，批准前旧密码还能用。")) return;
+    msg("提交申请…");
+    fetch(SB_URL.replace("/scores", "/rpc/request_password_reset"), {
+      method: "POST",
+      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_name: n, p_new_password: np, p_client_id: myCid(), p_note: "游戏内提交" })
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      msg((r && r.msg) || "提交失败，稍后再试");
+    }).catch(function () { msg("网络不通，稍后再试"); });
   });
 
   // ===== 恢复码：换设备 / 清缓存后找回登录 =====
