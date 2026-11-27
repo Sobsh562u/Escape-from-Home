@@ -1,4 +1,5 @@
 User-agent: *
+Disallow: /p7k2m9x/
 Allow: /
 
 Sitemap: https://sobsh562u.github.io/Escape-from-Home/sitemap.xml
