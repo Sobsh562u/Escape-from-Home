@@ -84,6 +84,7 @@
         <option value="30" selected>30 天</option>
         <option value="365">1 年</option>
         <option value="0">永久</option>
+        <option value="-1">解封（撤销封禁）</option>
       </select></label></p>
     <p><label>理由（写进记录）<br><textarea id="banReason" rows="3" style="width:100%" placeholder="例如：排行榜刷分、辱骂其他玩家"></textarea></label></p>
     <p class="kv">封禁后，对方在游戏里登录会被拦下，提示“账号已被封禁”，并显示到期时间。</p>
@@ -250,18 +251,40 @@ function openBan(row){
 }
 el("banCancel").addEventListener("click", () => el("banMask").classList.remove("show"));
 
+// 期限选「解封」时，按钮文案跟着变
+el("banDays").addEventListener("change", () => {
+  const btn = el("doBan");
+  const unban = el("banDays").value === "-1";
+  btn.dataset.armed = ""; btn.disabled = false;
+  btn.textContent = unban ? "确认解封" : "确认封禁";
+});
+
 // 点“确认封禁”后先倒数 1 秒，才真的能按——防手滑
 el("doBan").addEventListener("click", async () => {
   const btn = el("doBan");
   if(btn.dataset.armed !== "1"){
     btn.dataset.armed = "1";
-    btn.textContent = "再点一次确认封禁";
+    btn.textContent = el("banDays").value === "-1" ? "再点一次确认解封" : "再点一次确认封禁";
     return;
   }
   const who = cur ? (cur.name || cur.target_name || cur.p_target_name || "") : "";
   const pid = cur ? (cur.target_pid || cur.p_target_pid || "") : "";
   const days = parseInt(el("banDays").value, 10);
-  btn.disabled = true; btn.textContent = "提交中…";
+  btn.disabled = true; btn.textContent = days === -1 ? "解封中…" : "提交中…";
+  if(days === -1){
+    const r0 = await rpc("ehq_admin_unban", {p_key: PWD, p_name: who}).catch(() => null);
+    if(r0 && r0.ok){
+      el("banMsg").className = "msg green";
+      el("banMsg").textContent = "已解封 " + who + "，他现在可以正常登录了";
+      btn.dataset.armed = "";
+      setTimeout(() => el("banMask").classList.remove("show"), 900);
+    } else {
+      el("banMsg").className = "msg red";
+      el("banMsg").textContent = (r0 && r0.msg) || "解封失败";
+      btn.disabled = false; btn.textContent = "确认解封";
+    }
+    return;
+  }
   const r = await rpc("ehq_admin_ban", {
     p_key: PWD, p_name: who, p_pid: pid, p_days: days,
     p_reason: el("banReason").value.trim(), p_admin: "作者"
