@@ -70,8 +70,8 @@
   <div class="card" id="mineCard" hidden>
     <h2>我的提交</h2>
     <table>
-      <thead><tr><th>模组</th><th>改动</th><th>状态</th><th>时间</th></tr></thead>
-      <tbody id="mineRows"><tr><td colspan="4" class="kv">还没有提交</td></tr></tbody>
+      <thead><tr><th>模组</th><th>改动</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody id="mineRows"><tr><td colspan="5" class="kv">还没有提交</td></tr></tbody>
     </table>
   </div>
 
@@ -194,7 +194,14 @@ async function loadMine(){
     tr.innerHTML = '<td>'+(m.code?'<span class="pill ok">'+esc(m.code)+'</span> ':'')+'<b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
       '<td>'+m.patches+' 处</td><td>'+statusPill(m.status)+
       (m.review_note?'<br><span class="kv">'+esc(m.review_note)+'</span>':'')+'</td>' +
-      '<td class="kv">'+esc(String(m.created_at||"").slice(0,16).replace("T"," "))+'</td>';
+      '<td class="kv">'+esc(String(m.created_at||"").slice(0,16).replace("T"," "))+'</td>' +
+      '<td><button class="ghost">删除</button></td>';
+    tr.lastElementChild.firstChild.addEventListener("click", async () => {
+      if(!confirm("删掉「" + m.title + "」？编号和内容一起没，删了恢复不了。")) return;
+      const d = await rpc("mod_delete", {p_client_id: ME.cid, p_id: m.id}).catch(()=>null);
+      alert((d && d.msg) || "删除失败");
+      loadMine();
+    });
     el("mineRows").appendChild(tr);
   });
 }
