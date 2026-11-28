@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>模组编辑器 · 逃家游戏</title>
+<style>
+  :root{--bg:#f4efe6;--card:#fffdf8;--line:#ddd6c6;--text:#3a3428;--dim:#6b6455;--green:#3f7d4a;--red:#9c3a2f;--dark:#1b1e24}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.7 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:20px 14px 90px}
+  h1{font-size:20px;margin:0}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .lead{color:var(--dim);font-size:13px;margin:0 0 16px}
+  .cols{display:grid;grid-template-columns:300px 1fr;gap:14px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .card h2{font-size:14px;margin:0 0 10px}
+  .grp{margin:0 0 14px}
+  .grp b{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
+  .pick{display:block;width:100%;text-align:left;padding:6px 9px;margin:0 0 5px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:12.5px}
+  .pick:hover{border-color:var(--green)}
+  .pick small{color:var(--dim);display:block;font-size:11.5px;margin-top:1px}
+  input,textarea,select,button{font:inherit}
+  input,textarea{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;width:100%;color:var(--text)}
+  button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;color:var(--text)}
+  button.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  button.small{padding:3px 8px;font-size:12px}
+  .patch{border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 9px;background:#fff}
+  .patch .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--dim)}
+  .preview{background:var(--dark);border-radius:12px;padding:14px;color:#e8e6df;font-size:13.5px;line-height:1.9;min-height:120px}
+  .preview .ln{padding:2px 0;border-left:3px solid transparent;padding-left:9px}
+  .preview .bad{border-color:#c05a4a}
+  .preview .good{border-color:#5aa36a}
+  .preview .day{border-color:#8a8468}
+  .msg{font-size:13px;color:var(--dim);min-height:18px;margin:8px 0 0}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:#efe9dc;color:var(--dim)}
+  .mask{position:fixed;inset:0;background:rgba(20,18,14,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:70}
+  .mask.show{display:flex}
+  .modal{background:var(--card);border-radius:14px;padding:18px;max-width:420px;width:100%}
+  .modal h3{margin:0 0 6px;font-size:16px}
+  .modal p{color:var(--dim);font-size:13px;margin:0 0 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>模组编辑器</h1>
+    <div>
+      <span class="pill" id="who">未登录</span>
+      <button class="small" id="btnLogin">登录</button>
+      <button class="small" id="btnAuth">授权终端</button>
+    </div>
+  </div>
+  <p class="lead">左边点一下「位置」，右边写改成什么。改不了的（血量、角色）编辑器里根本点不出来。写完可提交审核，也可导出 JSON 给终端用。</p>
+
+  <div class="cols">
+    <div class="card">
+      <h2>位置库</h2>
+      <div class="grp"><b>事件（改文案）</b><div id="gEvent"></div></div>
+      <div class="grp"><b>新增事件（字数决定，血量 0）</b><div id="gAdd"></div></div>
+      <div class="grp"><b>难度</b><div id="gMode"></div></div>
+      <div class="grp"><b>结局</b><div id="gEnding"></div></div>
+    </div>
+
+    <div style="min-width:0">
+      <div class="card" style="margin-bottom:14px">
+        <h2>我的改动 <span class="code" id="patchCount">0 条</span></h2>
+        <div id="patches"><p class="msg">还没有改动，左边点一个位置开始。</p></div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <h2>预览（按游戏里的样子排）</h2>
+        <div class="preview" id="preview"></div>
+      </div>
+
+      <div class="card">
+        <h2>发布</h2>
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:8px;margin-bottom:8px">
+          <input id="title" maxlength="24" placeholder="模组名字（2–24 字）">
+          <input id="summary" maxlength="200" placeholder="一句话说明">
+        </div>
+        <p>
+          <button class="primary" id="btnSubmit">提交审核</button>
+          <button id="btnExport">导出 JSON</button>
+          <button id="btnImport">导入 JSON</button>
+          <button id="btnNew">清空重来</button>
+        </p>
+        <p class="msg" id="msg"></p>
+        <p class="code" id="hint"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="loginMask">
+  <div class="modal">
+    <h3>登录</h3>
+    <p>用游戏里的名字 + 密码，普通账号就行。</p>
+    <p><input id="lgName" maxlength="4" placeholder="名字（1–4 字）"></p>
+    <p><input id="lgPwd" type="password" maxlength="16" placeholder="密码"></p>
+    <p class="msg" id="lgMsg"></p>
+    <p><button class="primary" id="lgGo">登录</button> <button id="lgCancel">取消</button></p>
+  </div>
+</div>
+
+<div class="mask" id="authMask">
+  <div class="modal">
+    <h3>授权终端</h3>
+    <p>终端里会显示一个 8 位设备码（ABCD-1234 这种），填进来点确认，那台终端就能用你的账号提交模组。</p>
+    <p><input id="authCode" maxlength="9" placeholder="ABCD-1234" style="text-transform:uppercase"></p>
+    <p class="msg" id="authMsg"></p>
+    <p><button class="primary" id="authGo">确认授权</button> <button id="authCancel">取消</button></p>
+    <p><button class="small" id="authRevoke">断开我所有已授权设备</button></p>
+  </div>
+</div>
+
+<script>
+const SB = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/rpc/";
+const KEY = "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET";
+const DATA = {"modes": [["orig", "原始版"], ["revert", "反转版"], ["hard", "困难版"], ["limit", "极限版"], ["run", "跑路版"], ["school", "校园版"], ["phone", "手机版"], ["storm", "停电版"], ["summer", "暑假版"], ["newyear", "过年版"], ["winter", "寒假版"], ["checkup", "体检版"], ["endless", "无尽版"]], "endings": [["orig_win", "逃出这个家"], ["orig_call", "正义报警"], ["revert_early", "小小年纪成功逃家"], ["revert_caught", "门口被抓"], ["revert_call", "报警反被抓"], ["revert_cheat", "被当成作弊打死"], ["revert_repeat", "考上本科却失去自由"], ["revert_free", "考砸反而没人管"], ["hard_win", "困难模式通关"], ["school_win", "顺利毕业"], ["school_call", "报警被转接"], ["phone_win", "手机放下"], ["phone_call", "没人当真"], ["storm_win", "雨停了"], ["storm_call", "线路占线"], ["satellite", "Satellite Assistance"], ["summer_win", "暑假过完了"], ["summer_call", "被劝回家"], ["newyear_win", "年过完了"], ["newyear_call", "被围着教育"], ["winter_win", "寒假过完了"], ["winter_call", "雪夜被劝回"], ["checkup_win", "档案上写着正常"], ["checkup_call", "电话被夺走"], ["hard_call", "被当恶作剧"], ["limit_win", "极限模式通关"], ["limit_call", "报警被爸爸逮住"], ["limit_die", "被皮带打死"], ["died", "被打死"], ["paradox", "祖父悖论"], ["egg", "受精卵体外死亡"], ["run_win", "终点站"], ["run_die", "倒在路上"], ["run_rich", "攒够了也不走"], ["endless_die", "倒在站台上"], ["run_hot", "坐过站"], ["run_call", "报警了，但没人送你走"]], "events": [["e1", "5", "妈妈接了个电话，出门半小时。你趴在桌上，喘了口气。"], ["e2", "5", "邻居阿姨敲门，塞给你一包饼干。你没敢说谢谢。"], ["e3", "-5", "妈妈翻你的书包，翻出一张皱巴巴的测验卷，又数落了你一顿。"], ["e4", "0", "楼下有人放歌，你趴在窗台上听完了整首。这一刻没人管你。"], ["e5", "-8", "半夜停电，你摸黑找手电筒，膝盖磕在桌角上。"], ["e6", "3", "你在作业本背面偷偷画了一扇门，画完心里松了一点。"], ["e7", "0", "妈妈突然问你：你是不是想离开这个家？你没敢回答。"], ["e8", "4", "雨下了一整天，妈妈没来查作业，你睡了个囫囵觉。"]]};
+let ME = null;
+let PATCHES = [];
+
+function rpc(name, body){
+  return fetch(SB + name, {
+    method:"POST",
+    headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Content-Type":"application/json"},
+    body: JSON.stringify(body||{})
+  }).then(r => r.json());
+}
+const el = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---------- 位置库 ----------
+function addPick(host, label, sub, target, fieldHint){
+  const b = document.createElement("button");
+  b.className = "pick";
+  b.innerHTML = esc(label) + (sub ? '<small>' + esc(sub) + '</small>' : '');
+  b.addEventListener("click", () => {
+    PATCHES.push({ target, value:"" });
+    render();
+    const last = document.querySelector("#patches .patch:last-child input");
+    if(last) last.focus();
+  });
+  host.appendChild(b);
+}
+
+DATA.events.forEach(([id, , text]) => {
+  addPick(el("gEvent"), "事件 " + id, text.slice(0, 22) + (text.length > 22 ? "…" : ""), "event:" + id + ".text");
+});
+for(let i=1;i<=5;i++){
+  addPick(el("gAdd"), "新增事件 add." + i, "自己造一条，血量固定 0", "event:add." + i + ".text");
+}
+DATA.modes.forEach(([id, label]) => {
+  addPick(el("gMode"), label + " · 页签名", "mode:" + id + ".name", "mode:" + id + ".name");
+  addPick(el("gMode"), label + " · 开场白", "mode:" + id + ".text", "mode:" + id + ".text");
+});
+DATA.endings.forEach(([id, name]) => {
+  addPick(el("gEnding"), name, "ending:" + id + ".title", "ending:" + id + ".title");
+});
+
+// ---------- 补丁列表 ----------
+function render(){
+  const host = el("patches");
+  el("patchCount").textContent = PATCHES.length + " 条";
+  if(!PATCHES.length){
+    host.innerHTML = '<p class="msg">还没有改动，左边点一个位置开始。</p>';
+    renderPreview(); saveDraft(); return;
+  }
+  host.innerHTML = "";
+  PATCHES.forEach((p, i) => {
+    const box = document.createElement("div");
+    box.className = "patch";
+    box.innerHTML = '<div class="head"><span class="code">' + esc(p.target) + '</span>' +
+      '<button class="small">删除</button></div>' +
+      '<textarea rows="2" maxlength="500" placeholder="改成什么"></textarea>';
+    const ta = box.querySelector("textarea");
+    ta.value = p.value;
+    ta.addEventListener("input", () => { p.value = ta.value; renderPreview(); saveDraft(); });
+    box.querySelector("button").addEventListener("click", () => { PATCHES.splice(i,1); render(); });
+    host.appendChild(box);
+  });
+  renderPreview(); saveDraft();
+}
+
+// ---------- 预览 ----------
+function renderPreview(){
+  const out = [];
+  const filled = PATCHES.filter(p => p.value.trim());
+  if(!filled.length){ el("preview").innerHTML = '<span style="opacity:.6">写完内容这里会显示游戏里的效果。</span>'; return; }
+  filled.forEach(p => {
+    const t = p.target;
+    if(t.startsWith("event:add.")){
+      out.push(['day', "新事件：" + p.value]);
+    } else if(t.startsWith("event:")){
+      out.push(['day', p.value]);
+    } else if(t.endsWith(".text") && t.startsWith("mode:")){
+      out.push(['day', p.value]);
+    } else if(t.startsWith("mode:")){
+      out.push(['good', "难度页签：" + p.value]);
+    } else if(t.endsWith(".title")){
+      out.push(['bad', "结局：" + p.value]);
+    } else {
+      out.push(['day', p.value]);
+    }
+  });
+  el("preview").innerHTML = out.map(([cls, text]) => '<div class="ln ' + cls + '">' + esc(text) + '</div>').join("");
+}
+
+// ---------- 草稿 ----------
+function saveDraft(){
+  try{
+    localStorage.setItem("ehq_mod_draft", JSON.stringify({
+      title: el("title").value, summary: el("summary").value, patches: PATCHES
+    }));
+  }catch(e){}
+}
+function loadDraft(){
+  try{
+    const d = JSON.parse(localStorage.getItem("ehq_mod_draft") || "null");
+    if(!d) return;
+    el("title").value = d.title || "";
+    el("summary").value = d.summary || "";
+    PATCHES = Array.isArray(d.patches) ? d.patches : [];
+  }catch(e){}
+}
+
+// ---------- 登录 ----------
+el("btnLogin").addEventListener("click", () => { el("loginMask").classList.add("show"); el("lgMsg").textContent=""; });
+el("lgCancel").addEventListener("click", () => el("loginMask").classList.remove("show"));
+el("lgGo").addEventListener("click", async () => {
+  const n = el("lgName").value.trim(), p = el("lgPwd").value.trim();
+  if(!n || !p){ el("lgMsg").textContent = "名字和密码都要填"; return; }
+  el("lgMsg").textContent = "登录中…";
+  const r = await rpc("login_player", {p_name:n, p_password:p}).catch(()=>null);
+  if(!r || !r.ok){ el("lgMsg").textContent = (r && r.msg) || "登录失败"; return; }
+  ME = {name:r.name, pid:r.player_id, cid:r.client_id};
+  el("who").textContent = ME.name + " · " + ME.pid;
+  el("loginMask").classList.remove("show");
+});
+
+// ---------- 授权终端 ----------
+el("btnAuth").addEventListener("click", () => { el("authMask").classList.add("show"); el("authMsg").textContent=""; el("authCode").focus(); });
+el("authCancel").addEventListener("click", () => el("authMask").classList.remove("show"));
+el("authGo").addEventListener("click", async () => {
+  if(!ME){ el("authMsg").textContent = "先登录再授权"; return; }
+  const code = el("authCode").value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)){ el("authMsg").textContent = "设备码是 ABCD-1234 这种格式"; return; }
+  el("authMsg").textContent = "确认中…";
+  const r = await rpc("dev_pair_confirm", {p_code:code, p_client_id:ME.cid}).catch(()=>null);
+  if(r && r.ok){ el("authMsg").textContent = "已授权「" + r.name + "」的终端，回终端里等一下就会自己接上"; }
+  else { el("authMsg").textContent = (r && r.msg) || "授权失败"; }
+});
+el("authRevoke").addEventListener("click", async () => {
+  if(!ME){ el("authMsg").textContent = "先登录"; return; }
+  const r = await rpc("dev_token_revoke_all", {p_client_id:ME.cid}).catch(()=>null);
+  el("authMsg").textContent = (r && r.ok) ? "已断开所有终端，旧的 token 全部失效" : "操作失败";
+});
+
+// ---------- 提交 / 导出 / 导入 ----------
+el("btnSubmit").addEventListener("click", async () => {
+  if(!ME){ el("msg").textContent = "先登录"; el("loginMask").classList.add("show"); return; }
+  const patches = PATCHES.filter(p => p.target && p.value.trim());
+  if(!patches.length){ el("msg").textContent = "至少改一处"; return; }
+  const title = el("title").value.trim();
+  if(title.length < 2){ el("msg").textContent = "模组名字至少 2 个字"; return; }
+  el("msg").textContent = "提交中…";
+  const r = await rpc("submit_mod", {
+    p_client_id: ME.cid, p_name: ME.name, p_pid: ME.pid,
+    p_title: title, p_summary: el("summary").value.trim(), p_patches: patches
+  }).catch(()=>null);
+  if(r && r.ok){ el("msg").textContent = r.msg; }
+  else { el("msg").textContent = (r && r.msg) || "提交失败"; }
+});
+
+el("btnExport").addEventListener("click", () => {
+  const pack = {
+    title: el("title").value.trim(),
+    summary: el("summary").value.trim(),
+    patches: PATCHES.filter(p => p.value.trim())
+  };
+  const blob = new Blob([JSON.stringify(pack, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (pack.title || "mod") + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  el("msg").textContent = "已导出 JSON，可以拿给终端 submit 用";
+});
+
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = ".json,application/json";
+fileInput.addEventListener("change", () => {
+  const f = fileInput.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const d = JSON.parse(String(rd.result));
+      el("title").value = d.title || "";
+      el("summary").value = d.summary || "";
+      PATCHES = Array.isArray(d.patches) ? d.patches.map(p => ({target:String(p.target||""), value:String(p.value||"")})) : [];
+      render();
+      el("msg").textContent = "已导入 " + PATCHES.length + " 条改动";
+    }catch(e){ el("msg").textContent = "这个文件不是合法 JSON"; }
+  };
+  rd.readAsText(f);
+  fileInput.value = "";
+});
+el("btnImport").addEventListener("click", () => fileInput.click());
+
+el("btnNew").addEventListener("click", () => {
+  if(!confirm("清空当前草稿？")) return;
+  PATCHES = []; el("title").value = ""; el("summary").value = ""; render(); el("msg").textContent = "";
+});
+
+// ---------- 初始化 ----------
+el("hint").textContent = "能改的只有文字；血量、天数、金币、角色在服务器和游戏里都锁着，编辑器也不会给你这些位置。";
+loadDraft();
+render();
+</script>
+</body>
+</html>
