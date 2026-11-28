@@ -4269,16 +4269,15 @@
   });
   document.getElementById("sbClass").addEventListener("click", schClassStart);
 
-  /* ===== 模组加载：?mod=<id>，只改文字，成绩不上榜 ===== */
+  /* ===== 模组加载：?mod=001（编号）或 ?mod=数字（编号 id），只改文字 ===== */
   var MOD_ACTIVE = false, MOD_INFO = null;
   (function loadModFromQuery () {
-    var m = location.search.match(/[?&]mod=(\d+)/);
-    if (!m) return;
-    fetch(SB_URL.replace("/scores", "/rpc/mod_get"), {
-      method: "POST",
-      headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ p_id: Number(m[1]) })
-    }).then(function (r) { return r.json(); }).then(function (res) {
+    var mm = location.search.match(/[?&]mod=([^&]+)/);
+    if (!mm) return;
+    var ref = decodeURIComponent(mm[1]).trim();
+    if (!ref) return;
+
+    function applyMod (res) {
       if (!res || !res.ok) return;
       var patches = (res.data && res.data.patches) || [];
       patches.forEach(function (p) {
@@ -4287,11 +4286,11 @@
         if (parts.length < 2) return;
         var rest = parts[1].split("."), id = rest[0], field = rest[1] || "";
         if (parts[0] === "event") {
-          // event:e1.text 改已有事件文案；event:add.1.text 新增事件（血量固定 0，模组碰不到数值）
-          var raw = t.slice(6).split(".");   // ["e1","text"] 或 ["add","1","text"]
+          // event:e1.text 改已有事件文案；event:add.1.text 新增事件（血量固定 0）
+          var raw = t.slice(6).split(".");
           if (raw[0] === "add") {
             var body = String(p.value == null ? "" : p.value).trim();
-            if (body && raw[1]) EVENTS.push({ id: "mod" + m[1] + "_" + raw[1], hp: 0, text: body });
+            if (body && raw[1]) EVENTS.push({ id: "mod" + res.id + "_" + raw[1], hp: 0, text: body });
           } else {
             var ev = findEvent(raw[0]);
             if (ev) ev.text = v;
@@ -4305,13 +4304,36 @@
         }
       });
       MOD_ACTIVE = true;
-      MOD_INFO = { id: Number(m[1]), title: res.title || "", author: res.author || "" };
+      MOD_INFO = { id: res.id, code: res.code || "", title: res.title || "", author: res.author || "" };
       var b = document.createElement("div");
-      b.textContent = "模组：" + (res.title || "未命名") + (res.author ? "（" + res.author + "）" : "") + " · 成绩不上榜";
+      b.textContent = "模组 " + (res.code || "#" + res.id) + "：" + (res.title || "未命名") +
+        (res.author ? "（" + res.author + "）" : "") + (res.code ? " · 官方推荐模组 · 成绩不上榜" : " · 成绩不上榜");
       b.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:60;background:#3f7d4a;color:#fff;" +
         "padding:6px 10px;border-radius:8px;font:12px/1.4 -apple-system,sans-serif;max-width:70vw;box-shadow:0 2px 8px rgba(0,0,0,.2)";
       document.body.appendChild(b);
-    }).catch(function () {});
+    }
+
+    function callMod (fn, body, fallback) {
+      fetch(SB_URL.replace("/scores", "/rpc/" + fn), {
+        method: "POST",
+        headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res && res.ok) { applyMod(res); }
+        else if (fallback) { fallback(); }
+      }).catch(function () {});
+    }
+
+    if (/^\d{3}$/.test(ref)) {
+      // 三位数字当编号读；读不到再按 id 试一次
+      callMod("mod_get_by_code", { p_code: ref }, function () {
+        callMod("mod_get", { p_id: Number(ref) });
+      });
+    } else if (/^\d+$/.test(ref)) {
+      callMod("mod_get", { p_id: Number(ref) });
+    } else {
+      callMod("mod_get_by_code", { p_code: ref });
+    }
   })();
 
 
