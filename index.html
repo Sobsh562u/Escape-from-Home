@@ -4293,9 +4293,43 @@
     var ref = decodeURIComponent(mm[1]).trim();
     if (!ref) return;
 
+    /* ===== 404 页：编号不存在、或者数据里混了数值 → 像大网站那样给一页 ===== */
+    function escHtml (s) {
+      return String(s == null ? "" : s).slice(0, 40).replace(/[&<>"']/g, function (c) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+      });
+    }
+    function badPatch (patches) {
+      var bad = /(^|[.:])(hp|max|maxhp|goal|money|day|days|blood|life|power|atk|def|coin|coins|score|stage|loop)([.:]|$)/i;
+      for (var i = 0; i < patches.length; i++) {
+        if (bad.test(String(patches[i] && patches[i].target || ""))) return true;
+      }
+      return false;
+    }
+    function showMod404 (ref, kind) {
+      if (document.getElementById("mod404")) return;
+      var msg = kind === "bad" ? "这模组的数据不对，加载不了" : "好像没有这模组呢？";
+      var sub = kind === "bad"
+        ? "里面混了被改过的数值（血量、天数、金币这类），游戏不认这种模组。"
+        : "编号 " + escHtml(ref) + " 在模组市场里找不到，可能被作者删了，或者链接抄错了。";
+      var d = document.createElement("div");
+      d.id = "mod404";
+      d.style.cssText = "position:fixed;inset:0;z-index:9999;background:#0d1117;color:#c9d1d9;" +
+        "display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;" +
+        "padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+      d.innerHTML =
+        '<div style="font-size:68px;font-weight:700;letter-spacing:2px;line-height:1">404</div>' +
+        '<div style="font-size:20px;margin-top:14px">' + msg + '</div>' +
+        '<div style="font-size:13px;color:#8b949e;margin-top:10px;line-height:1.7;max-width:32em">' + sub + '</div>' +
+        '<a href="' + escHtml(location.pathname) + '" style="margin-top:22px;padding:9px 18px;border-radius:6px;background:#238636;color:#fff;text-decoration:none;font-size:14px">回游戏首页</a>' +
+        '<div style="margin-top:46px;font-size:12px;color:#6e7681;border:1px solid #30363d;border-radius:20px;padding:5px 14px">逃家游戏 · Escape from Home</div>';
+      document.body.appendChild(d);
+    }
+
     function applyMod (res) {
-      if (!res || !res.ok) return;
+      if (!res || !res.ok) return false;
       var patches = (res.data && res.data.patches) || [];
+      if (badPatch(patches)) { showMod404(ref, "bad"); return false; }
       patches.forEach(function (p) {
         var t = String(p.target || ""), v = String(p.value == null ? "" : p.value);
         var parts = t.split(":");
@@ -4327,6 +4361,7 @@
       b.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:60;background:#3f7d4a;color:#fff;" +
         "padding:6px 10px;border-radius:8px;font:12px/1.4 -apple-system,sans-serif;max-width:70vw;box-shadow:0 2px 8px rgba(0,0,0,.2)";
       document.body.appendChild(b);
+      return true;
     }
 
     function callMod (fn, body, fallback) {
@@ -4335,9 +4370,10 @@
         headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
         body: JSON.stringify(body)
       }).then(function (r) { return r.json(); }).then(function (res) {
-        if (res && res.ok) { applyMod(res); }
-        else if (fallback) { fallback(); }
-      }).catch(function () {});
+        if (res && res.ok) { applyMod(res); return; }
+        if (fallback) { fallback(); return; }
+        showMod404(ref);
+      }).catch(function () { showMod404(ref); });
     }
 
     if (/^\d{3}$/.test(ref)) {
