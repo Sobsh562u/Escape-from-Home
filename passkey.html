@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>验证成功 · 通行证登录</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,"Segoe UI Variable","Segoe UI",system-ui,"Microsoft YaHei",sans-serif;
+    background:#0b1220;color:#e8eefc;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;overflow:hidden;position:relative;
+  }
+  body::before{
+    content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(60% 45% at 20% 15%,rgba(10,132,255,.22),transparent 60%),
+      radial-gradient(50% 40% at 85% 80%,rgba(120,90,255,.20),transparent 62%),
+      radial-gradient(70% 60% at 50% 50%,#16213a 0%,#0b1220 70%);
+  }
+  .card{
+    position:relative;z-index:1;width:min(92vw,420px);
+    background:rgba(255,255,255,.97);color:#111827;
+    border-radius:26px;padding:38px 26px 26px;text-align:center;
+    box-shadow:0 28px 70px -20px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.6) inset;
+    animation:rise .55s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+  .scan{width:104px;height:104px;margin:0 auto 20px;position:relative;display:flex;align-items:center;justify-content:center}
+  .scan svg.frame{position:absolute;inset:0;width:100%;height:100%;stroke:#0a84ff;stroke-width:5;fill:none;stroke-linecap:round;animation:breathe 2.6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.55;transform:scale(.97)}50%{opacity:1;transform:scale(1)}}
+  .scan .tick{width:54px;height:54px;border-radius:50%;background:#0a84ff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px -8px rgba(10,132,255,.9);animation:pop .5s .25s cubic-bezier(.2,.9,.3,1.4) both}
+  @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  .scan .tick svg{width:28px;height:28px;stroke:#fff;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;font-weight:600;letter-spacing:.2px}
+  .sub{margin-top:10px;font-size:14.5px;line-height:1.6;color:#4b5563}
+  .sub b{color:#0a84ff;font-weight:600}
+  .badge{margin:18px auto 0;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:#eef5ff;color:#0a5fcc;font-size:12.5px;font-weight:600}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#0a84ff;box-shadow:0 0 0 3px rgba(10,132,255,.18)}
+  .bar{height:3px;border-radius:3px;background:#e8edf6;margin:24px 0 16px;overflow:hidden}
+  .bar span{display:block;height:100%;width:100%;background:linear-gradient(90deg,#0a84ff,#6f8cff);transform-origin:left;animation:drain 3s linear forwards}
+  @keyframes drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  .count{font-size:12.5px;color:#6b7280;letter-spacing:.3px}
+  .count em{font-style:normal;color:#111827;font-weight:600;font-variant-numeric:tabular-nums}
+  .btn{margin-top:20px;width:100%;border:0;cursor:pointer;padding:14px 18px;border-radius:14px;background:#0a84ff;color:#fff;font-size:15px;font-weight:600;font-family:inherit;box-shadow:0 10px 24px -12px rgba(10,132,255,.95);transition:transform .15s ease,box-shadow .15s ease,background .15s}
+  .btn:hover{background:#0071e3;transform:translateY(-1px)}
+  .btn:active{transform:translateY(0) scale(.99)}
+  .foot{margin-top:14px;font-size:11.5px;color:#9aa3b2;line-height:1.7}
+  .cap{margin-top:10px;font-size:12px;color:#6b7280}
+  @media (max-width:360px){
+    h1{font-size:21px}
+    .card{padding:30px 20px 22px;border-radius:22px}
+    .scan{width:88px;height:88px}
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="scan">
+      <svg class="frame" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M8 26 V12 a4 4 0 0 1 4-4 H26"/>
+        <path d="M74 8 H88 a4 4 0 0 1 4 4 V26"/>
+        <path d="M92 74 V88 a4 4 0 0 1-4 4 H74"/>
+        <path d="M26 92 H12 a4 4 0 0 1-4-4 V74"/>
+      </svg>
+      <div class="tick">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></svg>
+      </div>
+    </div>
+
+    <h1>身份验证成功</h1>
+    <p class="sub" id="line">已通过 <b id="method">Windows Hello</b> 完成验证<br>通行证凭据已与此设备绑定，下次可一键登录</p>
+
+    <div class="badge"><span class="dot"></span><span id="badgeText">Windows Hello · 本机认证器</span></div>
+
+    <div class="bar"><span></span></div>
+    <p class="count"><em id="sec">3</em> 秒后自动进入游戏</p>
+
+    <button class="btn" id="go" type="button">立即进入</button>
+
+    <p class="cap" id="cap">检测设备能力中…</p>
+    <p class="foot">你的通行证凭据仅保存在本机安全芯片（TPM）中<br>服务器只保存公钥，不保存任何私钥</p>
+  </main>
+
+<script>
+(function(){
+  var next = "index.html";
+  var sec = 6;
+  var timer;
+  var preview = /[?&]stay=1/.test(location.search);
+
+  function go(){
+    clearInterval(timer);
+    location.href = next;
+  }
+
+  document.getElementById("go").addEventListener("click", go);
+
+  if(preview){
+    document.querySelector(".count").innerHTML = "预览模式 · 不自动跳转";
+  }else{
+    timer = setInterval(function(){
+      sec--;
+      document.getElementById("sec").textContent = sec > 0 ? sec : 0;
+      if(sec <= 0){ clearInterval(timer); go(); }
+    }, 1000);
+  }
+
+  // 设备能力检测：只用于文案显示，不做真实验证
+  (async function(){
+    var cap = document.getElementById("cap");
+    var method = document.getElementById("method");
+    var badgeText = document.getElementById("badgeText");
+    try{
+      if(!window.PublicKeyCredential){
+        cap.textContent = "本浏览器不支持 WebAuthn，已退化为普通通行证登录";
+        method.textContent = "通行证（Passkey）";
+        badgeText.textContent = "软件通行证 · 未绑定安全芯片";
+        return;
+      }
+      var hasPlatform = false;
+      try{
+        hasPlatform = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      }catch(e){ hasPlatform = false; }
+
+      if(hasPlatform){
+        cap.textContent = "本机支持 Windows Hello，可调用指纹 / 人脸 / PIN 验证";
+        method.textContent = "Windows Hello";
+        badgeText.textContent = "Windows Hello · 本机认证器";
+      }else{
+        cap.textContent = "本机未检测到平台认证器，可用安全密钥（YubiKey）验证";
+        method.textContent = "通行证（Passkey）";
+        badgeText.textContent = "跨设备通行证 · 安全密钥";
+      }
+    }catch(e){
+      cap.textContent = "设备能力检测失败，按通行证方式继续";
+    }
+  })();
+})();
+</script>
+</body>
+</html>
