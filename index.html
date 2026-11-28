@@ -1901,6 +1901,7 @@
 
   /* ===================== 手机 ===================== */
   var PHONE_KEY = "ehq_phone_v1";
+  var SCHOOL_PIN = "562917";   // 学校发的手机，出厂密码固定这个，不再随机
 
   function loadPhone() {
     var d = {};
@@ -1926,8 +1927,10 @@
       browserUrl: typeof d.browserUrl === "string" && d.browserUrl ? d.browserUrl : "http://192.168.1.1"
     };
     if (!o.full && !o.fullnew && !o.mid) {
-      if (!o.schoolPin) o.schoolPin = String(100000 + Math.floor(Math.random() * 900000));
-      if (!o.passHash) o.passHash = sha256Hex(o.schoolPin);
+      // 学校发的机：出厂密码固定 SCHOOL_PIN，老存档里的随机密码也一并覆盖
+      o.schoolPin = SCHOOL_PIN;
+      o.passHash = sha256Hex(SCHOOL_PIN);
+      o.schoolPinKnown = true;
     }
     return o;
   }
