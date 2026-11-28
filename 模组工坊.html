@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>模组工坊 · 逃家游戏</title>
+<style>
+  :root{--bg:#f4efe6;--card:#fffdf8;--line:#ddd6c6;--text:#3a3428;--dim:#6b6455;--green:#3f7d4a;--red:#9c3a2f;--amber:#8a6d3b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.7 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 16px 90px}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:15px;margin:0 0 10px}
+  .lead{color:var(--dim);font-size:13px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:0 0 16px}
+  input,select,textarea,button{font:inherit}
+  input,select,textarea{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);width:100%}
+  button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);cursor:pointer}
+  button.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  button.ghost{padding:4px 9px;font-size:12px}
+  .row{display:grid;grid-template-columns:110px 1fr 110px 1.6fr 60px;gap:8px;align-items:center;margin:0 0 8px}
+  .row label{font-size:12px;color:var(--dim)}
+  .msg{font-size:13px;color:var(--dim);min-height:20px;margin:8px 0 0}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:#efe9dc;color:var(--dim)}
+  .pill.ok{background:#e5efe6;color:var(--green)}
+  .pill.red{background:#f6e5e2;color:var(--red)}
+  .pill.amber{background:#f5eedb;color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+  th{color:var(--dim);font-weight:600}
+  .kv{color:var(--dim);font-size:12px}
+  @media(max-width:640px){ .row{grid-template-columns:1fr 1fr; } .row textarea,.row input{grid-column:1/-1} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>模组工坊</h1>
+  <p class="lead">把「某处」改成「某样」，提交后进人工审核，通过就出现在模组市场。模组只改文字，不碰排行榜。</p>
+
+  <div class="card" id="loginCard">
+    <h2>先登录（普通账号即可）</h2>
+    <div class="row" style="grid-template-columns:1fr 1fr 100px">
+      <input id="lgName" maxlength="4" placeholder="游戏里的名字（1–4 字）">
+      <input id="lgPwd" type="password" maxlength="16" placeholder="密码">
+      <button class="primary" id="lgBtn">登录</button>
+    </div>
+    <p class="msg" id="lgMsg">还没注册？回 <a href="./index.html">游戏主页</a> 的排行榜面板注册一个就行。</p>
+  </div>
+
+  <div class="card" id="editCard" hidden>
+    <h2>写模组 <span class="kv" id="whoTag"></span></h2>
+    <div class="row" style="grid-template-columns:1fr 2fr">
+      <input id="mdTitle" maxlength="24" placeholder="模组名字（2–24 字），比如「更吓人的结局」">
+      <input id="mdSummary" maxlength="200" placeholder="一句话说明（会显示在市场上）">
+    </div>
+    <p class="kv" style="margin:12px 0 6px">要改的地方（最多 50 条，单条内容 500 字内）</p>
+    <div id="rows"></div>
+    <p style="margin:8px 0 0">
+      <button class="ghost" id="addRow">＋ 再加一条</button>
+      <button class="ghost" id="demoFill">填入示例</button>
+    </p>
+    <p class="kv" style="margin:10px 0 0">
+      位置写法：<b>类型:键.字段</b>。结局的键是 <code>orig_win</code>、<code>revert_caught</code> 这类；难度的键是 <code>orig</code>、<code>hard</code>、<code>limit</code>、<code>checkup</code> 这类。
+      字段：结局用 <code>title</code>（结局名）/ <code>desc</code>（副标题）；难度用 <code>name</code>（页签名）/ <code>text</code>（开场白）/ <code>desc</code>（规则说明）。
+    </p>
+    <p style="margin:12px 0 0"><button class="primary" id="mdSend">提交审核</button> <span class="msg" id="mdMsg"></span></p>
+  </div>
+
+  <div class="card" id="mineCard" hidden>
+    <h2>我的提交</h2>
+    <table>
+      <thead><tr><th>模组</th><th>改动</th><th>状态</th><th>时间</th></tr></thead>
+      <tbody id="mineRows"><tr><td colspan="4" class="kv">还没有提交</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>模组市场 <span class="kv" id="mkCount"></span></h2>
+    <p class="kv">点「复制加载链接」拿到带模组的游戏地址，发谁都能用。装了模组的局不计入排行榜。</p>
+    <table>
+      <thead><tr><th>模组</th><th>作者</th><th>改动</th><th></th></tr></thead>
+      <tbody id="mkRows"><tr><td colspan="4" class="kv">加载中…</td></tr></tbody>
+    </table>
+  </div>
+  <p class="kv">返回 <a href="./index.html">游戏主页</a></p>
+</div>
+
+<script>
+const SB = "https://spvouajdnckiyihhccux.supabase.co/rest/v1/rpc/";
+const KEY = "sb_publishable_gOcJXjEu8wVL7tDFNCL5yw_7Y7Zy7ET";
+let ME = null;   // {name, pid, cid}
+
+function rpc(name, body){
+  return fetch(SB + name, {
+    method:"POST",
+    headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Content-Type":"application/json"},
+    body: JSON.stringify(body||{})
+  }).then(r => r.json());
+}
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function statusPill(st){
+  if(st==="pending") return '<span class="pill amber">审核中</span>';
+  if(st==="approved") return '<span class="pill ok">已上架</span>';
+  return '<span class="pill red">已驳回</span>';
+}
+
+// ---------- 登录 ----------
+el("lgBtn").addEventListener("click", async () => {
+  const n = el("lgName").value.trim(), p = el("lgPwd").value.trim();
+  if(!n || !p){ el("lgMsg").textContent = "名字和密码都要填"; return; }
+  el("lgMsg").textContent = "登录中…";
+  const r = await rpc("login_player", {p_name:n, p_password:p}).catch(()=>null);
+  if(!r || !r.ok){ el("lgMsg").textContent = (r && r.msg) || "登录失败"; return; }
+  ME = {name:r.name, pid:r.player_id, cid:r.client_id};
+  el("loginCard").hidden = true; el("editCard").hidden = false; el("mineCard").hidden = false;
+  el("whoTag").textContent = "（" + ME.name + " · ID " + ME.pid + "）";
+  loadMine();
+});
+
+// ---------- 编辑器 ----------
+function addRow(type, key, field, value){
+  const div = document.createElement("div");
+  div.className = "row";
+  div.innerHTML =
+    '<label>类型</label>' +
+    '<select class="t"><option value="ending">结局</option><option value="mode">难度</option></select>' +
+    '<label>键</label>' +
+    '<input class="k" placeholder="比如 orig_win / checkup">' +
+    '<input class="v" placeholder="改成什么">' +
+    '<button class="ghost del">删</button>' +
+    '<label>字段</label>' +
+    '<select class="f"><option value="title">结局名 / 难度页签名</option><option value="desc">副标题 / 规则说明</option><option value="text">开场白（仅难度）</option></select>';
+  el("rows").appendChild(div);
+  const t = div.querySelector(".t"), k = div.querySelector(".k"), f = div.querySelector(".f"), v = div.querySelector(".v");
+  if(type) t.value = type;
+  if(key) k.value = key;
+  if(field) f.value = field;
+  if(value) v.value = value;
+  div.querySelector(".del").addEventListener("click", () => div.remove());
+}
+el("addRow").addEventListener("click", () => addRow());
+el("demoFill").addEventListener("click", () => {
+  if(el("rows").children.length === 0) addRow();
+  el("rows").children[0].querySelector(".t").value = "ending";
+  el("rows").children[0].querySelector(".k").value = "orig_win";
+  el("rows").children[0].querySelector(".f").value = "title";
+  el("rows").children[0].querySelector(".v").value = "你真的逃出去了吗";
+});
+addRow("ending","orig_win","title","");
+
+el("mdSend").addEventListener("click", async () => {
+  if(!ME){ el("mdMsg").textContent = "先登录"; return; }
+  const title = el("mdTitle").value.trim();
+  if(title.length < 2){ el("mdMsg").textContent = "模组名字至少 2 个字"; return; }
+  const patches = [];
+  [...el("rows").children].forEach(row => {
+    const t = row.querySelector(".t").value;
+    const k = row.querySelector(".k").value.trim();
+    const f = row.querySelector(".f").value;
+    const v = row.querySelector(".v").value;
+    if(!k && !v) return;
+    if(!k || !v.trim()){ patches.push(null); return; }
+    patches.push({target: t + ":" + k + "." + f, value: v});
+  });
+  if(patches.some(x => !x)){ el("mdMsg").textContent = "有空着的行：键和内容都要填"; return; }
+  if(!patches.length){ el("mdMsg").textContent = "至少改一处"; return; }
+  el("mdMsg").textContent = "提交中…";
+  const r = await rpc("submit_mod", {
+    p_client_id: ME.cid, p_name: ME.name, p_pid: ME.pid,
+    p_title: title, p_summary: el("mdSummary").value.trim(), p_patches: patches
+  }).catch(()=>null);
+  if(r && r.ok){
+    el("mdMsg").textContent = r.msg;
+    el("mdTitle").value = ""; el("mdSummary").value = "";
+    el("rows").innerHTML = ""; addRow();
+    loadMine();
+  } else {
+    el("mdMsg").textContent = (r && r.msg) || "提交失败";
+  }
+});
+
+// ---------- 我的提交 ----------
+async function loadMine(){
+  if(!ME) return;
+  const r = await rpc("my_mods", {p_client_id: ME.cid}).catch(()=>null);
+  const rows = (r && r.rows) || [];
+  if(!rows.length){ el("mineRows").innerHTML = '<tr><td colspan="4" class="kv">还没有提交</td></tr>'; return; }
+  el("mineRows").innerHTML = "";
+  rows.forEach(m => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
+      '<td>'+m.patches+' 处</td><td>'+statusPill(m.status)+
+      (m.review_note?'<br><span class="kv">'+esc(m.review_note)+'</span>':'')+'</td>' +
+      '<td class="kv">'+esc(String(m.created_at||"").slice(0,16).replace("T"," "))+'</td>';
+    el("mineRows").appendChild(tr);
+  });
+}
+
+// ---------- 市场 ----------
+async function loadMarket(){
+  const r = await rpc("list_mods").catch(()=>null);
+  const rows = (r && r.rows) || [];
+  el("mkCount").textContent = rows.length ? "共 " + rows.length + " 个" : "";
+  if(!rows.length){ el("mkRows").innerHTML = '<tr><td colspan="4" class="kv">暂时没有上架的模组</td></tr>'; return; }
+  el("mkRows").innerHTML = "";
+  rows.forEach(m => {
+    const link = location.origin + location.pathname.replace(/[^/]*$/,"index.html") + "?mod=" + m.id;
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
+      '<td>'+esc(m.author_name||"—")+'</td><td>'+m.patches+' 处</td>' +
+      '<td><button class="ghost">复制加载链接</button></td>';
+    tr.lastElementChild.firstChild.addEventListener("click", () => {
+      navigator.clipboard && navigator.clipboard.writeText(link);
+      tr.lastElementChild.firstChild.textContent = "已复制";
+    });
+    el("mkRows").appendChild(tr);
+  });
+}
+loadMarket();
+</script>
+</body>
+</html>
