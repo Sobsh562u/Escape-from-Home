@@ -1402,16 +1402,21 @@
     saveState();
   }
 
+  // 事件带 id，模组只能改 text，hp 锁死在代码里，模组改不了
   var EVENTS = [
-    { hp: 5, text: "妈妈接了个电话，出门半小时。你趴在桌上，喘了口气。" },
-    { hp: 5, text: "邻居阿姨敲门，塞给你一包饼干。你没敢说谢谢。" },
-    { hp: -5, text: "妈妈翻你的书包，翻出一张皱巴巴的测验卷，又数落了你一顿。" },
-    { hp: 0, text: "楼下有人放歌，你趴在窗台上听完了整首。这一刻没人管你。" },
-    { hp: -8, text: "半夜停电，你摸黑找手电筒，膝盖磕在桌角上。" },
-    { hp: 3, text: "你在作业本背面偷偷画了一扇门，画完心里松了一点。" },
-    { hp: 0, text: "妈妈突然问你：你是不是想离开这个家？你没敢回答。" },
-    { hp: 4, text: "雨下了一整天，妈妈没来查作业，你睡了个囫囵觉。" }
+    { id: "e1", hp: 5, text: "妈妈接了个电话，出门半小时。你趴在桌上，喘了口气。" },
+    { id: "e2", hp: 5, text: "邻居阿姨敲门，塞给你一包饼干。你没敢说谢谢。" },
+    { id: "e3", hp: -5, text: "妈妈翻你的书包，翻出一张皱巴巴的测验卷，又数落了你一顿。" },
+    { id: "e4", hp: 0, text: "楼下有人放歌，你趴在窗台上听完了整首。这一刻没人管你。" },
+    { id: "e5", hp: -8, text: "半夜停电，你摸黑找手电筒，膝盖磕在桌角上。" },
+    { id: "e6", hp: 3, text: "你在作业本背面偷偷画了一扇门，画完心里松了一点。" },
+    { id: "e7", hp: 0, text: "妈妈突然问你：你是不是想离开这个家？你没敢回答。" },
+    { id: "e8", hp: 4, text: "雨下了一整天，妈妈没来查作业，你睡了个囫囵觉。" }
   ];
+  function findEvent(id) {
+    for (var i = 0; i < EVENTS.length; i++) { if (EVENTS[i].id === id) return EVENTS[i]; }
+    return null;
+  }
 
   function maybeEvent() {
     if (!state.fireActive && state.day > 2 && Math.random() < 0.06) {
@@ -4282,7 +4287,17 @@
         var parts = t.split(":");
         if (parts.length < 2) return;
         var rest = parts[1].split("."), id = rest[0], field = rest[1] || "";
-        if (parts[0] === "ending" && ENDINGS[id]) {
+        if (parts[0] === "event") {
+          // event:e1.text 改已有事件文案；event:add.1.text 新增事件（血量固定 0，模组碰不到数值）
+          var raw = t.slice(6).split(".");   // ["e1","text"] 或 ["add","1","text"]
+          if (raw[0] === "add") {
+            var body = String(p.value == null ? "" : p.value).trim();
+            if (body && raw[1]) EVENTS.push({ id: "mod" + m[1] + "_" + raw[1], hp: 0, text: body });
+          } else {
+            var ev = findEvent(raw[0]);
+            if (ev) ev.text = v;
+          }
+        } else if (parts[0] === "ending" && ENDINGS[id]) {
           if (field === "desc") { ENDINGS[id].desc = v; } else { ENDINGS[id].name = v; }
         } else if (parts[0] === "mode" && MODES[id]) {
           if (field === "text") { MODES[id].intro = v; }
