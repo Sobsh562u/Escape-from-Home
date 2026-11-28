@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>逃家模组 · 手机版</title>
+<style>
+  :root{--bg:#f4efe6;--card:#fffdf8;--line:#ddd6c6;--text:#3a3428;--dim:#6b6455;--green:#3f7d4a;--red:#9c3a2f}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 -apple-system,"PingFang SC","Noto Sans CJK SC",sans-serif;padding-bottom:20px}
+  .bar{position:sticky;top:0;z-index:10;background:#fffdf8ee;backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .bar b{font-size:15px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#efe9dc;color:var(--dim)}
+  .pill.ok{background:#e5efe6;color:var(--green)}
+  section{margin:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  h3{font-size:13.5px;margin:0 0 10px;color:var(--text)}
+  select,textarea,input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font:inherit}
+  textarea{min-height:64px;resize:vertical}
+  .stack>*+*{margin-top:8px}
+  button{padding:9px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font:inherit}
+  button.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  button.small{padding:4px 9px;font-size:12px}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .patch{border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:8px;background:#fff}
+  .patch .t{font-size:11.5px;color:var(--dim);font-family:ui-monospace,Menlo,monospace;word-break:break-all}
+  .patch textarea{min-height:48px;margin-top:6px}
+  .msg{font-size:12.5px;color:var(--dim);min-height:18px;margin:6px 0 0}
+  .dark{background:#1b1e24;color:#e8e6df;border-radius:10px;padding:10px;font-size:13px;line-height:1.85;min-height:70px}
+  .kv{font-size:12px;color:var(--dim);word-break:break-all}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div><b>逃家模组</b> <span class="pill" id="who">未授权</span></div>
+  <div>
+    <button class="small" id="btnAuth">授权</button>
+    <button class="small" id="btnOut">断开</button>
+  </div>
+</div>
+
+<section>
+  <h3>加一条改动</h3>
+  <div class="stack">
+    <select id="kind">
+      <option value="event">改已有事件文案</option>
+      <option value="add">新增一条事件（血量固定 0）</option>
+      <option value="mode">难度</option>
+      <option value="ending">结局</option>
+    </select>
+    <select id="target"></select>
+    <select id="field"></select>
+    <textarea id="value" placeholder="改成什么"></textarea>
+    <div class="row">
+      <button class="primary" id="btnAdd">加进去</button>
+      <button id="btnHint">清空输入</button>
+    </div>
+  </div>
+  <p class="msg" id="addMsg">血量、天数、金币、角色改不了，这里也不会给你这些位置。</p>
+</section>
+
+<section>
+  <h3>改动列表 <span class="kv" id="cnt">0 条</span></h3>
+  <div id="list"><p class="kv">还没有改动。</p></div>
+  <div class="dark" id="preview">预览会在这里显示。</div>
+</section>
+
+<section>
+  <h3>发布</h3>
+  <div class="stack">
+    <input id="title" maxlength="24" placeholder="模组名字（2–24 字）">
+    <input id="summary" maxlength="200" placeholder="一句话说明">
+    <div class="row">
+      <button id="btnSave">保存到工作区</button>
+      <button class="primary" id="btnSubmit">提交审核</button>
+    </div>
+    <div class="row">
+      <button id="btnFiles">工作区文件</button>
+      <button id="btnMarket">模组市场</button>
+    </div>
+  </div>
+  <p class="msg" id="msg"></p>
+  <p class="kv" id="wsPath">工作区：读取中…</p>
+</section>
+
+<script>
+const DATA = {"modes": [["orig", "原始版"], ["revert", "反转版"], ["hard", "困难版"], ["limit", "极限版"], ["run", "跑路版"], ["school", "校园版"], ["phone", "手机版"], ["storm", "停电版"], ["summer", "暑假版"], ["newyear", "过年版"], ["winter", "寒假版"], ["checkup", "体检版"], ["endless", "无尽版"]], "endings": [["orig_win", "逃出这个家"], ["orig_call", "正义报警"], ["revert_early", "小小年纪成功逃家"], ["revert_caught", "门口被抓"], ["revert_call", "报警反被抓"], ["revert_cheat", "被当成作弊打死"], ["revert_repeat", "考上本科却失去自由"], ["revert_free", "考砸反而没人管"], ["hard_win", "困难模式通关"], ["school_win", "顺利毕业"], ["school_call", "报警被转接"], ["phone_win", "手机放下"], ["phone_call", "没人当真"], ["storm_win", "雨停了"], ["storm_call", "线路占线"], ["satellite", "Satellite Assistance"], ["summer_win", "暑假过完了"], ["summer_call", "被劝回家"], ["newyear_win", "年过完了"], ["newyear_call", "被围着教育"], ["winter_win", "寒假过完了"], ["winter_call", "雪夜被劝回"], ["checkup_win", "档案上写着正常"], ["checkup_call", "电话被夺走"], ["hard_call", "被当恶作剧"], ["limit_win", "极限模式通关"], ["limit_call", "报警被爸爸逮住"], ["limit_die", "被皮带打死"], ["died", "被打死"], ["paradox", "祖父悖论"], ["egg", "受精卵体外死亡"], ["run_win", "终点站"], ["run_die", "倒在路上"], ["run_rich", "攒够了也不走"], ["endless_die", "倒在站台上"], ["run_hot", "坐过站"], ["run_call", "报警了，但没人送你走"]], "events": [["e1", "5", "妈妈接了个电话，出门半小时。你趴在桌上，喘了口气。"], ["e2", "5", "邻居阿姨敲门，塞给你一包饼干。你没敢说谢谢。"], ["e3", "-5", "妈妈翻你的书包，翻出一张皱巴巴的测验卷，又数落了你一顿。"], ["e4", "0", "楼下有人放歌，你趴在窗台上听完了整首。这一刻没人管你。"], ["e5", "-8", "半夜停电，你摸黑找手电筒，膝盖磕在桌角上。"], ["e6", "3", "你在作业本背面偷偷画了一扇门，画完心里松了一点。"], ["e7", "0", "妈妈突然问你：你是不是想离开这个家？你没敢回答。"], ["e8", "4", "雨下了一整天，妈妈没来查作业，你睡了个囫囵觉。"]]};
+let TOKEN = EHQ.getToken();
+let PATCHES = [];
+const el = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function post(fn, body){ try { return JSON.parse(EHQ.post(fn, JSON.stringify(body||{}))); } catch(e){ return {ok:false,msg:"返回格式不对"}; } }
+function code8(){
+  const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const p = n => Array.from({length:n}, () => A[Math.floor(Math.random()*A.length)]).join("");
+  return p(4) + "-" + p(4);
+}
+function setWho(){
+  if(!TOKEN){ el("who").textContent = "未授权"; el("who").className = "pill"; return; }
+  const r = post("dev_token_check", {p_token: TOKEN});
+  if(r.ok){ el("who").textContent = (r.name || "已授权") + " · " + (r.player_id || ""); el("who").className = "pill ok"; }
+  else { TOKEN = ""; EHQ.setToken(""); el("who").textContent = "token 失效"; el("who").className = "pill"; }
+}
+
+// ---------- 位置下拉 ----------
+function fillTargets(){
+  const kind = el("kind").value, t = el("target"), f = el("field");
+  t.innerHTML = ""; f.innerHTML = "";
+  if(kind === "event"){
+    DATA.events.forEach(([id, , text]) => t.add(new Option(id + " · " + text.slice(0,18), "event:" + id + ".text")));
+    f.add(new Option("事件文案", "suffix"));
+    f.disabled = true;
+  } else if(kind === "add"){
+    for(let i=1;i<=5;i++) t.add(new Option("新增第 " + i + " 条", "event:add." + i + ".text"));
+    f.add(new Option("事件文案", "suffix")); f.disabled = true;
+  } else if(kind === "mode"){
+    DATA.modes.forEach(([id, label]) => t.add(new Option(label + "（" + id + "）", id)));
+    f.disabled = false;
+    f.add(new Option("页签名", "name"));
+    f.add(new Option("开场白", "text"));
+    f.add(new Option("规则说明", "desc"));
+  } else {
+    DATA.endings.forEach(([id, name]) => t.add(new Option(name + "（" + id + "）", id)));
+    f.disabled = false;
+    f.add(new Option("结局名", "title"));
+    f.add(new Option("副标题", "desc"));
+  }
+}
+el("kind").addEventListener("change", fillTargets);
+
+// ---------- 加补丁 ----------
+el("btnAdd").addEventListener("click", () => {
+  const kind = el("kind").value;
+  const tgt = el("target").value;
+  const val = el("value").value.trim();
+  if(!tgt){ el("addMsg").textContent = "先选一个位置"; return; }
+  if(!val){ el("addMsg").textContent = "写上改成什么"; return; }
+  let target = tgt;
+  if(kind === "mode") target = "mode:" + tgt + "." + el("field").value;
+  if(kind === "ending") target = "ending:" + tgt + "." + el("field").value;
+  PATCHES.push({target, value: val});
+  el("value").value = "";
+  el("addMsg").textContent = "已加入：" + target;
+  render();
+});
+el("btnHint").addEventListener("click", () => { el("value").value = ""; });
+
+// ---------- 渲染 ----------
+function render(){
+  el("cnt").textContent = PATCHES.length + " 条";
+  const box = el("list");
+  if(!PATCHES.length){ box.innerHTML = '<p class="kv">还没有改动。</p>'; el("preview").textContent = "预览会在这里显示。"; return; }
+  box.innerHTML = "";
+  PATCHES.forEach((p, i) => {
+    const d = document.createElement("div");
+    d.className = "patch";
+    d.innerHTML = '<div class="t">' + esc(p.target) + '</div><textarea maxlength="500"></textarea>' +
+      '<div style="text-align:right;margin-top:6px"><button class="small">删除</button></div>';
+    const ta = d.querySelector("textarea");
+    ta.value = p.value;
+    ta.addEventListener("input", () => { p.value = ta.value; preview(); });
+    d.querySelector("button").addEventListener("click", () => { PATCHES.splice(i,1); render(); });
+    box.appendChild(d);
+  });
+  preview();
+}
+function preview(){
+  const fill = PATCHES.filter(p => p.value.trim());
+  if(!fill.length){ el("preview").textContent = "预览会在这里显示。"; return; }
+  el("preview").innerHTML = fill.map(p => {
+    if(p.target.startsWith("event:add.")) return '<div>＋新事件：' + esc(p.value) + '</div>';
+    if(p.target.startsWith("event:")) return '<div>' + esc(p.value) + '</div>';
+    if(p.target.endsWith(".title")) return '<div style="color:#e6b46b">结局：' + esc(p.value) + '</div>';
+    if(p.target.startsWith("mode:")) return '<div style="color:#8fbf9a">' + esc(p.value) + '</div>';
+    return '<div>' + esc(p.value) + '</div>';
+  }).join("");
+}
+
+// ---------- 授权 ----------
+el("btnAuth").addEventListener("click", async () => {
+  const code = code8();
+  el("msg").textContent = "申请设备码…";
+  const r = post("dev_pair_start", {p_code: code});
+  if(!r.ok){ el("msg").textContent = r.msg || "申请失败"; return; }
+  el("msg").textContent = "设备码 " + code + "，正在打开浏览器…";
+  EHQ.openUrl("https://sobsh562u.github.io/Escape-from-Home/%E6%A8%A1%E7%BB%84%E7%BC%96%E8%BE%91%E5%99%A8.html?pair=" + code);
+  let n = 0;
+  const timer = setInterval(() => {
+    n++;
+    const p = post("dev_pair_poll", {p_code: code});
+    if(p.status === "confirmed" && p.token){
+      clearInterval(timer);
+      TOKEN = p.token; EHQ.setToken(TOKEN);
+      setWho();
+      el("msg").textContent = "授权成功：" + (p.name || "") + "，以后可以直接提交。";
+    } else if(p.status !== "pending" || n > 120){
+      clearInterval(timer);
+      el("msg").textContent = "没等到授权（" + (p.msg || "超时") + "），再点一次授权试试。";
+    }
+  }, 3000);
+});
+el("btnOut").addEventListener("click", () => {
+  if(!TOKEN){ el("msg").textContent = "本来就没授权"; return; }
+  TOKEN = ""; EHQ.setToken("");
+  setWho();
+  el("msg").textContent = "本机 token 已清除。要作废服务器上的，去网页「授权终端 → 断开我所有已授权设备」。";
+});
+
+// ---------- 保存 / 提交 / 市场 ----------
+function pack(){
+  return {title: el("title").value.trim(), summary: el("summary").value.trim(),
+          patches: PATCHES.filter(p => p.value.trim())};
+}
+el("btnSave").addEventListener("click", () => {
+  const p = pack();
+  if(!p.patches.length){ el("msg").textContent = "还没有改动"; return; }
+  const ok = EHQ.writeFile("mod.json", JSON.stringify(p, null, 2));
+  el("msg").textContent = ok ? "已保存到工作区 mod.json（" + p.patches.length + " 条）" : "保存失败";
+});
+el("btnSubmit").addEventListener("click", () => {
+  if(!TOKEN){ el("msg").textContent = "先点右上角「授权」"; return; }
+  const p = pack();
+  if(!p.patches.length){ el("msg").textContent = "至少改一处"; return; }
+  if(p.title.length < 2){ el("msg").textContent = "模组名字至少 2 个字"; return; }
+  el("msg").textContent = "提交中…";
+  const r = post("dev_submit", {p_token: TOKEN, p_title: p.title, p_summary: p.summary, p_patches: p.patches});
+  el("msg").textContent = r.ok ? r.msg : (r.msg || "提交失败");
+  if(r.ok){ EHQ.writeFile("mod.json", JSON.stringify(p, null, 2)); }
+});
+el("btnMarket").addEventListener("click", () => {
+  const r = post("list_mods", {});
+  const rows = r.rows || [];
+  if(!rows.length){ el("msg").textContent = "市场还是空的。"; return; }
+  el("msg").innerHTML = rows.map(m => "「" + esc(m.code || "—") + "」 " + esc(m.title) + " · " + esc(m.author_name || "匿名")).join("<br>");
+});
+el("btnFiles").addEventListener("click", () => {
+  const list = JSON.parse(EHQ.listFiles() || "[]");
+  el("msg").innerHTML = list.length
+    ? list.map(f => esc(f.name) + "（" + Math.max(1, Math.round(f.size / 1024)) + "KB）").join("<br>")
+    : "工作区还是空的。";
+});
+
+// ---------- 启动 ----------
+el("wsPath").textContent = "工作区：" + EHQ.workspacePath();
+fillTargets();
+setWho();
+render();
+// 自动接上次的草稿
+try{
+  const saved = EHQ.readFile("mod.json");
+  if(saved){
+    const d = JSON.parse(saved);
+    if(d.patches && d.patches.length){
+      PATCHES = d.patches;
+      el("title").value = d.title || "";
+      el("summary").value = d.summary || "";
+      render();
+    }
+  }
+}catch(e){}
+</script>
+</body>
+</html>
