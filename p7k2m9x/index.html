@@ -152,6 +152,19 @@ function rpc(name, body){
 function el(id){ return document.getElementById(id); }
 function setMsg(t, cls){ const m = el("msg"); m.className = "msg " + (cls||""); m.textContent = t; }
 
+function show403 (why){
+  if(document.getElementById("p403")) return;
+  var d=document.createElement("div");
+  d.id="p403";
+  d.style.cssText="position:fixed;inset:0;z-index:99999;background:#0d1117;color:#c9d1d9;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+  d.innerHTML='<div style="font-size:68px;font-weight:700;letter-spacing:2px;line-height:1">403</div>'+
+    '<div style="font-size:20px;margin-top:14px">这个页面你没权限看</div>'+
+    '<div style="font-size:13px;color:#8b949e;margin-top:10px;line-height:1.7;max-width:32em">'+(why||"管理口令不对，或者你不是这个后台的管理员。")+'</div>'+
+    '<a href="javascript:location.reload()" style="margin-top:22px;padding:9px 18px;border-radius:6px;background:#238636;color:#fff;text-decoration:none;font-size:14px">重新输口令</a>'+
+    '<div style="margin-top:46px;font-size:12px;color:#6e7681;border:1px solid #30363d;border-radius:20px;padding:5px 14px">逃家游戏 · Escape from Home</div>';
+  document.body.appendChild(d);
+}
+
 el("gateBtn").addEventListener("click", async () => {
   const p = el("pwd").value.trim();
   if(!p){ el("gateMsg").textContent = "先填口令"; return; }
@@ -160,7 +173,8 @@ el("gateBtn").addEventListener("click", async () => {
   if(ok === true){
     PWD = p; el("gate").hidden = true; el("main").hidden = false; load(); loadPw(); loadVis(); loadMods();
   } else {
-    el("gateMsg").textContent = "口令不对，或者数据库函数还没建（见 数据库/举报中心.sql）";
+    el("gateMsg").textContent = "口令不对";
+    show403("口令不对。这个后台只给作者本人用，输对了才进。");
   }
 });
 
