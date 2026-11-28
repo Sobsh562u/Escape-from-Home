@@ -94,7 +94,7 @@
         <button id="modReload">刷新</button>
         <span class="msg" id="modMsg"></span>
       </div>
-      <p class="kv">通过的模组会立刻出现在「模组市场」，玩家用 <code>?mod=编号</code> 的链接加载；装了模组的局自动不上排行榜。</p>
+      <p class="kv">通过的模组会立刻出现在「模组市场」，玩家用 <code>?mod=编号</code> 的链接加载；装了模组的局自动不上排行榜。推荐位只有 <b>9 个</b>，只给好玩的，不因为推荐就上榜。</p>
       <table>
         <thead><tr><th>模组</th><th>作者</th><th>改动内容</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead>
         <tbody id="modRows"><tr><td colspan="6" class="kv">还没加载</td></tr></tbody>
@@ -381,27 +381,41 @@ async function loadMods(){
   const r = await rpc("ehq_admin_mods", {p_key: PWD}).catch(() => null);
   if(!r || !r.ok){ el("modRows").innerHTML = '<tr><td colspan="6" class="kv">' + esc((r && r.msg) || "连不上数据库") + '</td></tr>'; return; }
   const rows = r.rows || [];
-  el("modCount").textContent = rows.filter(x => x.status === "pending").length + " 待审 / 共 " + rows.length;
+  const fcount = rows.filter(x => x.featured).length;
+  el("modCount").textContent = rows.filter(x => x.status === "pending").length + " 待审 / 共 " + rows.length +
+    " · 推荐位 " + fcount + "/9";
   if(!rows.length){ el("modRows").innerHTML = '<tr><td colspan="6" class="kv">还没有人提交模组</td></tr>'; return; }
   el("modRows").innerHTML = "";
   rows.forEach(m => {
     const patches = ((m.data && m.data.patches) || []).map(x => '<div class="kv">' + esc(x.target) + ' → ' + esc(x.value) + '</div>').join("");
     const st = m.status === "pending" ? '<span class="red">审核中</span>' : (m.status === "approved" ? '<span class="green">已上架</span>' : '已驳回');
     const tr = document.createElement("tr");
-    tr.innerHTML = '<td><b>' + esc(m.title) + '</b><br><span class="kv">' + esc(m.summary || "") + ' · #' + m.id + '</span></td>' +
+    tr.innerHTML = '<td>' + (m.code ? '<span class="green"><b>' + esc(m.code) + '</b></span> ' : '') +
+      '<b>' + esc(m.title) + '</b><br><span class="kv">' + esc(m.summary || "") + ' · #' + m.id + '</span></td>' +
       '<td>' + esc(m.author_name || "—") + '</td>' +
       '<td>' + patches + '</td>' +
       '<td class="kv">' + esc(String(m.created_at || "").replace("T"," ").slice(0,16)) + '</td>' +
       '<td>' + st + (m.review_note ? '<br><span class="kv">' + esc(m.review_note) + '</span>' : '') + '</td>' +
       '<td>' + (m.status === "pending"
         ? '<button class="primary">通过</button> <button class="danger">驳回</button>'
-        : "—") + '</td>';
+        : (m.status === "approved"
+            ? '<button class="primary">' + (m.featured ? '撤推荐' : '推荐') + '</button>'
+            : "—")) + '</td>';
     if(m.status === "pending"){
       tr.children[5].children[0].addEventListener("click", () => modApprove(m));
       tr.children[5].children[1].addEventListener("click", () => modReject(m));
+    } else if(m.status === "approved"){
+      tr.children[5].children[0].addEventListener("click", () => modFeature(m));
     }
     el("modRows").appendChild(tr);
   });
+}
+
+async function modFeature(m){
+  modMsg("处理中…");
+  const r = await rpc("ehq_admin_mod_feature", {p_key: PWD, p_id: m.id, p_on: !m.featured}).catch(() => null);
+  if(r && r.ok){ modMsg(r.msg || "已更新", "green"); loadMods(); }
+  else { modMsg((r && r.msg) || "操作失败", "red"); }
 }
 
 async function modApprove(m){
