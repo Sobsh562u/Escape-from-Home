@@ -18,13 +18,16 @@ create table if not exists public.mods (
 create index if not exists mods_status_idx on public.mods (status, created_at desc);
 
 -- 提交：必须是注册玩家（普通账号即可），不允许管理员特权
+-- 可改：难度页签名/开场白/规则说明、结局名/副标题、事件文案、新增事件文案
+-- 不可改：血量等数值参数（hp/max/goal/money/day 一律拒）、游戏自带角色（妈妈等，char/role/npc 前缀一律拒）
 create or replace function public.submit_mod(
   p_client_id text, p_name text, p_pid text,
   p_title text, p_summary text, p_patches jsonb
 ) returns jsonb
 language plpgsql security definer
 as $fn$
-declare recent int; n int; item jsonb; tgt text;
+declare
+  recent int; n int; item jsonb; tgt text; kind text; rest text; base text; field text; v text;
 begin
   if length(coalesce(p_client_id, '')) < 8 then
     return jsonb_build_object('ok', false, 'msg', '先登录再提交');
@@ -51,12 +54,75 @@ begin
     if jsonb_typeof(item) <> 'object' then
       return jsonb_build_object('ok', false, 'msg', '每条都要是 { target, value }');
     end if;
-    tgt := item->>'target';
-    if tgt is null or tgt !~ '^(mode|ending|text):[A-Za-z0-9_\u4e00-\u9fa5]+(\.(name|title|text|desc|hint))?$' then
-      return jsonb_build_object('ok', false, 'msg', '位置写法不对：' || coalesce(tgt, '空'));
+    tgt := btrim(coalesce(item->>'target', ''));
+    v := coalesce(item->>'value', '');
+
+    if tgt = '' or position(':' in tgt) = 0 then
+      return jsonb_build_object('ok', false, 'msg', '位置写法不对：' || coalesce(tgt, '空') || '（要写成 类型:键.字段）');
     end if;
-    if char_length(coalesce(item->>'value', '')) > 500 then
+
+    kind := lower(split_part(tgt, ':', 1));
+    rest := substr(tgt, position(':' in tgt) + 1);
+
+    -- 角色、数值：直接拒绝
+    if kind in ('char', 'role', 'npc', 'player', 'actor', 'person', 'mom', 'dad') then
+      return jsonb_build_object('ok', false, 'msg', '游戏自带的角色（妈妈这些）不能改，模组只能改文字');
+    end if;
+    if tgt ~* '(^|[.:])(hp|max|maxhp|goal|money|day|days|blood|life|power|atk|def|coin|coins|score|stage|loop)([.:]|$)'
+       or tgt ~* '(加血|扣血|血池|血量|天数|金币|分数)' then
+      return jsonb_build_object('ok', false, 'msg', '血量、天数、金币这类数值参数不能改，事件和结局的数值由游戏定死');
+    end if;
+
+    if kind not in ('mode', 'ending', 'event', 'text') then
+      return jsonb_build_object('ok', false, 'msg', '位置写法不对：' || tgt || '（类型只能是 mode/ending/event/text）');
+    end if;
+
+    if kind in ('mode', 'ending') then
+      if position('.' in rest) = 0 then
+        return jsonb_build_object('ok', false, 'msg', '要写字段：' || tgt || '（比如 mode:orig.name / ending:orig_win.title）');
+      end if;
+      base  := split_part(rest, '.', 1);
+      field := split_part(rest, '.', 2);
+      if base = '' then return jsonb_build_object('ok', false, 'msg', '键不能空：' || tgt); end if;
+      if kind = 'mode' and field not in ('name', 'text', 'desc') then
+        return jsonb_build_object('ok', false, 'msg', '难度的字段只能是 name / text / desc：' || tgt);
+      end if;
+      if kind = 'ending' and field not in ('title', 'desc') then
+        return jsonb_build_object('ok', false, 'msg', '结局的字段只能是 title / desc：' || tgt);
+      end if;
+
+    elsif kind = 'event' then
+      -- event:e1.text 改已有事件；event:add.1.text 新增事件（血量固定 0）
+      base := split_part(rest, '.', 1);
+      if base = 'add' then
+        field := split_part(rest, '.', 2);
+        if field !~ '^[1-5]$' then
+          return jsonb_build_object('ok', false, 'msg', '新增事件写法是 event:add.1.text 到 event:add.5.text');
+        end if;
+        if split_part(rest, '.', 3) <> 'text' then
+          return jsonb_build_object('ok', false, 'msg', '新增事件只能写文案：event:add.' || field || '.text');
+        end if;
+      else
+        if base !~ '^e[1-9]$' then
+          return jsonb_build_object('ok', false, 'msg', '事件编号要写 e1、e2 这种：' || tgt);
+        end if;
+        field := nullif(split_part(rest, '.', 2), '');
+        if field is not null and field <> 'text' then
+          return jsonb_build_object('ok', false, 'msg', '事件只能改文案（.text）：' || tgt);
+        end if;
+      end if;
+
+    else  -- text: 自由文本
+      if rest !~ '^[A-Za-z0-9_\u4e00-\u9fa5]+$' then
+        return jsonb_build_object('ok', false, 'msg', '位置写法不对：' || tgt);
+      end if;
+    end if;
+
+    if char_length(v) > 500 then
       return jsonb_build_object('ok', false, 'msg', '单条内容最多 500 字');
+    end if;
+    if btrim(v) = '' then
+      return jsonb_build_object('ok', false, 'msg', '改成什么不能空：' || tgt);
     end if;
   end loop;
 
