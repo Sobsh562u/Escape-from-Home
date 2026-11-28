@@ -60,9 +60,9 @@
       <button class="ghost" id="addRow">＋ 再加一条</button>
       <button class="ghost" id="demoFill">填入示例</button>
     </p>
-    <p class="kv" style="margin:10px 0 0">
-      位置写法：<b>类型:键.字段</b>。结局的键是 <code>orig_win</code>、<code>revert_caught</code> 这类；难度的键是 <code>orig</code>、<code>hard</code>、<code>limit</code>、<code>checkup</code> 这类。
-      字段：结局用 <code>title</code>（结局名）/ <code>desc</code>（副标题）；难度用 <code>name</code>（页签名）/ <code>text</code>（开场白）/ <code>desc</code>（规则说明）。
+    <p class="kv" style="margin:10px 0 0" id="ruleHelp">
+      能改的：<b>事件文案</b>（键填 <code>e1</code>–<code>e8</code>，改已有事件）、<b>新增事件</b>（键填 <code>add.1</code>–<code>add.5</code>，会多出一条纯叙事事件，血量固定 0 不扣不加）、<b>难度</b>（键如 <code>orig</code>，字段 name 页签名 / text 开场白 / desc 规则说明）、<b>结局</b>（键如 <code>orig_win</code>，字段 title 结局名 / desc 副标题）。
+      <br>不能改的：<b>血量、天数、金币这些数值参数</b>，以及 <b>游戏自带的角色</b>（妈妈这些）。这两类会被直接退回。
     </p>
     <p style="margin:12px 0 0"><button class="primary" id="mdSend">提交审核</button> <span class="msg" id="mdMsg"></span></p>
   </div>
@@ -125,13 +125,13 @@ function addRow(type, key, field, value){
   div.className = "row";
   div.innerHTML =
     '<label>类型</label>' +
-    '<select class="t"><option value="ending">结局</option><option value="mode">难度</option></select>' +
+    '<select class="t"><option value="event">事件</option><option value="ending">结局</option><option value="mode">难度</option></select>' +
     '<label>键</label>' +
     '<input class="k" placeholder="比如 orig_win / checkup">' +
     '<input class="v" placeholder="改成什么">' +
     '<button class="ghost del">删</button>' +
     '<label>字段</label>' +
-    '<select class="f"><option value="title">结局名 / 难度页签名</option><option value="desc">副标题 / 规则说明</option><option value="text">开场白（仅难度）</option></select>';
+    '<select class="f"><option value="text">事件文案 / 难度开场白</option><option value="title">结局名 / 难度页签名</option><option value="desc">副标题 / 规则说明</option></select>';
   el("rows").appendChild(div);
   const t = div.querySelector(".t"), k = div.querySelector(".k"), f = div.querySelector(".f"), v = div.querySelector(".v");
   if(type) t.value = type;
@@ -143,12 +143,13 @@ function addRow(type, key, field, value){
 el("addRow").addEventListener("click", () => addRow());
 el("demoFill").addEventListener("click", () => {
   if(el("rows").children.length === 0) addRow();
-  el("rows").children[0].querySelector(".t").value = "ending";
-  el("rows").children[0].querySelector(".k").value = "orig_win";
-  el("rows").children[0].querySelector(".f").value = "title";
-  el("rows").children[0].querySelector(".v").value = "你真的逃出去了吗";
+  const r0 = el("rows").children[0];
+  r0.querySelector(".t").value = "event";
+  r0.querySelector(".k").value = "add.1";
+  r0.querySelector(".f").value = "text";
+  r0.querySelector(".v").value = "床底传来一阵挠门声，怪物慢慢爬出来了";
 });
-addRow("ending","orig_win","title","");
+addRow("event","e3","text","");
 
 el("mdSend").addEventListener("click", async () => {
   if(!ME){ el("mdMsg").textContent = "先登录"; return; }
