@@ -69,6 +69,24 @@
       </table>
       <p class="kv">点「同意重置」会立刻把对方密码换成本人申请时填的新密码，他直接用新密码登录；驳回则旧密码不动。</p>
     </div>
+
+    <div class="card">
+      <b>访问记录</b> <span class="pill" id="visCount">—</span>
+      <div style="margin:10px 0 0">
+        <button id="visReload">刷新</button>
+        <span class="msg" id="visMsg"></span>
+      </div>
+      <p class="kv" style="margin:8px 0 4px">24 小时内访问 ≥3 次的 IP（n 是次数，机器人列有值说明 UA 像程序）</p>
+      <table>
+        <thead><tr><th>IP</th><th>次数</th><th>首次</th><th>最近</th><th>机器人</th></tr></thead>
+        <tbody id="visHot"><tr><td colspan="5" class="kv">还没加载</td></tr></tbody>
+      </table>
+      <p class="kv" style="margin:14px 0 4px">最近访问</p>
+      <table>
+        <thead><tr><th>时间</th><th>IP</th><th>路径</th><th>UA</th><th>机器人</th></tr></thead>
+        <tbody id="visRows"><tr><td colspan="5" class="kv">还没加载</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -127,7 +145,7 @@ el("gateBtn").addEventListener("click", async () => {
   el("gateMsg").textContent = "校验中…";
   const ok = await rpc("ehq_admin_ok", {p_key: p}).catch(() => null);
   if(ok === true){
-    PWD = p; el("gate").hidden = true; el("main").hidden = false; load(); loadPw();
+    PWD = p; el("gate").hidden = true; el("main").hidden = false; load(); loadPw(); loadVis();
   } else {
     el("gateMsg").textContent = "口令不对，或者数据库函数还没建（见 数据库/举报中心.sql）";
   }
@@ -190,6 +208,46 @@ async function loadPw(){
       tr.children[4].children[1].addEventListener("click", () => pwReject(p0));
     }
     el("pwRows").appendChild(tr);
+  });
+}
+
+// ===== 访问记录 =====
+el("visReload").addEventListener("click", loadVis);
+function visMsg(t, cls){ const m = el("visMsg"); m.className = "msg " + (cls||""); m.textContent = t; }
+function shortUa(u){
+  u = String(u || "");
+  var m = u.match(/(Chrome|Firefox|Safari|Edg|Opera|MSIE|Trident)[\/ ]?[\w.]+/);
+  var os = u.match(/Windows|Android|iPhone|iPad|Linux|Mac OS X/);
+  return (os ? os[0] + " · " : "") + (m ? m[0] : (u ? u.slice(0, 24) : "—"));
+}
+function tfmt(t){ return esc(String(t||"").replace("T"," ").slice(0,16)); }
+
+async function loadVis(){
+  el("visRows").innerHTML = "加载中…";
+  const r = await rpc("ehq_admin_visits", {p_key: PWD, p_limit: 50}).catch(() => null);
+  if(!r || !r.ok){ el("visRows").innerHTML = (r && r.msg) || "连不上数据库"; return; }
+  el("visCount").textContent = "24h 共 " + (r.total24 || 0) + " 次";
+  const hot = r.hot || [];
+  if(!hot.length){ el("visHot").innerHTML = '<tr><td colspan="5" class="kv">还没有反复访问的 IP</td></tr>'; }
+  else {
+    el("visHot").innerHTML = "";
+    hot.forEach(h => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<td><b>' + esc(h.ip) + '</b></td><td>' + h.n + '</td><td class="kv">' + tfmt(h.first_seen) +
+        '</td><td class="kv">' + tfmt(h.last_seen) + '</td><td class="' + (h.has_bot ? "red" : "") + '">' +
+        (h.has_bot ? "像机器人" : "—") + '</td>';
+      el("visHot").appendChild(tr);
+    });
+  }
+  const rows = r.rows || [];
+  if(!rows.length){ el("visRows").innerHTML = '<tr><td colspan="5" class="kv">还没有记录</td></tr>'; return; }
+  el("visRows").innerHTML = "";
+  rows.forEach(v => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td class="kv">' + tfmt(v.created_at) + '</td><td>' + esc(v.ip || "（没记到）") +
+      '</td><td class="kv">' + esc(v.path || "/") + '</td><td class="kv">' + esc(shortUa(v.ua)) +
+      '</td><td class="' + (v.bot ? "red" : "") + '">' + (v.bot ? "是" : "—") + '</td>';
+    el("visRows").appendChild(tr);
   });
 }
 
