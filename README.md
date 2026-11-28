@@ -399,3 +399,7 @@ Copyright (c) 2026 Sobsh562u
 ## Keywords（英文关键词）
 
 text adventure, text-based game, Chinese indie game, visual novel alternative, Python game, HTML5 game, browser game, no-download game, open source game, exam theme.
+
+---
+
+维护者：Sobsh562u。本仓库就是《逃家游戏》的唯一源码出处，网页版、桌面版、安卓版的代码都在这里，发布包由本仓库构建。
