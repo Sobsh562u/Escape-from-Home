@@ -77,7 +77,7 @@
 
   <div class="card">
     <h2>模组市场 <span class="kv" id="mkCount"></span></h2>
-    <p class="kv">点「复制加载链接」拿到带模组的游戏地址，发谁都能用。装了模组的局不计入排行榜。</p>
+    <p class="kv">审核通过后会分配三位编号（001、002……），编号存在服务器，改不了。点「复制加载链接」拿到 <code>?mod=001</code> 的地址，发谁都能用。推荐只代表作者觉得好玩，<b>装了模组的局一律不上榜</b>。</p>
     <table>
       <thead><tr><th>模组</th><th>作者</th><th>改动</th><th></th></tr></thead>
       <tbody id="mkRows"><tr><td colspan="4" class="kv">加载中…</td></tr></tbody>
@@ -191,7 +191,7 @@ async function loadMine(){
   el("mineRows").innerHTML = "";
   rows.forEach(m => {
     const tr = document.createElement("tr");
-    tr.innerHTML = '<td><b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
+    tr.innerHTML = '<td>'+(m.code?'<span class="pill ok">'+esc(m.code)+'</span> ':'')+'<b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
       '<td>'+m.patches+' 处</td><td>'+statusPill(m.status)+
       (m.review_note?'<br><span class="kv">'+esc(m.review_note)+'</span>':'')+'</td>' +
       '<td class="kv">'+esc(String(m.created_at||"").slice(0,16).replace("T"," "))+'</td>';
@@ -207,9 +207,10 @@ async function loadMarket(){
   if(!rows.length){ el("mkRows").innerHTML = '<tr><td colspan="4" class="kv">暂时没有上架的模组</td></tr>'; return; }
   el("mkRows").innerHTML = "";
   rows.forEach(m => {
-    const link = location.origin + location.pathname.replace(/[^/]*$/,"index.html") + "?mod=" + m.id;
+    const link = location.origin + location.pathname.replace(/[^/]*$/,"index.html") + "?mod=" + (m.code || m.id);
+    const no = m.code ? '<span class="pill ok">' + esc(m.code) + '</span> ' : '<span class="pill">待编号</span> ';
     const tr = document.createElement("tr");
-    tr.innerHTML = '<td><b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
+    tr.innerHTML = '<td>'+no+'<b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
       '<td>'+esc(m.author_name||"—")+'</td><td>'+m.patches+' 处</td>' +
       '<td><button class="ghost">复制加载链接</button></td>';
     tr.lastElementChild.firstChild.addEventListener("click", () => {
