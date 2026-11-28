@@ -73,8 +73,8 @@ begin
       return jsonb_build_object('ok', false, 'msg', '血量、天数、金币这类数值参数不能改，事件和结局的数值由游戏定死');
     end if;
 
-    if kind not in ('mode', 'ending', 'event', 'text') then
-      return jsonb_build_object('ok', false, 'msg', '位置写法不对：' || tgt || '（类型只能是 mode/ending/event/text）');
+    if kind not in ('mode', 'ending', 'event') then
+      return jsonb_build_object('ok', false, 'msg', '类型只能是 mode / ending / event：' || tgt);
     end if;
 
     if kind in ('mode', 'ending') then
