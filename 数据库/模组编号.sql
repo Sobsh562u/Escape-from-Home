@@ -61,6 +61,10 @@ $fn$;
 -- 5) 成绩带模组编号：只有官方推荐（审核通过）的模组才允许把编号写进榜单
 alter table public.scores add column if not exists mod_code text not null default '';
 
+-- 旧版是 7 个参数，create or replace 不会覆盖它，两个重载同时存在会让接口返回
+-- 300 PGRST203（"挑不出该调哪个"），所以必须先删旧签名
+drop function if exists public.submit_score(text, text, text, text, integer, integer, integer);
+
 create or replace function public.submit_score(
   p_name text, p_client_id text, p_mode text, p_ending text,
   p_days integer, p_stations integer, p_money integer, p_mod_code text default ''
