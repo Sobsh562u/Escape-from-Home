@@ -402,4 +402,6 @@ text adventure, text-based game, Chinese indie game, visual novel alternative, P
 
 ---
 
+隐私政策：见 `隐私政策.html`（收集范围、用途、保留期都在里面）。
+
 维护者：Sobsh562u。本仓库就是《逃家游戏》的唯一源码出处，网页版、桌面版、安卓版的代码都在这里，发布包由本仓库构建。
