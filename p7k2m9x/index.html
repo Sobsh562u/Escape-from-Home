@@ -390,6 +390,13 @@ el("doBan").addEventListener("click", async () => {
 el("modReload").addEventListener("click", loadMods);
 function modMsg(t, cls){ const m = el("modMsg"); m.className = "msg " + (cls||""); m.textContent = t; }
 
+async function modDelete(m){
+  if(!confirm("删掉 #" + m.id + "「" + m.title + "」？删了就没了，" + (m.code ? "编号 " + m.code + " 也一起失效。" : "内容一起没。") + "确定？")) return;
+  const r = await rpc("ehq_admin_mod_delete", {p_key: PWD, p_id: m.id}).catch(() => null);
+  alert((r && r.msg) || "删除失败");
+  loadMods();
+}
+
 async function loadMods(){
   el("modRows").innerHTML = '<tr><td colspan="6" class="kv">加载中…</td></tr>';
   const r = await rpc("ehq_admin_mods", {p_key: PWD}).catch(() => null);
@@ -415,6 +422,11 @@ async function loadMods(){
         : (m.status === "approved"
             ? '<button class="primary">' + (m.featured ? '撤推荐' : '推荐') + '</button>'
             : "—")) + '</td>';
+    const delBtn = document.createElement("button");
+    delBtn.className = "danger"; delBtn.textContent = "删除";
+    delBtn.addEventListener("click", () => modDelete(m));
+    tr.children[5].appendChild(document.createTextNode(" "));
+    tr.children[5].appendChild(delBtn);
     if(m.status === "pending"){
       tr.children[5].children[0].addEventListener("click", () => modApprove(m));
       tr.children[5].children[1].addEventListener("click", () => modReject(m));
