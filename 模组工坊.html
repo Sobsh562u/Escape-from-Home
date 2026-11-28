@@ -77,13 +77,13 @@
 
   <div class="card">
     <h2>模组市场 <span class="kv" id="mkCount"></span></h2>
-    <p class="kv">审核通过后会分配三位编号（001、002……），编号存在服务器，改不了。点「复制加载链接」拿到 <code>?mod=001</code> 的地址，发谁都能用。推荐只代表作者觉得好玩，<b>装了模组的局一律不上榜</b>。</p>
+    <p class="kv">审核通过后会分配三位编号（001、002……），编号存在服务器，改不了。点「复制加载链接」拿到 <code>?mod=001</code> 的地址，发谁都能用。官方推荐位只有 9 个，只代表作者觉得好玩，<b>装了模组的局一律不上榜</b>。</p>
     <table>
       <thead><tr><th>模组</th><th>作者</th><th>改动</th><th></th></tr></thead>
       <tbody id="mkRows"><tr><td colspan="4" class="kv">加载中…</td></tr></tbody>
     </table>
   </div>
-  <p class="kv">返回 <a href="./index.html">游戏主页</a></p>
+  <p class="kv">返回 <a href="./index.html">游戏主页</a> · 想边写边看效果？用 <a href="./模组编辑器.html">模组编辑器</a>（能授权终端 / APK）</p>
 </div>
 
 <script>
@@ -208,7 +208,8 @@ async function loadMarket(){
   el("mkRows").innerHTML = "";
   rows.forEach(m => {
     const link = location.origin + location.pathname.replace(/[^/]*$/,"index.html") + "?mod=" + (m.code || m.id);
-    const no = m.code ? '<span class="pill ok">' + esc(m.code) + '</span> ' : '<span class="pill">待编号</span> ';
+    const no = (m.code ? '<span class="pill ok">' + esc(m.code) + '</span> ' : '<span class="pill">待编号</span> ') +
+      (m.featured ? '<span class="pill amber">官方推荐</span> ' : '');
     const tr = document.createElement("tr");
     tr.innerHTML = '<td>'+no+'<b>'+esc(m.title)+'</b><br><span class="kv">'+esc(m.summary||"")+'</span></td>' +
       '<td>'+esc(m.author_name||"—")+'</td><td>'+m.patches+' 处</td>' +
