@@ -87,6 +87,19 @@
         <tbody id="visRows"><tr><td colspan="5" class="kv">还没加载</td></tr></tbody>
       </table>
     </div>
+
+    <div class="card">
+      <b>模组审核</b> <span class="pill" id="modCount">0 条</span>
+      <div style="margin:10px 0 0">
+        <button id="modReload">刷新</button>
+        <span class="msg" id="modMsg"></span>
+      </div>
+      <p class="kv">通过的模组会立刻出现在「模组市场」，玩家用 <code>?mod=编号</code> 的链接加载；装了模组的局自动不上排行榜。</p>
+      <table>
+        <thead><tr><th>模组</th><th>作者</th><th>改动内容</th><th>提交时间</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody id="modRows"><tr><td colspan="6" class="kv">还没加载</td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -145,7 +158,7 @@ el("gateBtn").addEventListener("click", async () => {
   el("gateMsg").textContent = "校验中…";
   const ok = await rpc("ehq_admin_ok", {p_key: p}).catch(() => null);
   if(ok === true){
-    PWD = p; el("gate").hidden = true; el("main").hidden = false; load(); loadPw(); loadVis();
+    PWD = p; el("gate").hidden = true; el("main").hidden = false; load(); loadPw(); loadVis(); loadMods();
   } else {
     el("gateMsg").textContent = "口令不对，或者数据库函数还没建（见 数据库/举报中心.sql）";
   }
@@ -358,6 +371,56 @@ el("doBan").addEventListener("click", async () => {
     btn.disabled = false; btn.textContent = "现在确认封禁";
   }
 });
+
+// ===== 模组审核 =====
+el("modReload").addEventListener("click", loadMods);
+function modMsg(t, cls){ const m = el("modMsg"); m.className = "msg " + (cls||""); m.textContent = t; }
+
+async function loadMods(){
+  el("modRows").innerHTML = '<tr><td colspan="6" class="kv">加载中…</td></tr>';
+  const r = await rpc("ehq_admin_mods", {p_key: PWD}).catch(() => null);
+  if(!r || !r.ok){ el("modRows").innerHTML = '<tr><td colspan="6" class="kv">' + esc((r && r.msg) || "连不上数据库") + '</td></tr>'; return; }
+  const rows = r.rows || [];
+  el("modCount").textContent = rows.filter(x => x.status === "pending").length + " 待审 / 共 " + rows.length;
+  if(!rows.length){ el("modRows").innerHTML = '<tr><td colspan="6" class="kv">还没有人提交模组</td></tr>'; return; }
+  el("modRows").innerHTML = "";
+  rows.forEach(m => {
+    const patches = ((m.data && m.data.patches) || []).map(x => '<div class="kv">' + esc(x.target) + ' → ' + esc(x.value) + '</div>').join("");
+    const st = m.status === "pending" ? '<span class="red">审核中</span>' : (m.status === "approved" ? '<span class="green">已上架</span>' : '已驳回');
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><b>' + esc(m.title) + '</b><br><span class="kv">' + esc(m.summary || "") + ' · #' + m.id + '</span></td>' +
+      '<td>' + esc(m.author_name || "—") + '</td>' +
+      '<td>' + patches + '</td>' +
+      '<td class="kv">' + esc(String(m.created_at || "").replace("T"," ").slice(0,16)) + '</td>' +
+      '<td>' + st + (m.review_note ? '<br><span class="kv">' + esc(m.review_note) + '</span>' : '') + '</td>' +
+      '<td>' + (m.status === "pending"
+        ? '<button class="primary">通过</button> <button class="danger">驳回</button>'
+        : "—") + '</td>';
+    if(m.status === "pending"){
+      tr.children[5].children[0].addEventListener("click", () => modApprove(m));
+      tr.children[5].children[1].addEventListener("click", () => modReject(m));
+    }
+    el("modRows").appendChild(tr);
+  });
+}
+
+async function modApprove(m){
+  const note = prompt("通过「" + m.title + "」？可以写一句备注（留空也行）：", "");
+  if(note === null) return;
+  modMsg("处理中…");
+  const r = await rpc("ehq_admin_mod_approve", {p_key: PWD, p_id: m.id, p_note: note}).catch(() => null);
+  if(r && r.ok){ modMsg("已上架「" + m.title + "」", "green"); loadMods(); }
+  else { modMsg((r && r.msg) || "通过失败", "red"); }
+}
+
+async function modReject(m){
+  const note = prompt("驳回「" + m.title + "」，写个理由给他看：", "内容不合适");
+  if(note === null) return;
+  modMsg("处理中…");
+  const r = await rpc("ehq_admin_mod_reject", {p_key: PWD, p_id: m.id, p_note: note}).catch(() => null);
+  if(r && r.ok){ modMsg("已驳回「" + m.title + "」", "green"); loadMods(); }
+  else { modMsg((r && r.msg) || "驳回失败", "red"); }
+}
 </script>
 </body>
 </html>
