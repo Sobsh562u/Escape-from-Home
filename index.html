@@ -2161,7 +2161,7 @@
       lk.appendChild(dd);
       var hh = document.createElement("div"); hh.className = "phlockhint";
       hh.textContent = isSchoolPhone()
-        ? (phone.schoolPinKnown ? "学校发的机 · 出厂密码老师给过你了" : "学校发的机，出厂就带密码——回学校问老师要")
+        ? (phone.schoolPinKnown ? "学校发的机 · 出厂密码：" + phone.schoolPin : "学校发的机，出厂就带密码——点下面按钮问老师")
         : "这台手机你设了密码，输入解锁";
       lk.appendChild(hh);
       var ok = document.createElement("button");
@@ -2174,6 +2174,18 @@
         else phMsg("密码不对。");
       });
       lk.appendChild(inp); lk.appendChild(ok);
+      if (isSchoolPhone() && !phone.schoolPinKnown) {
+        var ask = document.createElement("button");
+        ask.type = "button"; ask.className = "phbtn"; ask.textContent = "问老师要密码";
+        ask.style.marginTop = "8px";
+        ask.addEventListener("click", function () {
+          phone.schoolPinKnown = true; savePhone();
+          phMsg("你问了班主任，她翻出登记本：「" + phone.schoolPin + "」，记一下吧。");
+          hh.textContent = "学校发的机 · 出厂密码：" + phone.schoolPin;
+          inp.value = phone.schoolPin;
+        });
+        lk.appendChild(ask);
+      }
       var em = document.createElement("button");
       em.type = "button"; em.className = "phemerg"; em.textContent = "紧急拨号 · 110";
       em.addEventListener("click", function () { closePhone(); doCall(); });
@@ -4159,7 +4171,7 @@
       schLine("你从教室后门溜出去了——这节课算旷了。", "bad");
     }
     schLine("你走到了" + p.name + "。", "");
-    if (id === "office" && isSchoolPhone() && !phone.schoolPinKnown) {
+    if (id === "office" && !phone.schoolPinKnown) {
       phone.schoolPinKnown = true; savePhone();
       schLine("你问老师学校发的手机密码，老师翻出登记本：「" + phone.schoolPin + "」，记一下吧，别再忘了。", "good");
     }
